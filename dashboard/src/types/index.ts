@@ -168,6 +168,8 @@ export interface Service {
   health: ServiceHealth;
   latencyMs: number;
   lastCheckedAt: Date;
+  /** Optional short status label rendered next to the dot ("Maintenance", "Elevated latency"). */
+  note?: string;
 }
 
 export interface ErrorCode {

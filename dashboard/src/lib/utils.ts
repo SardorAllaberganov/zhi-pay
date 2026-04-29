@@ -41,6 +41,42 @@ export function formatMoney(
 }
 
 /**
+ * Plain numeric formatter with locale-aware grouping.
+ * For non-monetary values: FX rates, percentages, counts.
+ * For money in minor units, use `formatMoney` instead.
+ */
+export function formatNumber(value: number, fractionDigits = 2): string {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(value);
+}
+
+/**
+ * Compact money formatter for KPI tiles (e.g. `2.84B UZS`, `847M UZS`).
+ *
+ * Reserved for AGGREGATE / dashboard summary rendering only — never use this
+ * for transactional displays (send-money review, transfer detail, activity
+ * row amounts), where the user must see the exact figure with full grouping
+ * per `.claude/rules/money-and-fx.md`.
+ */
+export function formatMoneyCompact(
+  amountMinor: bigint | number,
+  currency: Currency,
+): string {
+  const minor = typeof amountMinor === 'bigint' ? amountMinor : BigInt(amountMinor);
+  const negative = minor < 0n;
+  const abs = negative ? -minor : minor;
+  const major = Number(abs) / 100;
+  const compact = new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    maximumFractionDigits: 2,
+  }).format(major);
+  const sign = negative ? '−' : '';
+  return `${sign}${compact} ${currency}`;
+}
+
+/**
  * Date formatter — drives off locale, not device.
  */
 export function formatDate(d: Date, locale: Locale = 'en'): string {
