@@ -1,0 +1,273 @@
+
+<style>
+h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+#tabs{display:flex;gap:6px;flex-wrap:wrap;padding:16px 16px 0}
+#tabs button{font-size:12px;padding:5px 12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer;transition:all .15s}
+#tabs button.active{background:var(--color-background-primary);color:var(--color-text-primary);border-color:var(--color-border-primary);font-weight:500}
+#erd-wrap{padding:0 8px 16px;overflow-x:auto}
+#erd svg{max-width:100%}
+.note{font-size:11px;color:var(--color-text-tertiary);padding:0 20px 12px;line-height:1.5}
+</style>
+<h2 class="sr-only">ZhiPay database schema — interactive entity-relationship diagram across 5 domain groups</h2>
+
+<div id="tabs"></div>
+<div class="note" id="note"></div>
+<div id="erd-wrap"><div id="erd"></div></div>
+
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad:false, theme:'base',
+  fontFamily:'"Anthropic Sans",sans-serif',
+  themeVariables:{darkMode:dark,fontSize:'12px',fontFamily:'"Anthropic Sans",sans-serif',
+    lineColor:dark?'#9c9a92':'#73726c',textColor:dark?'#c2c0b6':'#3d3d3a',
+    primaryColor:dark?'#2a2a28':'#f1efe8',primaryBorderColor:dark?'#444441':'#b4b2a9',
+    primaryTextColor:dark?'#c2c0b6':'#3d3d3a'}
+});
+
+const groups = [
+  {
+    label:'Users & KYC',
+    note:'Core identity: users register by phone, verified via MyID. KYC result drives transfer limits.',
+    src:`erDiagram
+  USERS {
+    uuid id PK
+    string phone_number UK
+    string full_name
+    string pinfl UK
+    enum status "active|blocked|pending"
+    timestamp created_at
+    timestamp updated_at
+  }
+  KYC_VERIFICATIONS {
+    uuid id PK
+    uuid user_id FK
+    string myid_session_id
+    enum status "pending|passed|failed|expired"
+    string document_type
+    string document_number
+    date date_of_birth
+    jsonb myid_response
+    timestamp verified_at
+    timestamp created_at
+  }
+  BLACKLIST {
+    uuid id PK
+    string identifier "phone|pinfl|device"
+    enum type "phone|pinfl|device_id|ip"
+    string reason
+    string added_by
+    timestamp expires_at
+    timestamp created_at
+  }
+  USERS ||--o{ KYC_VERIFICATIONS : "verifies via"
+  USERS }o--o| BLACKLIST : "checked against"`
+  },
+  {
+    label:'Cards & Wallet',
+    note:'Each user may link multiple UzCard/Humo cards. Internal wallet stores UZS balance for pending flows.',
+    src:`erDiagram
+  USERS {
+    uuid id PK
+    string phone_number UK
+  }
+  LINKED_CARDS {
+    uuid id PK
+    uuid user_id FK
+    string masked_pan "last 4 digits"
+    enum card_type "uzcard|humo"
+    string token "PCI tokenized"
+    string bank_name
+    boolean is_default
+    enum status "active|expired|removed"
+    timestamp created_at
+  }
+  WALLETS {
+    uuid id PK
+    uuid user_id FK
+    bigint balance_uzs "stored in tiyins"
+    bigint hold_amount
+    enum status "active|frozen"
+    timestamp updated_at
+  }
+  USERS ||--o{ LINKED_CARDS : "links"
+  USERS ||--|| WALLETS : "owns"`
+  },
+  {
+    label:'Transfers',
+    note:'One transfer record per user-initiated send. FX rate frozen at creation time. Status machine: created→processing→completed|failed|reversed.',
+    src:`erDiagram
+  TRANSFERS {
+    uuid id PK
+    uuid user_id FK
+    uuid card_id FK
+    enum destination "alipay|wechat"
+    string recipient_identifier "phone or email"
+    bigint amount_uzs
+    bigint amount_cny "in fen"
+    numeric fx_rate
+    bigint fee_uzs
+    bigint fx_spread_uzs
+    enum status "created|processing|completed|failed|reversed"
+    string external_tx_id "Alipay/WeChat ref"
+    jsonb provider_response
+    timestamp completed_at
+    timestamp created_at
+  }
+  FX_RATES {
+    uuid id PK
+    string pair "UZS_CNY"
+    numeric mid_rate
+    numeric spread_pct
+    numeric client_rate
+    timestamp valid_from
+    timestamp valid_to
+  }
+  TRANSFERS }o--|| FX_RATES : "locked at"
+  TRANSFERS }|--|| LINKED_CARDS : "charged to"
+  TRANSFERS }|--|| USERS : "initiated by"`
+  },
+  {
+    label:'Commissions & Errors',
+    note:'Commission rules versioned by tier. Error codes used across transfers and integrations; locale field enables UZ/RU/EN messages.',
+    src:`erDiagram
+  COMMISSION_RULES {
+    uuid id PK
+    enum account_type "personal|corporate"
+    decimal min_pct
+    decimal max_pct
+    bigint min_fee_uzs
+    bigint volume_threshold_usd "corporate threshold"
+    decimal corporate_pct
+    boolean is_active
+    integer version
+    timestamp effective_from
+  }
+  TRANSFER_FEES {
+    uuid id PK
+    uuid transfer_id FK
+    uuid rule_id FK
+    bigint commission_uzs
+    bigint fx_spread_uzs
+    bigint total_fee_uzs
+  }
+  ERROR_CODES {
+    string code PK "e.g. KYC_EXPIRED"
+    enum category "kyc|acquiring|fx|provider|compliance|system"
+    string message_uz
+    string message_ru
+    string message_en
+    boolean retryable
+    string suggested_action
+  }
+  TRANSFER_FEES }|--|| COMMISSION_RULES : "applies"
+  TRANSFER_FEES }|--|| ERROR_CODES : "references"`
+  },
+  {
+    label:'Services & CMS',
+    note:'Services registry controls which payment rails are live. Notifications, stories, and news are content managed for the mobile app.',
+    src:`erDiagram
+  SERVICES {
+    uuid id PK
+    enum name "alipay|wechat|uzcard|humo|myid"
+    enum status "active|maintenance|disabled"
+    jsonb config "api keys, endpoints"
+    integer priority
+    string health_check_url
+    timestamp last_checked_at
+    timestamp updated_at
+  }
+  APP_VERSIONS {
+    uuid id PK
+    enum platform "ios|android"
+    string version "semver"
+    boolean force_update
+    string min_supported
+    string release_notes_uz
+    string release_notes_ru
+    timestamp released_at
+  }
+  NOTIFICATIONS {
+    uuid id PK
+    uuid user_id FK "null = broadcast"
+    enum type "transfer|promo|system|compliance"
+    string title_uz
+    string title_ru
+    string body_uz
+    string body_ru
+    boolean is_read
+    jsonb deep_link
+    timestamp sent_at
+  }
+  STORIES {
+    uuid id PK
+    string title_uz
+    string title_ru
+    string media_url
+    enum type "image|video"
+    jsonb cta "call-to-action"
+    integer display_order
+    timestamp expires_at
+    timestamp created_at
+  }
+  NEWS {
+    uuid id PK
+    string title_uz
+    string title_ru
+    string body_uz
+    string body_ru
+    string image_url
+    boolean is_published
+    timestamp published_at
+  }
+  SERVICES ||--o{ NOTIFICATIONS : "triggers"
+  APP_VERSIONS }o--o| SERVICES : "depends on"`
+  }
+];
+
+const tabs = document.getElementById('tabs');
+const erdDiv = document.getElementById('erd');
+const noteDiv = document.getElementById('note');
+let current = 0;
+
+async function render(i) {
+  current = i;
+  tabs.querySelectorAll('button').forEach((b,j)=>b.classList.toggle('active',j===i));
+  noteDiv.textContent = groups[i].note;
+  erdDiv.innerHTML = '<div style="padding:20px;color:var(--color-text-secondary);font-size:13px">Rendering…</div>';
+  try {
+    const {svg} = await mermaid.render('erd-svg-'+i, groups[i].src);
+    erdDiv.innerHTML = svg;
+    erdDiv.querySelector('svg').style.maxWidth='100%';
+    // Round entity box corners
+    erdDiv.querySelectorAll('.node').forEach(node => {
+      const fp = node.querySelector('path[d]');
+      if(!fp) return;
+      const d = fp.getAttribute('d');
+      const nums = d.match(/-?[\d.]+/g)?.map(Number);
+      if(!nums||nums.length<8) return;
+      const xs=[nums[0],nums[2],nums[4],nums[6]],ys=[nums[1],nums[3],nums[5],nums[7]];
+      const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+      const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x',x);rect.setAttribute('y',y);
+      rect.setAttribute('width',w);rect.setAttribute('height',h);
+      rect.setAttribute('rx','8');
+      for(const a of['fill','stroke','stroke-width','class','style'])
+        if(fp.hasAttribute(a))rect.setAttribute(a,fp.getAttribute(a));
+      fp.replaceWith(rect);
+    });
+  } catch(e) {
+    erdDiv.innerHTML = '<div style="padding:20px;color:var(--color-text-danger);font-size:13px">Render error</div>';
+  }
+}
+
+groups.forEach((g,i)=>{
+  const b = document.createElement('button');
+  b.textContent = g.label;
+  b.onclick = ()=>render(i);
+  tabs.appendChild(b);
+});
+render(0);
+</script>
