@@ -1,0 +1,111 @@
+import { useNavigate } from 'react-router-dom';
+import {
+  ArrowLeftRight,
+  ShieldCheck,
+  AlertTriangle,
+  Users,
+  CreditCard,
+  LayoutDashboard,
+  TrendingUp,
+  Activity,
+  Sun,
+  Moon,
+} from 'lucide-react';
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  CommandShortcut,
+} from '@/components/ui/command';
+import { useTheme } from '@/providers/ThemeProvider';
+
+interface CommandPaletteProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
+  const navigate = useNavigate();
+  const { setTheme } = useTheme();
+
+  const go = (path: string) => {
+    navigate(path);
+    onOpenChange(false);
+  };
+
+  return (
+    <CommandDialog open={open} onOpenChange={onOpenChange}>
+      <CommandInput placeholder="Search transfers, users, cards…" />
+      <CommandList>
+        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandGroup heading="Navigate">
+          <CommandItem onSelect={() => go('/')}>
+            <LayoutDashboard className="mr-2" />
+            <span>Overview</span>
+            <CommandShortcut>g o</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/transfers')}>
+            <ArrowLeftRight className="mr-2" />
+            <span>Transfers</span>
+            <CommandShortcut>g t</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/kyc-queue')}>
+            <ShieldCheck className="mr-2" />
+            <span>KYC Queue</span>
+            <CommandShortcut>g k</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/aml-triage')}>
+            <AlertTriangle className="mr-2" />
+            <span>AML Triage</span>
+            <CommandShortcut>g a</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/users')}>
+            <Users className="mr-2" />
+            <span>Users</span>
+            <CommandShortcut>g u</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/cards')}>
+            <CreditCard className="mr-2" />
+            <span>Cards</span>
+            <CommandShortcut>g c</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/fx-config')}>
+            <TrendingUp className="mr-2" />
+            <span>FX Config</span>
+            <CommandShortcut>g f</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/services')}>
+            <Activity className="mr-2" />
+            <span>Services & Health</span>
+            <CommandShortcut>g s</CommandShortcut>
+          </CommandItem>
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading="Theme">
+          <CommandItem
+            onSelect={() => {
+              setTheme('light');
+              onOpenChange(false);
+            }}
+          >
+            <Sun className="mr-2" />
+            Light theme
+          </CommandItem>
+          <CommandItem
+            onSelect={() => {
+              setTheme('dark');
+              onOpenChange(false);
+            }}
+          >
+            <Moon className="mr-2" />
+            Dark theme
+          </CommandItem>
+        </CommandGroup>
+      </CommandList>
+    </CommandDialog>
+  );
+}

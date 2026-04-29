@@ -1,0 +1,160 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand blue scale (anchor: #0a64bc → brand-600) */
+    --brand-50: 210 80% 95%;
+    --brand-100: 210 78% 88%;
+    --brand-200: 210 76% 76%;
+    --brand-300: 210 70% 64%;
+    --brand-400: 210 66% 53%;
+    --brand-500: 209 77% 45%;
+    --brand-600: 209 90% 39%; /* #0a64bc */
+    --brand-700: 211 91% 32%;
+    --brand-800: 213 89% 25%;
+    --brand-900: 215 86% 18%;
+    --brand-950: 217 92% 12%;
+
+    /* Slate scale */
+    --slate-50: 210 40% 98%;
+    --slate-100: 210 40% 96%;
+    --slate-200: 214 32% 91%;
+    --slate-300: 213 27% 84%;
+    --slate-400: 215 20% 65%;
+    --slate-500: 215 16% 47%;
+    --slate-600: 215 19% 35%;
+    --slate-700: 215 25% 27%;
+    --slate-800: 217 33% 17%;
+    --slate-900: 222 47% 11%;
+    --slate-950: 229 84% 5%;
+
+    /* Semantic */
+    --success-50: 138 76% 97%;
+    --success-600: 142 71% 45%;
+    --success-700: 142 76% 36%;
+    --warning-50: 48 100% 96%;
+    --warning-600: 32 95% 44%;
+    --warning-700: 26 90% 37%;
+    --danger-50: 0 86% 97%;
+    --danger-600: 0 72% 51%;
+    --danger-700: 0 74% 42%;
+
+    /* shadcn token mapping (LIGHT) */
+    --background: var(--slate-50);
+    --foreground: var(--slate-900);
+    --card: 0 0% 100%;
+    --card-foreground: var(--slate-900);
+    --popover: 0 0% 100%;
+    --popover-foreground: var(--slate-900);
+    --primary: var(--brand-600);
+    --primary-foreground: 0 0% 100%;
+    --secondary: var(--slate-100);
+    --secondary-foreground: var(--slate-900);
+    --muted: var(--slate-100);
+    --muted-foreground: var(--slate-500);
+    --accent: var(--slate-100);
+    --accent-foreground: var(--slate-900);
+    --destructive: var(--danger-600);
+    --destructive-foreground: 0 0% 100%;
+    --border: var(--slate-200);
+    --input: var(--slate-200);
+    --ring: var(--brand-600);
+
+    /* Radius */
+    --radius-sm: 4px;
+    --radius: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+
+    /* Shadow */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+    --shadow: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 1px 3px -1px rgb(0 0 0 / 0.04);
+    --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.12), 0 4px 12px -2px rgb(0 0 0 / 0.06);
+
+    /* Motion */
+    --duration-fast: 120ms;
+    --duration-base: 180ms;
+    --duration-slow: 240ms;
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-emphasized: cubic-bezier(0.2, 0, 0, 1.2);
+
+    /* Typography */
+    --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  }
+
+  .dark {
+    /* shadcn token mapping (DARK) */
+    --background: var(--slate-950);
+    --foreground: var(--slate-100);
+    --card: var(--slate-900);
+    --card-foreground: var(--slate-100);
+    --popover: var(--slate-900);
+    --popover-foreground: var(--slate-100);
+    --primary: var(--brand-500);
+    --primary-foreground: 0 0% 100%;
+    --secondary: var(--slate-800);
+    --secondary-foreground: var(--slate-100);
+    --muted: var(--slate-800);
+    --muted-foreground: var(--slate-400);
+    --accent: var(--slate-800);
+    --accent-foreground: var(--slate-100);
+    --destructive: var(--danger-600);
+    --destructive-foreground: 0 0% 100%;
+    --border: var(--slate-800);
+    --input: var(--slate-800);
+    --ring: var(--brand-400);
+
+    /* Shadows ~2x alpha in dark mode */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+    --shadow: 0 4px 12px -2px rgb(0 0 0 / 0.5), 0 1px 3px -1px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 4px 12px -2px rgb(0 0 0 / 0.4);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+  }
+
+  /* Tabular numerals on monetary, count, ID, timestamp values */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Skip link */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded;
+  }
+
+  /* Honor reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
