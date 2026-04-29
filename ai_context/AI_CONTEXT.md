@@ -24,7 +24,7 @@
 
 ## Current phase
 
-**Foundation built.** Admin-dashboard prototype running locally under `dashboard/` (Vite + React 18 + TS + Tailwind + shadcn). Mobile app and full brand work still pending. Design system tokens implemented in code; no Figma yet.
+**Admin Overview live.** Dashboard prototype under `dashboard/` (Vite + React 18 + TS + Tailwind + shadcn). Overview page (`/`) carries real-time KPIs, throughput + status charts, FX spread health, services grid, and a 20-row recent-activity table with totals. Next phases: Transfers, KYC queue, AML triage, and the rest of the 14 placeholder routes — driven by user prompts. Mobile app and full brand work still pending.
 
 ## Role
 
@@ -42,7 +42,10 @@ Acting as a **senior product designer with 10+ years of experience** in fintech 
 | Mobile / backend tech stack | not decided |
 | Brand color anchor | placeholder `#0a64bc` (trusted blue) — full brand still pending |
 | Type scale (dashboard) | **locked** — 13px floor; xs=13/sm=14/base=15; `text-xs` reserved for chips/kbd/uppercase only |
-| Brand / Figma | not started (real card-scheme + ZhiPay logos still needed) |
+| Visa / Mastercard rails in dashboard | **temporarily scoped out** (user direction 2026-04-30) — `docs/models.md` schema unchanged; mock data + services grid use UzCard/Humo only until user re-introduces |
+| Compact money formatter (`formatMoneyCompact`) | **locked** — KPI / dashboard-aggregate tiles only; transactional displays (send-money review, transfer detail, activity rows) keep full grouping per [`money-and-fx.md`](../.claude/rules/money-and-fx.md) |
+| Routes (admin) | **flat for now** — `/transfers`, `/services`, `/fx-config`, `/kyc-queue`, etc. Renaming to nested (`/operations/...`, `/finance/...`) is a separate initiative |
+| Brand / Figma | not started (real card-scheme + Alipay/WeChat + ZhiPay logos still needed) |
 | KYC tier numbers | **placeholder**, pending Compliance sign-off |
 | FX rate refresh cadence | open (PRD §12 q5) |
 | Refund SLA copy | open (PRD §12 q1) |
@@ -73,14 +76,14 @@ ZhiPay/
 │   ├── package.json, vite.config.ts, tsconfig.json, tailwind.config.ts, components.json
 │   └── src/
 │       ├── styles/globals.css         # tokens (brand, slate, semantic, shadcn light/dark)
-│       ├── lib/{utils,i18n}.ts        # cn, formatters, mask, statusToTone, t() stub
+│       ├── lib/{utils,i18n}.ts        # cn, formatMoney, formatMoneyCompact, formatNumber, mask, statusToTone, t() stub
 │       ├── types/                     # status enums aligned with docs/models.md
 │       ├── providers/ThemeProvider.tsx
 │       ├── hooks/useKeyboardShortcuts.ts
-│       ├── data/mock.ts               # Uzbek-context sample data
+│       ├── data/mock.ts               # Uzbek-context sample data (UzCard/Humo only for now)
 │       ├── components/ui/*            # 20 shadcn primitives
 │       ├── components/layout/*        # AppShell, Sidebar, TopBar, CommandPalette, …
-│       ├── components/zhipay/*        # 10 domain primitives (StatusBadge, Money, …)
+│       ├── components/zhipay/*        # 11 domain primitives — adds DestinationBadge (Alipay/WeChat)
 │       └── pages/{Overview,Placeholder}.tsx + router.tsx
 ├── design/                            # for mobile design assets (not started)
 ├── i18n/                              # for mobile copy keys (not started)
@@ -102,13 +105,14 @@ If they conflict, **`docs/` wins.** Fix the doc, then propagate to rules / orien
 
 - ☑ Admin dashboard foundation — DONE (Vite + React 18 + TS + Tailwind + shadcn under `dashboard/`)
 - ☑ Design system tokens (dashboard) — DONE (brand-50→950, slate, semantic, shadcn mappings, radii, shadows, motion)
-- ☑ ZhiPay primitives (10) — DONE (StatusBadge, TierBadge, SeverityBadge, Money, MaskedPan, SchemeLogo, StatusTimeline, ErrorCell, KeyboardHint, ReviewQueueRow)
-- ☑ Admin Overview page — DONE (KPIs, charts, services health, recent activity)
+- ☑ ZhiPay primitives (11) — DONE (StatusBadge, TierBadge, SeverityBadge, Money, MaskedPan, SchemeLogo, StatusTimeline, ErrorCell, KeyboardHint, ReviewQueueRow, **DestinationBadge**)
+- ☑ Admin Overview page (Phase 2) — DONE — header w/ refresh + date range, 4 KPI cards (focusable, Enter→navigate, compact volume), donut + 60-min throughput, **FX spread health** (rate, mid, spread, source, live TTL countdown, 24h mini chart, Healthy/Drifting/Stale badge), services health (5 tiles), recent activity (20 rows + tfoot totals UZS+CNY, mobile stacked cards), 600ms initial skeletons, 30s auto-refresh w/ pulse, empty/error states gated by const flags, `r` shortcut
 - ☐ Admin Transfers page — placeholder route, content TBD
 - ☐ Admin KYC review queue — placeholder route, content TBD
 - ☐ Admin AML triage — placeholder route, content TBD
-- ☐ Other 15 admin sub-pages — placeholder routes, content TBD
-- ☐ Real brand assets (UzCard / Humo / Visa / MC logos, ZhiPay wordmark) — currently stylized SVG placeholders
+- ☐ Other 14 admin sub-pages — placeholder routes, content TBD
+- ☐ Real brand assets (UzCard / Humo logos, Alipay / WeChat marks, ZhiPay wordmark) — currently stylized SVG placeholders
+- ☐ Visa / Mastercard re-introduction in dashboard — paused, returns when user signals
 - ☐ Mobile design system tokens — not started
 - ☐ Mobile onboarding screens — not started
 - ☐ Mobile send-money flow — not started
