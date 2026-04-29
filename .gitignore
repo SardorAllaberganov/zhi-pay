@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# Editor swap files
+*.swp
+*.swo
+
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Per-user Claude config
+.claude/settings.local.json
+
+# Logs
+*.log
+logs/
+
+# Future implementation (created when code starts)
+node_modules/
+dist/
+build/
+coverage/
