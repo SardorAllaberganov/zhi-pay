@@ -24,7 +24,7 @@
 
 ## Current phase
 
-**Design & specification.** No implementation yet. Design system being built from scratch (no Figma, no brand assets locked in).
+**Foundation built.** Admin-dashboard prototype running locally under `dashboard/` (Vite + React 18 + TS + Tailwind + shadcn). Mobile app and full brand work still pending. Design system tokens implemented in code; no Figma yet.
 
 ## Role
 
@@ -38,8 +38,11 @@ Acting as a **senior product designer with 10+ years of experience** in fintech 
 |---|---|
 | Two-surface scope (mobile + admin) | locked |
 | Customer-facing web | non-goal for v1 |
-| Tech stack | not decided — stack-agnostic |
-| Brand / Figma | not started |
+| Dashboard tech stack | **locked** — Vite + React 18 + TS + Tailwind + shadcn/ui + recharts + lucide-react + react-router-dom |
+| Mobile / backend tech stack | not decided |
+| Brand color anchor | placeholder `#0a64bc` (trusted blue) — full brand still pending |
+| Type scale (dashboard) | **locked** — 13px floor; xs=13/sm=14/base=15; `text-xs` reserved for chips/kbd/uppercase only |
+| Brand / Figma | not started (real card-scheme + ZhiPay logos still needed) |
 | KYC tier numbers | **placeholder**, pending Compliance sign-off |
 | FX rate refresh cadence | open (PRD §12 q5) |
 | Refund SLA copy | open (PRD §12 q1) |
@@ -51,20 +54,36 @@ Acting as a **senior product designer with 10+ years of experience** in fintech 
 
 ```
 ZhiPay/
+├── README.md                          # product positioning
 ├── CLAUDE.md                          # slim workflow orchestrator
+├── .gitignore
 ├── ai_context/                        # ← orientation (this folder)
 │   ├── AI_CONTEXT.md                  # this file
 │   ├── LESSONS.md                     # user-correction-driven rules
 │   └── HISTORY.md                     # session-by-session changelog
 ├── .claude/
 │   ├── rules/                         # 13 rule files (auto-loaded)
-│   └── commands/                      # slash commands
+│   ├── commands/                      # 3 slash commands: /start_task /doc_sync /commit
+│   └── settings.json                  # project-shared (settings.local.json gitignored)
 ├── docs/                              # source of truth
 │   ├── models.md                      # 7-domain data model reference
 │   ├── product_requirements_document.md
 │   └── mermaid_schemas/               # 8 mermaid diagrams
-├── design/                            # created on first design asset
-├── i18n/                              # created on first copy block
+├── dashboard/                         # admin-dashboard prototype (Vite + React 18 + TS)
+│   ├── package.json, vite.config.ts, tsconfig.json, tailwind.config.ts, components.json
+│   └── src/
+│       ├── styles/globals.css         # tokens (brand, slate, semantic, shadcn light/dark)
+│       ├── lib/{utils,i18n}.ts        # cn, formatters, mask, statusToTone, t() stub
+│       ├── types/                     # status enums aligned with docs/models.md
+│       ├── providers/ThemeProvider.tsx
+│       ├── hooks/useKeyboardShortcuts.ts
+│       ├── data/mock.ts               # Uzbek-context sample data
+│       ├── components/ui/*            # 20 shadcn primitives
+│       ├── components/layout/*        # AppShell, Sidebar, TopBar, CommandPalette, …
+│       ├── components/zhipay/*        # 10 domain primitives (StatusBadge, Money, …)
+│       └── pages/{Overview,Placeholder}.tsx + router.tsx
+├── design/                            # for mobile design assets (not started)
+├── i18n/                              # for mobile copy keys (not started)
 └── zhipay_database_schema.html        # LEGACY (stale, not authoritative)
 ```
 
@@ -81,13 +100,19 @@ If they conflict, **`docs/` wins.** Fix the doc, then propagate to rules / orien
 
 > Update this section as work begins or completes.
 
-- ☐ Design system tokens — not started
-- ☐ Brand / visual identity — not started
+- ☑ Admin dashboard foundation — DONE (Vite + React 18 + TS + Tailwind + shadcn under `dashboard/`)
+- ☑ Design system tokens (dashboard) — DONE (brand-50→950, slate, semantic, shadcn mappings, radii, shadows, motion)
+- ☑ ZhiPay primitives (10) — DONE (StatusBadge, TierBadge, SeverityBadge, Money, MaskedPan, SchemeLogo, StatusTimeline, ErrorCell, KeyboardHint, ReviewQueueRow)
+- ☑ Admin Overview page — DONE (KPIs, charts, services health, recent activity)
+- ☐ Admin Transfers page — placeholder route, content TBD
+- ☐ Admin KYC review queue — placeholder route, content TBD
+- ☐ Admin AML triage — placeholder route, content TBD
+- ☐ Other 15 admin sub-pages — placeholder routes, content TBD
+- ☐ Real brand assets (UzCard / Humo / Visa / MC logos, ZhiPay wordmark) — currently stylized SVG placeholders
+- ☐ Mobile design system tokens — not started
 - ☐ Mobile onboarding screens — not started
 - ☐ Mobile send-money flow — not started
-- ☐ Admin KYC review queue — not started
-- ☐ Admin AML triage — not started
-- ☐ Localization seed (`i18n/uz.json`) — not started
+- ☐ Mobile localization seed (`i18n/uz.json`) — not started
 
 ## Open questions (carried from PRD §12)
 
