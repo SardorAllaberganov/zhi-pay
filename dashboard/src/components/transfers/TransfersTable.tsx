@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Money } from '@/components/zhipay/Money';
 import { MaskedPan } from '@/components/zhipay/MaskedPan';
 import { StatusBadge } from '@/components/zhipay/StatusBadge';
@@ -41,6 +42,7 @@ const STUCK_THRESHOLD_MS = 10 * 60 * 1000;
 interface TransfersTableProps {
   rows: Transfer[];
   totalCount: number;
+  loading?: boolean;
 
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
@@ -76,6 +78,7 @@ export function TransfersTable(props: TransfersTableProps) {
   const {
     rows,
     totalCount,
+    loading = false,
     selectedIds,
     onToggleSelect,
     onToggleSelectAll,
@@ -185,40 +188,48 @@ export function TransfersTable(props: TransfersTableProps) {
             </tr>
           </thead>
           <tbody ref={tbodyRef}>
-            {rows.map((tr, i) => (
-              <Row
-                key={tr.id}
-                tr={tr}
-                rowIndex={i}
-                focused={i === focusedIndex}
-                selected={selectedIds.has(tr.id)}
-                hasAml={amlByTransferId(tr.id)}
-                onToggleSelect={() => onToggleSelect(tr.id)}
-                onOpen={() => onRowOpen(tr.id)}
-                onAction={(a) => onRowAction(a, tr.id)}
-                onFocus={() => onFocusedIndexChange(i)}
-              />
-            ))}
+            {loading
+              ? Array.from({ length: 10 }).map((_, i) => <SkeletonRow key={i} />)
+              : rows.map((tr, i) => (
+                  <Row
+                    key={tr.id}
+                    tr={tr}
+                    rowIndex={i}
+                    focused={i === focusedIndex}
+                    selected={selectedIds.has(tr.id)}
+                    hasAml={amlByTransferId(tr.id)}
+                    onToggleSelect={() => onToggleSelect(tr.id)}
+                    onOpen={() => onRowOpen(tr.id)}
+                    onAction={(a) => onRowAction(a, tr.id)}
+                    onFocus={() => onFocusedIndexChange(i)}
+                  />
+                ))}
           </tbody>
         </table>
       </div>
 
       {/* Mobile stacked cards */}
       <ul className="md:hidden space-y-2">
-        {rows.map((tr, i) => (
-          <li key={tr.id}>
-            <MobileRow
-              tr={tr}
-              rowIndex={i}
-              focused={i === focusedIndex}
-              selected={selectedIds.has(tr.id)}
-              hasAml={amlByTransferId(tr.id)}
-              onToggleSelect={() => onToggleSelect(tr.id)}
-              onOpen={() => onRowOpen(tr.id)}
-              onFocus={() => onFocusedIndexChange(i)}
-            />
-          </li>
-        ))}
+        {loading
+          ? Array.from({ length: 10 }).map((_, i) => (
+              <li key={i}>
+                <SkeletonMobileCard />
+              </li>
+            ))
+          : rows.map((tr, i) => (
+              <li key={tr.id}>
+                <MobileRow
+                  tr={tr}
+                  rowIndex={i}
+                  focused={i === focusedIndex}
+                  selected={selectedIds.has(tr.id)}
+                  hasAml={amlByTransferId(tr.id)}
+                  onToggleSelect={() => onToggleSelect(tr.id)}
+                  onOpen={() => onRowOpen(tr.id)}
+                  onFocus={() => onFocusedIndexChange(i)}
+                />
+              </li>
+            ))}
       </ul>
 
       {/* Pagination */}
@@ -654,5 +665,74 @@ function ActionMenu({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+// =====================================================================
+// Skeletons
+// =====================================================================
+
+function SkeletonRow() {
+  return (
+    <tr className="border-b">
+      <td className="pl-3 py-3 align-middle w-9">
+        <Skeleton className="h-4 w-4 rounded-sm" />
+      </td>
+      <td className="px-3 py-3 align-middle">
+        <Skeleton className="h-4 w-20" />
+      </td>
+      <td className="px-3 py-3 align-middle">
+        <Skeleton className="h-4 w-24" />
+      </td>
+      <td className="px-3 py-3 align-middle">
+        <Skeleton className="h-4 w-32" />
+      </td>
+      <td className="px-3 py-3 align-middle">
+        <div className="space-y-1.5">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      </td>
+      <td className="px-3 py-3 align-middle">
+        <div className="space-y-1.5">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-14" />
+        </div>
+      </td>
+      <td className="px-3 py-3 align-middle text-right">
+        <Skeleton className="h-4 w-24 ml-auto" />
+      </td>
+      <td className="px-3 py-3 align-middle text-right">
+        <Skeleton className="h-4 w-16 ml-auto" />
+      </td>
+      <td className="px-3 py-3 align-middle text-right">
+        <Skeleton className="h-4 w-16 ml-auto" />
+      </td>
+      <td className="px-3 py-3 align-middle">
+        <Skeleton className="h-5 w-20 rounded-full" />
+      </td>
+      <td className="px-3 py-3 align-middle">
+        <Skeleton className="h-4 w-24" />
+      </td>
+      <td className="px-3 py-3 align-middle w-9">
+        <Skeleton className="h-4 w-4 rounded-sm" />
+      </td>
+    </tr>
+  );
+}
+
+function SkeletonMobileCard() {
+  return (
+    <div className="rounded-md border border-border bg-card p-3">
+      <div className="flex items-center justify-between gap-2">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-5 w-20 rounded-full" />
+      </div>
+      <Skeleton className="mt-3 h-5 w-40" />
+      <div className="mt-3 flex items-center justify-between">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-3 w-16" />
+      </div>
+    </div>
   );
 }

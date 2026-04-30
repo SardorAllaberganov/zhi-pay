@@ -4,7 +4,6 @@ import {
   Calendar,
   ChevronDown,
   CircleDollarSign,
-  FileDown,
   Filter,
   Search,
   ShieldCheck,
@@ -13,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Popover,
   PopoverContent,
@@ -65,7 +65,7 @@ interface TransfersFilterBarProps {
   statusCounts: Record<TransferStatus, number>;
   quickCounts: QuickFilterCounts;
   onApplyQuickFilter: (key: 'failedToday' | 'reversedLast7d' | 'stuckProcessing') => void;
-  onExportCsv: () => void;
+  loading?: boolean;
 }
 
 // =====================================================================
@@ -74,7 +74,7 @@ interface TransfersFilterBarProps {
 
 export const TransfersFilterBar = forwardRef<HTMLInputElement, TransfersFilterBarProps>(
   function TransfersFilterBar(
-    { filters, setFilters, statusCounts, quickCounts, onApplyQuickFilter, onExportCsv },
+    { filters, setFilters, statusCounts, quickCounts, onApplyQuickFilter, loading = false },
     searchRef,
   ) {
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -92,7 +92,7 @@ export const TransfersFilterBar = forwardRef<HTMLInputElement, TransfersFilterBa
         )}
         data-filter-bar
       >
-        {/* Row 1: search (left) ◇ Sheet trigger + Export CSV (right) */}
+        {/* Row 1: search (left) ◇ Sheet trigger (mobile only, right) */}
         <div className="flex items-center justify-between gap-3 min-w-0">
           <div className="relative flex-1 min-w-0 max-w-[700px]">
             <Search
@@ -110,8 +110,8 @@ export const TransfersFilterBar = forwardRef<HTMLInputElement, TransfersFilterBa
             />
           </div>
 
-          {/* Right group: mobile filters trigger + Export CSV */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Right group: mobile filters trigger (Export CSV lives in page header) */}
+          <div className="flex items-center gap-2 shrink-0 md:hidden">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button
@@ -125,7 +125,7 @@ export const TransfersFilterBar = forwardRef<HTMLInputElement, TransfersFilterBa
                   {t('admin.transfers.filter.mobile-button')}
                 </span>
                 {activeCount > 0 && (
-                  <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white">
+                  <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
                     {activeCount}
                   </span>
                 )}
@@ -249,25 +249,21 @@ export const TransfersFilterBar = forwardRef<HTMLInputElement, TransfersFilterBa
               </div>
             </SheetContent>
           </Sheet>
-
-          {/* Export CSV — green Excel/CSV affordance */}
-          <Button
-            size="sm"
-            onClick={onExportCsv}
-            className={cn(
-              'shrink-0 h-9 px-3 gap-1.5',
-              'bg-success-600 text-white hover:bg-success-700',
-              'dark:bg-success-700 dark:hover:bg-success-600',
-              'focus-visible:ring-success-600',
-            )}
-          >
-            <FileDown className="h-3.5 w-3.5" aria-hidden="true" />
-            <span className="hidden sm:inline">{t('admin.transfers.export')}</span>
-          </Button>
           </div>
         </div>
 
         {/* Row 2: chip filters (md+ only — mobile uses the Sheet) */}
+        {loading ? (
+          <div className="hidden md:flex flex-wrap items-center gap-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                className="h-8 rounded-full"
+                style={{ width: 96 + (i % 3) * 24 }}
+              />
+            ))}
+          </div>
+        ) : (
         <div className="hidden md:flex flex-wrap items-center gap-2 min-w-0">
             <StatusFilterChip filters={filters} setFilters={setFilters} statusCounts={statusCounts} />
             <DateRangePicker
@@ -321,8 +317,17 @@ export const TransfersFilterBar = forwardRef<HTMLInputElement, TransfersFilterBa
               </button>
             )}
           </div>
+        )}
 
         {/* Row 3: quick filter pills */}
+        {loading ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Skeleton className="h-4 w-12 rounded-md" />
+            <Skeleton className="h-7 w-32 rounded-full" />
+            <Skeleton className="h-7 w-36 rounded-full" />
+            <Skeleton className="h-7 w-40 rounded-full" />
+          </div>
+        ) : (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs uppercase tracking-wider text-muted-foreground mr-1">
             Quick:
@@ -343,6 +348,7 @@ export const TransfersFilterBar = forwardRef<HTMLInputElement, TransfersFilterBa
             onClick={() => onApplyQuickFilter('stuckProcessing')}
           />
         </div>
+        )}
       </div>
     );
   },

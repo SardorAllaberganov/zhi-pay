@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, BookmarkPlus, ChevronDown, Inbox, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { AlertTriangle, BookmarkPlus, ChevronDown, FileDown, Inbox, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,6 +72,13 @@ export function Transfers() {
 
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => getSavedFilters());
   useEffect(() => subscribeSavedFilters(() => setSavedFilters(getSavedFilters())), []);
+
+  // Initial-mount skeleton — matches Overview's 600ms pattern.
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const tid = window.setTimeout(() => setLoading(false), 600);
+    return () => window.clearTimeout(tid);
+  }, []);
 
   // Saved-filters dropdown control + dialog state.
   const [savedFiltersOpen, setSavedFiltersOpen] = useState(false);
@@ -344,9 +351,16 @@ export function Transfers() {
 
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-      if (e.key === '/' || e.key === 'f') {
+      if (e.key === '/') {
         e.preventDefault();
         searchInputRef.current?.focus();
+        return;
+      }
+      if (e.key === 'f') {
+        e.preventDefault();
+        const firstChip =
+          filterBarRef.current?.querySelector<HTMLButtonElement>('button');
+        firstChip?.focus();
         return;
       }
       if (e.key === 'e') {
@@ -395,12 +409,25 @@ export function Transfers() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={exportFiltered}
+            className={cn(
+              'gap-1.5 h-9 px-3',
+              'bg-success-600 text-white hover:bg-success-700',
+              'dark:bg-success-700 dark:hover:bg-success-600',
+              'focus-visible:ring-success-600',
+            )}
+          >
+            <FileDown className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="hidden sm:inline">{t('admin.transfers.export')}</span>
+          </Button>
           <DropdownMenu open={savedFiltersOpen} onOpenChange={setSavedFiltersOpen}>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 {t('admin.transfers.saved-filters')}
                 {savedFilters.length > 0 && (
-                  <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white">
+                  <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-xs font-bold text-white">
                     {savedFilters.length}
                   </span>
                 )}
@@ -441,7 +468,7 @@ export function Transfers() {
                 <BookmarkPlus className="h-4 w-4" />
                 <span className="flex-1">{t('admin.transfers.saved-filters.save')}</span>
                 {activeFilterCount === 0 && (
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground">
                     {t('admin.transfers.saved-filters.save-disabled-hint')}
                   </span>
                 )}
@@ -486,7 +513,7 @@ export function Transfers() {
           statusCounts={STATUS_COUNTS}
           quickCounts={QUICK_FILTERS}
           onApplyQuickFilter={applyQuickFilter}
-          onExportCsv={exportFiltered}
+          loading={loading}
         />
       </div>
 
@@ -550,6 +577,7 @@ export function Transfers() {
         <TransfersTable
           rows={paged}
           totalCount={totalCount}
+          loading={loading}
           selectedIds={selectedIds}
           onToggleSelect={toggleSelect}
           onToggleSelectAll={toggleSelectAll}
