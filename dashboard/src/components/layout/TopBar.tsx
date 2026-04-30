@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Search, Bell, Menu } from 'lucide-react';
+import { Fragment, useEffect, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Search, Bell, Menu, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -17,16 +17,27 @@ interface TopBarProps {
   className?: string;
 }
 
+interface Crumb {
+  label: string;
+  to?: string;
+}
+
 const ROUTE_TITLES: Record<string, { title: string; section?: string }> = {
   '/': { title: t('admin.nav.overview'), section: t('admin.nav.section.operations') },
-  '/transfers': { title: t('admin.nav.transfers'), section: t('admin.nav.section.operations') },
+  '/operations/transfers': {
+    title: t('admin.nav.transfers'),
+    section: t('admin.nav.section.operations'),
+  },
   '/kyc-queue': { title: t('admin.nav.kyc-queue'), section: t('admin.nav.section.operations') },
   '/aml-triage': { title: t('admin.nav.aml-triage'), section: t('admin.nav.section.operations') },
   '/users': { title: t('admin.nav.users'), section: t('admin.nav.section.customers') },
   '/cards': { title: t('admin.nav.cards'), section: t('admin.nav.section.customers') },
   '/recipients': { title: t('admin.nav.recipients'), section: t('admin.nav.section.customers') },
   '/fx-config': { title: t('admin.nav.fx-config'), section: t('admin.nav.section.finance') },
-  '/commission-rules': { title: t('admin.nav.commission-rules'), section: t('admin.nav.section.finance') },
+  '/commission-rules': {
+    title: t('admin.nav.commission-rules'),
+    section: t('admin.nav.section.finance'),
+  },
   '/audit-log': { title: t('admin.nav.audit-log'), section: t('admin.nav.section.compliance') },
   '/blacklist': { title: t('admin.nav.blacklist'), section: t('admin.nav.section.compliance') },
   '/kyc-tiers': { title: t('admin.nav.kyc-tiers'), section: t('admin.nav.section.compliance') },
@@ -38,6 +49,53 @@ const ROUTE_TITLES: Record<string, { title: string; section?: string }> = {
   '/notifications': { title: t('admin.nav.notifications'), section: t('admin.nav.section.content') },
 };
 
+function titleCaseSegment(seg: string): string {
+  return seg
+    .split('-')
+    .map((w) => (w.length > 0 ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(' ');
+}
+
+function getBreadcrumbs(pathname: string): Crumb[] {
+  // /operations/transfers/:id (detail page) — link Transfers back to its list.
+  const transferDetailMatch = pathname.match(/^\/operations\/transfers\/(.+)$/);
+  if (transferDetailMatch) {
+    return [
+      { label: t('admin.nav.section.operations') },
+      { label: t('admin.nav.transfers'), to: '/operations/transfers' },
+      { label: transferDetailMatch[1] },
+    ];
+  }
+
+  // /customers/users/:id, /customers/cards/:id (placeholders for now).
+  const customerEntityMatch = pathname.match(/^\/customers\/(users|cards)\/(.+)$/);
+  if (customerEntityMatch) {
+    const seg = customerEntityMatch[1];
+    const id = customerEntityMatch[2];
+    const labelKey = seg === 'users' ? 'admin.nav.users' : 'admin.nav.cards';
+    const flatTo = `/${seg}`;
+    return [
+      { label: t('admin.nav.section.customers') },
+      { label: t(labelKey), to: flatTo },
+      { label: id },
+    ];
+  }
+
+  // Direct ROUTE_TITLES lookup for known routes.
+  const route = ROUTE_TITLES[pathname];
+  if (route) {
+    return [
+      ...(route.section ? [{ label: route.section }] : []),
+      { label: route.title },
+    ];
+  }
+
+  // Fallback — derive crumbs from path segments, title-cased.
+  const parts = pathname.split('/').filter(Boolean);
+  if (parts.length === 0) return [{ label: t('common.app.name') }];
+  return parts.map((p) => ({ label: titleCaseSegment(p) }));
+}
+
 export function TopBar({
   onCommandPalette,
   onMobileMenu,
@@ -46,7 +104,7 @@ export function TopBar({
   className,
 }: TopBarProps) {
   const location = useLocation();
-  const route = ROUTE_TITLES[location.pathname] ?? { title: 'ZhiPay Admin' };
+  const breadcrumbs = getBreadcrumbs(location.pathname);
   const internalRef = useRef<HTMLInputElement>(null);
   const ref = searchInputRef ?? internalRef;
 
@@ -71,17 +129,50 @@ export function TopBar({
         <Menu className="h-5 w-5" />
       </Button>
 
-      <div className="hidden md:flex items-center gap-2 min-w-0">
-        {route.section && (
-          <span className="text-sm text-muted-foreground hidden lg:inline">{route.section}</span>
-        )}
-        {route.section && (
-          <span className="text-sm text-muted-foreground hidden lg:inline" aria-hidden="true">
-            /
-          </span>
-        )}
-        <span className="text-sm font-medium truncate">{route.title}</span>
-      </div>
+      <nav
+        className="hidden md:flex items-center gap-1.5 min-w-0 flex-shrink"
+        aria-label="Breadcrumb"
+      >
+        {breadcrumbs.map((bc, i) => {
+          const isLast = i === breadcrumbs.length - 1;
+          // Hide non-leaf crumbs below `lg` so the bar stays compact on tablets.
+          const hideOnMd = !isLast && i < breadcrumbs.length - 2;
+          return (
+            <Fragment key={i}>
+              {i > 0 && (
+                <ChevronRight
+                  className={cn(
+                    'h-3.5 w-3.5 text-muted-foreground/60 shrink-0',
+                    hideOnMd && 'hidden lg:inline-block',
+                  )}
+                  aria-hidden="true"
+                />
+              )}
+              {bc.to && !isLast ? (
+                <Link
+                  to={bc.to}
+                  className={cn(
+                    'text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors truncate',
+                    hideOnMd && 'hidden lg:inline-block',
+                  )}
+                >
+                  {bc.label}
+                </Link>
+              ) : (
+                <span
+                  className={cn(
+                    'text-sm truncate',
+                    isLast ? 'font-medium text-foreground' : 'text-muted-foreground',
+                    hideOnMd && 'hidden lg:inline-block',
+                  )}
+                >
+                  {bc.label}
+                </span>
+              )}
+            </Fragment>
+          );
+        })}
+      </nav>
 
       <div className="flex-1" />
 

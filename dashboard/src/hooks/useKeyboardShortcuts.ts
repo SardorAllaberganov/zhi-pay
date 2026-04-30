@@ -81,7 +81,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
       // g + <key> sequences
       if (lastKey.current === 'g') {
         if (e.key === 'o') navigate('/');
-        else if (e.key === 't') navigate('/transfers');
+        else if (e.key === 't') navigate('/operations/transfers');
         else if (e.key === 'k') navigate('/kyc-queue');
         else if (e.key === 'a') navigate('/aml-triage');
         else if (e.key === 'u') navigate('/users');

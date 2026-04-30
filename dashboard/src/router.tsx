@@ -1,10 +1,11 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { Overview } from '@/pages/Overview';
+import { Transfers } from '@/pages/Transfers';
+import { TransferDetail } from '@/pages/TransferDetail';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES = [
-  '/transfers',
   '/kyc-queue',
   '/aml-triage',
   '/users',
@@ -28,6 +29,18 @@ export function Router() {
     <AppShell>
       <Routes>
         <Route path="/" element={<Overview />} />
+
+        {/* Operations — Transfers (nested) */}
+        <Route path="/operations/transfers" element={<Transfers />} />
+        <Route path="/operations/transfers/:id" element={<TransferDetail />} />
+
+        {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
+        <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
+        <Route
+          path="/transfers/:id"
+          element={<Navigate to="/operations/transfers" replace />}
+        />
+
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />
         ))}

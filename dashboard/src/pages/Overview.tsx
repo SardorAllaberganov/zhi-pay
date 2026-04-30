@@ -42,17 +42,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Money } from '@/components/zhipay/Money';
 import { MaskedPan } from '@/components/zhipay/MaskedPan';
 import { StatusBadge } from '@/components/zhipay/StatusBadge';
 import { DestinationBadge } from '@/components/zhipay/DestinationBadge';
+import {
+  DateRangePicker,
+  formatDateRangeLabel,
+  type DateRangeValue,
+} from '@/components/zhipay/DateRangePicker';
 import { cn, formatMoney, formatMoneyCompact, formatNumber, formatRelative } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import {
@@ -95,14 +93,6 @@ const SERVICE_LABELS: Record<string, string> = {
   myid: 'MyID',
 };
 
-type RangeKey = 'today' | 'yesterday' | '7d' | '30d';
-
-const RANGE_LABELS: Record<RangeKey, string> = {
-  today: 'admin.overview.range.today',
-  yesterday: 'admin.overview.range.yesterday',
-  '7d': 'admin.overview.range.7d',
-  '30d': 'admin.overview.range.30d',
-};
 
 // =====================================================================
 // Page
@@ -115,7 +105,7 @@ export function Overview() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pulse, setPulse] = useState(0);
   const [, setTick] = useState(0);
-  const [range, setRange] = useState<RangeKey>('today');
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ range: 'today' });
   const [feedHealthy, setFeedHealthy] = useState(FEED_HEALTHY);
 
   // Initial skeleton — clears after 600ms.
@@ -191,8 +181,8 @@ export function Overview() {
   return (
     <div className="space-y-6">
       <PageHeader
-        range={range}
-        onRangeChange={setRange}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
         lastRefreshedAt={lastRefreshedAt}
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
@@ -335,16 +325,16 @@ export function Overview() {
 // Page header
 // =====================================================================
 interface PageHeaderProps {
-  range: RangeKey;
-  onRangeChange: (r: RangeKey) => void;
+  dateRange: DateRangeValue;
+  onDateRangeChange: (next: DateRangeValue) => void;
   lastRefreshedAt: Date;
   isRefreshing: boolean;
   onRefresh: () => void;
 }
 
 function PageHeader({
-  range,
-  onRangeChange,
+  dateRange,
+  onDateRangeChange,
   lastRefreshedAt,
   isRefreshing,
   onRefresh,
@@ -384,40 +374,20 @@ function PageHeader({
           />
         </button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className={cn(
-                'inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-medium',
-                'hover:bg-accent hover:text-accent-foreground transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-              )}
-            >
-              {t(RANGE_LABELS[range])}
-              <ChevronDown className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[180px]">
-            <DropdownMenuRadioGroup
-              value={range}
-              onValueChange={(v) => onRangeChange(v as RangeKey)}
-            >
-              <DropdownMenuRadioItem value="today">
-                {t('admin.overview.range.today')}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="yesterday">
-                {t('admin.overview.range.yesterday')}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="7d">
-                {t('admin.overview.range.7d')}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="30d">
-                {t('admin.overview.range.30d')}
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <DateRangePicker value={dateRange} onChange={onDateRangeChange}>
+          <button
+            type="button"
+            className={cn(
+              'inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-sm font-medium',
+              'hover:bg-accent hover:text-accent-foreground transition-colors',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            )}
+          >
+            <Clock className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
+            {formatDateRangeLabel(dateRange)}
+            <ChevronDown className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
+          </button>
+        </DateRangePicker>
       </div>
     </header>
   );
