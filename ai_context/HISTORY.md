@@ -4,6 +4,25 @@
 
 ---
 
+### 2026-05-01 — GitHub Pages deployment (HashRouter + Actions workflow)
+
+- **Summary**: Wired the dashboard prototype up to GitHub Pages so the demo URL is shareable. Uses `HashRouter` (selected over BrowserRouter + 404.html SPA-redirect shim — simpler, zero deploy infrastructure), Vite `base: '/zhi-pay/'` applied only at build-time so local dev keeps serving at `/`, and a `actions/deploy-pages@v4`-based workflow that auto-deploys on every push to `main`. CI also runs `tsc --noEmit` before `vite build` so TS errors fail the deploy fast.
+- **Files modified**:
+  - `dashboard/vite.config.ts` — `defineConfig` switched to function form keyed off `command`; build emits assets at `/zhi-pay/`, dev unchanged at `/`
+  - `dashboard/src/App.tsx` — `BrowserRouter` → `HashRouter`
+  - `ai_context/AI_CONTEXT.md` — two new "Decisions made" rows (Router type, Deployment), file map gains `.github/workflows/`
+  - `ai_context/HISTORY.md` — this entry
+- **Files created**:
+  - `.github/workflows/deploy.yml` — Node 20, `npm ci` in `dashboard/`, `tsc --noEmit`, `npm run build`, `actions/upload-pages-artifact` on `dashboard/dist`, `actions/deploy-pages` to publish. Triggers on push to `main` and manual `workflow_dispatch`.
+- **Docs updated**: `ai_context/AI_CONTEXT.md`, `ai_context/HISTORY.md`. No `docs/models.md` / PRD / `mermaid_schemas/` changes.
+- **Key decisions**:
+  - **HashRouter for now** — GH Pages can't serve SPAs cleanly without a 404.html redirect script. HashRouter sidesteps that with no infrastructure cost. Hash URLs (`/#/operations/transfers/t_01`) are slightly less polished but fully functional, shareable, and reload-correct.
+  - **Vite `base` is build-only** — `command === 'build' ? '/zhi-pay/' : '/'`. Local `npm run dev` keeps working at `http://localhost:5173/` exactly as before; only production builds embed the project-pages prefix.
+  - **CI gate on type errors** — `tsc --noEmit` runs before `vite build` in the workflow. Any TS regression blocks the deploy.
+- **Open items**: User must enable GitHub Pages with "GitHub Actions" as the source at https://github.com/SardorAllaberganov/zhi-pay/settings/pages (one-time, can't be done via CLI). After that, every push to `main` ships in ~1-2 min. Live URL: https://sardorallaberganov.github.io/zhi-pay/.
+
+---
+
 ### 2026-05-01 — Transfer Detail polish rounds (FX, StatusTimeline, More dropdown, header buttons, 11px ban)
 
 - **Summary**: Two correction passes after the initial Transfer Detail build, both same-day. Visual / interaction issues spotted by the user on real-device review.

@@ -51,6 +51,8 @@ Acting as a **senior product designer with 10+ years of experience** in fintech 
 | Compact money formatter (`formatMoneyCompact`) | **locked** — KPI / dashboard-aggregate tiles only; transactional displays (send-money review, transfer detail, activity rows) keep full grouping per [`money-and-fx.md`](../.claude/rules/money-and-fx.md) |
 | Sticky table `<thead>` / column headers | **forbidden** (LESSONS 2026-04-30) — never apply `position: sticky` to data-table column headers. Filter bars + bulk-action bars may still be sticky |
 | Routes (admin) | **partially nested** — Transfers uses nested `/operations/transfers` + `/operations/transfers/:id` per Phase-3 spec. Other admin pages stay flat (`/services`, `/fx-config`, `/kyc-queue`, etc.) until each phase migrates them. Sidebar entry for Transfers points to the nested path; `/transfers` redirects to `/operations/transfers` for back-compat |
+| Router type | **HashRouter** — chosen over BrowserRouter so GitHub Pages can serve the SPA without a 404.html redirect shim. URLs render as `/#/operations/transfers/:id`. Switch to BrowserRouter + spa-github-pages 404 trick if/when clean URLs become a requirement |
+| Deployment | **GitHub Pages** at https://sardorallaberganov.github.io/zhi-pay/ — auto-deployed by `.github/workflows/deploy.yml` on every push to `main` (or manual `workflow_dispatch`). Build runs `npx tsc --noEmit && npm run build` in `dashboard/`, uploads `dashboard/dist`, deploys via `actions/deploy-pages@v4`. Vite `base` is `/zhi-pay/` only at build time so local dev stays at `/` |
 | Brand / Figma | not started (real card-scheme + Alipay/WeChat + ZhiPay logos still needed) |
 | KYC tier numbers | **placeholder**, pending Compliance sign-off |
 | FX rate refresh cadence | open (PRD §12 q5) |
@@ -66,6 +68,8 @@ ZhiPay/
 ├── README.md                          # product positioning
 ├── CLAUDE.md                          # slim workflow orchestrator
 ├── .gitignore
+├── .github/
+│   └── workflows/deploy.yml           # GitHub Actions — build dashboard/ + deploy to GH Pages on push to main
 ├── ai_context/                        # ← orientation (this folder)
 │   ├── AI_CONTEXT.md                  # this file
 │   ├── LESSONS.md                     # user-correction-driven rules
