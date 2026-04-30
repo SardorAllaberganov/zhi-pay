@@ -347,6 +347,7 @@ The v1 feature surface, grouped by domain:
 3. **Visa/Mastercard fee differential:** international cards typically carry higher acquirer cost. Do we surface a higher fee, eat the margin, or block them at tier_1?
 4. **Recipient verification:** Alipay/WeChat sometimes accept malformed identifiers and silently fail. Should we pre-validate via a provider lookup, or accept and reverse on failure?
 5. **Rate refresh cadence:** how often does `fx_rates` regenerate? Seconds-level keeps quotes fresh but increases stale-quote risk; minutes-level is simpler but worse UX in volatile windows.
+6. **KYC admin claim semantics:** when an ops reviewer picks up a verification in the KYC review queue, does that create a **soft claim** (`assignee_id` set, others can override) or a **hard reservation with TTL** (e.g. 10 minutes, auto-released)? Are multiple reviewers on the same row allowed? Schema gap: `kyc_verifications.assignee_id` is not in [`models.md` §2.4](./models.md#24-field-reference--kyc_verifications) today — the admin dashboard's [KYC Review Queue prototype](../dashboard/src/data/mockKycQueue.ts) models it locally so the "Assigned to me" filter and bulk Assign-to-me work, but backend addition is gated on this answer plus a related **stale-claim policy** (auto-release after N minutes idle?).
 
 ---
 
