@@ -573,6 +573,208 @@ const EN: Record<string, string> = {
   'admin.transfer-detail.mobile.more-button': 'More',
 
   'admin.transfer-detail.shortcuts.group': 'Transfer detail page',
+
+  // ====================================================================
+  // KYC Queue
+  // ====================================================================
+  'admin.kyc-queue.title': 'KYC Queue',
+  'admin.kyc-queue.subtitle.counts':
+    '{pending} pending · {reviewing} reviewing',
+  'admin.kyc-queue.refresh': 'Refresh',
+
+  // Filters
+  'admin.kyc-queue.filter.status': 'Status',
+  'admin.kyc-queue.filter.status.pending': 'Pending',
+  'admin.kyc-queue.filter.status.passed': 'Passed',
+  'admin.kyc-queue.filter.status.failed': 'Failed',
+  'admin.kyc-queue.filter.status.expired': 'Expired',
+  'admin.kyc-queue.filter.document-type': 'Document type',
+  'admin.kyc-queue.filter.document-type.passport': 'Passport',
+  'admin.kyc-queue.filter.document-type.id_card': 'ID card',
+  'admin.kyc-queue.filter.tier': 'Resulting tier',
+  'admin.kyc-queue.filter.age': 'Submitted',
+  'admin.kyc-queue.filter.age.under-1h': '< 1h',
+  'admin.kyc-queue.filter.age.under-24h': '< 24h',
+  'admin.kyc-queue.filter.age.over-24h': '> 24h',
+  'admin.kyc-queue.filter.age.over-7d': '> 7d',
+  'admin.kyc-queue.filter.assigned': 'Assigned',
+  'admin.kyc-queue.filter.assigned.anyone': 'Anyone',
+  'admin.kyc-queue.filter.assigned.me': 'Me',
+  'admin.kyc-queue.filter.assigned.unassigned': 'Unassigned',
+  'admin.kyc-queue.filter.clear-all': 'Clear all',
+
+  // Assignee header select
+  'admin.kyc-queue.assignee.all': 'All',
+  'admin.kyc-queue.assignee.me': 'Assigned to me',
+
+  // Sort
+  'admin.kyc-queue.sort.newest': 'Newest first',
+  'admin.kyc-queue.sort.oldest': 'Oldest first',
+
+  // Row
+  'admin.kyc-queue.row.passport': 'Passport',
+  'admin.kyc-queue.row.id-card': 'ID card',
+  'admin.kyc-queue.row.submitted-ago': 'Submitted {relative}',
+  'admin.kyc-queue.row.expiring-in': 'Expiring in {minutes}m',
+  'admin.kyc-queue.row.assignee-prefix': 'Reviewing: {name}',
+  'admin.kyc-queue.row.actions-label': 'Row actions',
+
+  // Bulk
+  'admin.kyc-queue.bulk.selected': '{count} selected',
+  'admin.kyc-queue.bulk.approve': 'Approve',
+  'admin.kyc-queue.bulk.reject': 'Reject',
+  'admin.kyc-queue.bulk.assign-me': 'Assign to me',
+  'admin.kyc-queue.bulk.clear': 'Clear selection',
+  'admin.kyc-queue.bulk.approve.result':
+    'Approved {approved} · skipped {skipped}',
+  'admin.kyc-queue.bulk.approve.result-detail':
+    '{underAge} under-18 · {sanctions} sanctions-hit (review individually)',
+
+  // Empty / loading / error
+  'admin.kyc-queue.empty.cleared': 'Queue is clear',
+  'admin.kyc-queue.empty.cleared.body':
+    'No verifications waiting for review. Auto-refreshing every 30s.',
+  'admin.kyc-queue.empty.no-results.title': 'No verifications match',
+  'admin.kyc-queue.empty.no-results.body': 'Try adjusting or clearing filters.',
+  'admin.kyc-queue.empty.no-selection.title': 'Select a verification to review',
+  'admin.kyc-queue.empty.no-selection.body':
+    'Pick a row on the left, or press {key} on the focused row.',
+  'admin.kyc-queue.error.list.title': "Couldn't load verifications",
+  'admin.kyc-queue.error.list.body': 'The realtime feed is unavailable.',
+  'admin.kyc-queue.error.list.retry': 'Retry',
+  'admin.kyc-queue.error.action.title': "Couldn't apply action",
+  'admin.kyc-queue.error.action.body': 'Please try again in a moment.',
+
+  // Detail — top
+  'admin.kyc-queue.detail.open-user': 'Open user profile',
+  'admin.kyc-queue.detail.copy-session': 'Copy session ID',
+  'admin.kyc-queue.detail.session-copied': 'Session ID copied',
+
+  // Detail — Identity card
+  'admin.kyc-queue.detail.identity': 'Identity',
+  'admin.kyc-queue.detail.identity.full-name': 'Full name',
+  'admin.kyc-queue.detail.identity.dob': 'Date of birth',
+  'admin.kyc-queue.detail.identity.age': '{count} years old',
+  'admin.kyc-queue.detail.identity.document-type': 'Document type',
+  'admin.kyc-queue.detail.identity.document-number': 'Document number',
+  'admin.kyc-queue.detail.identity.pinfl': 'PINFL',
+  'admin.kyc-queue.detail.identity.session-id': 'MyID session',
+  'admin.kyc-queue.detail.identity.submitted-at': 'Submitted',
+  'admin.kyc-queue.detail.identity.verified-at': 'Verified',
+  'admin.kyc-queue.detail.identity.expires-at': 'Verification expires',
+  'admin.kyc-queue.detail.identity.resulting-tier': 'On approval, promotes to',
+  'admin.kyc-queue.detail.identity.assignee': 'Assignee',
+  'admin.kyc-queue.detail.identity.unassigned': 'Unassigned',
+
+  // Detail — Document image
+  'admin.kyc-queue.detail.document-image': 'Document scan',
+  'admin.kyc-queue.detail.document-image.banner':
+    'Sensitive — do not screenshot. Reveals are logged to the audit trail.',
+  'admin.kyc-queue.detail.document-image.show-face': 'Show face',
+  'admin.kyc-queue.detail.document-image.hide-face': 'Hide face',
+  'admin.kyc-queue.detail.document-image.show-doc-number':
+    'Show document number',
+  'admin.kyc-queue.detail.document-image.hide-doc-number':
+    'Hide document number',
+  'admin.kyc-queue.detail.document-image.placeholder-label': 'Document scan',
+  'admin.kyc-queue.detail.document-image.no-image':
+    'No document scan attached to this verification.',
+
+  // Detail — MyID response
+  'admin.kyc-queue.detail.myid-response': 'MyID response',
+  'admin.kyc-queue.detail.myid-response.copy': 'Copy JSON',
+  'admin.kyc-queue.detail.myid-response.copied': 'JSON copied',
+  'admin.kyc-queue.detail.myid-response.label': 'Raw payload',
+  'admin.kyc-queue.detail.myid-response.note':
+    'Sensitive fields (full PINFL, full document number) are redacted at the data layer.',
+
+  // Detail — Edge-case banners
+  'admin.kyc-queue.warning.under-18.title': 'Under 18 — auto-blocked',
+  'admin.kyc-queue.warning.under-18.body':
+    'DOB shows {age} years. tier_2 verification is unavailable for minors. Approve is disabled.',
+  'admin.kyc-queue.warning.data-mismatch.title': 'Name mismatch with users table',
+  'admin.kyc-queue.warning.data-mismatch.body':
+    'MyID returned “{myid}”; sign-up name is “{user}”. Verify identity carefully — this is a soft warning, you can still approve.',
+  'admin.kyc-queue.warning.sanctions-hit.title':
+    'Sanctions match — escalate to compliance',
+  'admin.kyc-queue.warning.sanctions-hit.body':
+    'Cannot approve until compliance clears the AML flag. Use Escalate to route to senior review.',
+  'admin.kyc-queue.warning.expiring-soon.title':
+    'Auto-expires in {minutes}m without review',
+  'admin.kyc-queue.warning.expiring-soon.body':
+    'The user will be notified to re-submit. Approve or reject now to prevent silent expiry.',
+
+  // Detail — info-requests counter
+  'admin.kyc-queue.detail.info-requests': '{count} info requests sent',
+
+  // Action bar — primary buttons
+  'admin.kyc-queue.action.approve': 'Approve',
+  'admin.kyc-queue.action.reject': 'Reject',
+  'admin.kyc-queue.action.request-info': 'Request more info',
+  'admin.kyc-queue.action.escalate': 'Escalate',
+
+  // Approve modal
+  'admin.kyc-queue.action.approve.confirm-title': 'Approve KYC for {phone}?',
+  'admin.kyc-queue.action.approve.confirm-body':
+    'User will be promoted to {tier}. Verification expires in 12 months.',
+  'admin.kyc-queue.action.approve.confirm-submit': 'Approve verification',
+  'admin.kyc-queue.action.approve.success': 'Verification approved',
+  'admin.kyc-queue.action.approve.disabled.under-18':
+    'Under-18 — approval is auto-blocked.',
+  'admin.kyc-queue.action.approve.disabled.sanctions':
+    'Sanctions match — clear the AML flag before approving.',
+  'admin.kyc-queue.action.approve.disabled.terminal':
+    'Verification already in a terminal state.',
+
+  // Reject modal
+  'admin.kyc-queue.action.reject.title': 'Reject verification',
+  'admin.kyc-queue.action.reject.body':
+    'User stays at the previous tier. They will be notified with the reason. This action is logged to the audit trail.',
+  'admin.kyc-queue.action.reject.failure-reason': 'Failure reason',
+  'admin.kyc-queue.action.reject.failure-reason.document_unreadable':
+    'Document unreadable',
+  'admin.kyc-queue.action.reject.failure-reason.data_mismatch': 'Data mismatch',
+  'admin.kyc-queue.action.reject.failure-reason.under_18': 'Under 18',
+  'admin.kyc-queue.action.reject.failure-reason.sanctions_hit': 'Sanctions hit',
+  'admin.kyc-queue.action.reject.failure-reason.other': 'Other',
+  'admin.kyc-queue.action.reject.reason-label': 'Reason (visible to user)',
+  'admin.kyc-queue.action.reject.reason-placeholder':
+    'Be specific — the user sees this text. Min 10 characters.',
+  'admin.kyc-queue.action.reject.submit': 'Reject verification',
+  'admin.kyc-queue.action.reject.success': 'Verification rejected',
+
+  // Request more info
+  'admin.kyc-queue.action.request-info.title': 'Request more information',
+  'admin.kyc-queue.action.request-info.body':
+    'A notification is sent to the user. The verification stays in pending state.',
+  'admin.kyc-queue.action.request-info.message': 'Message to user',
+  'admin.kyc-queue.action.request-info.message-placeholder':
+    'e.g. Please re-take the passport photo with the full MRZ visible. Min 10 characters.',
+  'admin.kyc-queue.action.request-info.submit': 'Send request',
+  'admin.kyc-queue.action.request-info.success': 'Information request sent',
+
+  // Escalate
+  'admin.kyc-queue.action.escalate.title': 'Escalate to senior review',
+  'admin.kyc-queue.action.escalate.body':
+    'Marks for senior compliance review. The action is logged for audit; senior role wiring is planned for a future release.',
+  'admin.kyc-queue.action.escalate.reason-label': 'Reason for escalation',
+  'admin.kyc-queue.action.escalate.reason-placeholder':
+    'Explain why this verification needs senior review. Min 10 characters.',
+  'admin.kyc-queue.action.escalate.submit': 'Escalate',
+  'admin.kyc-queue.action.escalate.success': 'Escalated for senior review',
+
+  // Common
+  'admin.kyc-queue.action.reason-too-short': 'Min {min} characters.',
+  'admin.kyc-queue.action.toast.audit-logged':
+    '{action} — logged to audit trail',
+  'admin.kyc-queue.tier-promotion.tier_2': 'tier_2 (MyID verified)',
+
+  // Mobile detail page
+  'admin.kyc-queue.mobile.back': 'Back to queue',
+  'admin.kyc-queue.mobile.more': 'More',
+
+  // Help overlay group
+  'admin.kyc-queue.shortcuts.group': 'KYC Queue',
 };
 
 /**

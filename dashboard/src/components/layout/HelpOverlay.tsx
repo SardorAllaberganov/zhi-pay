@@ -40,6 +40,15 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['c'], label: 'Copy transfer ID', group: 'Transfer detail' },
   { keys: ['u'], label: 'Open user profile', group: 'Transfer detail' },
   { keys: ['b'], label: 'Back to list', group: 'Transfer detail' },
+  // KYC Queue page (page-scoped)
+  { keys: ['j'], label: 'Move down in queue', group: 'KYC Queue' },
+  { keys: ['k'], label: 'Move up in queue', group: 'KYC Queue' },
+  { keys: ['Enter'], label: 'Open focused verification', group: 'KYC Queue' },
+  { keys: ['a'], label: 'Approve focused (opens confirm)', group: 'KYC Queue' },
+  { keys: ['r'], label: 'Reject focused (opens reason)', group: 'KYC Queue' },
+  { keys: ['i'], label: 'Request more info', group: 'KYC Queue' },
+  { keys: ['e'], label: 'Escalate to senior review', group: 'KYC Queue' },
+  { keys: ['m'], label: 'Toggle "Assigned to me" filter', group: 'KYC Queue' },
 ];
 
 interface HelpOverlayProps {
@@ -48,7 +57,7 @@ interface HelpOverlayProps {
 }
 
 export function HelpOverlay({ open, onOpenChange }: HelpOverlayProps) {
-  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail'];
+  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
