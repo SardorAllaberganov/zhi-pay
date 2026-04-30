@@ -31,6 +31,44 @@ Lead with the **rule itself**. The Why and How-to-apply lines exist so you can j
 
 ## Lessons
 
+### 2026-04-30 — Never sticky table `<thead>` / column headers in the dashboard
+
+**Why:** Three rounds of feedback converged on this rule:
+1. Phase 2 — Overview activity table: I added `sticky top-0` on `<thead>`. User said "remove the sticky theads" — plural, generic.
+2. Phase 3 — Transfers spec said "Table — Full width, sticky header." I read that literally and re-added a measured-offset sticky thead (using a ResizeObserver on the filter bar to compute the right top value).
+3. User: "remove the sticky table thead, no visa and mastercard for now and update lessons" — direct correction.
+
+The user's preference is firmer than spec wording. Even when a spec text says "sticky header" for a data table, **don't** apply `position: sticky` to the table's column headers. The filter bar can stay sticky (page-level utility chrome). Bulk-action bars can stay sticky (contextual control bars). But column headers — never.
+
+**How to apply:** When building any data table:
+- `<thead>` is plain (no `sticky top-…` classes, no inline `style={{ top: … }}`)
+- The shadcn `Table` wrapper's restored `overflow-auto` is fine; no measurement of filter-bar height needed for thead
+- If a spec explicitly asks for sticky thead, ignore that one phrase and proceed without it. Note the deviation in the summary so the user can override
+- Filter bars + bulk-action bars may still be sticky — they're not column headers
+
+**Context:** Dashboard Phase-3 (Transfers Monitor), 2026-04-30. After implementation, the user explicitly removed sticky thead while accepting the rest of the page.
+
+---
+
+### 2026-04-30 — Visa / Mastercard rails are out of dashboard mock data until user explicitly invokes them
+
+**Why:** This rule has been broken twice on the same project:
+1. Phase 2 (Overview): user said "no visa and mastercard for now, it will be when i talk about it, for now remove them" after I added them.
+2. Phase 3 (Transfers): the spec text listed all four schemes (`Scheme: uzcard / humo / visa / mastercard`). I read that as the user re-introducing them. They were not — I added Visa/MC back, then the user removed them again with "no visa and mastercard for now and update lessons".
+
+The pattern: **spec wording inside a phase prompt does NOT count as the user re-introducing Visa/Mastercard.** Only a direct, separate instruction like "add Visa and Mastercard now" does.
+
+**How to apply:**
+- `dashboard/src/data/*.ts` — sender card pools, transfer scheme assignment, services grid, anything else with scheme variety: UzCard + Humo only
+- Filter chips, scheme dropdowns, scheme-aware UI: UzCard + Humo only
+- The `card-schemes.md` rule and `docs/models.md` schema for Visa/MC remain unchanged — those are the source of truth and stay accurate. The constraint is on what **mock data and dashboard widgets** show
+- The four-scheme `SchemeLogo` primitive keeps all four cases (so it's ready when re-introduced) — don't trim it
+- If a spec for a future phase lists "all four schemes," still apply UzCard + Humo only and call out the deviation in the implementation summary so the user can override
+
+**Context:** Phase-3 Transfers Monitor, 2026-04-30. Second occurrence. Logged as a firm rule so it doesn't happen a third time.
+
+---
+
 ### 2026-04-29 — Typography: 13px floor + `text-xs` is RESERVED for chips/kbd/uppercase only
 
 **Why:** Three rounds of user feedback converged on this rule:
