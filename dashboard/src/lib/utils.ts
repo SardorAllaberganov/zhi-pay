@@ -126,9 +126,17 @@ export function maskPan(masked: string): string {
   return `${first6.slice(0, 4)} ${first6.slice(4)}•• •••• ${last4}`;
 }
 
+/**
+ * UZ passport / id-card document number is 9 chars (2-letter series +
+ * 7-digit sequence, e.g. `AB1234567`). UI displays the series prefix +
+ * dots + last 3 digits (`AB••••567`). The full number is never displayed
+ * — use this at every doc-number render site.
+ */
 export function maskDocNumber(doc: string): string {
-  const last4 = doc.slice(-4);
-  return `••••${last4}`;
+  if (doc.length < 5) return doc;
+  const series = doc.slice(0, 2);
+  const last3 = doc.slice(-3);
+  return `${series}••••${last3}`;
 }
 
 /**
