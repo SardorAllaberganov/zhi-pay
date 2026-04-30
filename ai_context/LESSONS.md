@@ -31,6 +31,50 @@ Lead with the **rule itself**. The Why and How-to-apply lines exist so you can j
 
 ## Lessons
 
+### 2026-05-01 — Buttons and flowing-text spans must be ≥ `text-sm` (14px) — never `text-xs`
+
+**Why:** Several rounds of feedback have converged on this rule:
+1. First incident — `text-[10px]` count badges in tiny circles got shipped on Transfer Detail. Rule from LESSON 2026-04-29 said the floor is 13px and `text-xs` is reserved for chips/kbd/uppercase only, but it explicitly allowed `text-xs` on shadcn `size="sm"` buttons.
+2. After fixing the badges to `text-xs`, user came back: "the labels are 11px… never use 11px in buttons and spans." They also pointed to flowing meta lines like `<div class="text-xs text-muted-foreground">35 transfers · 133,186,000.00 UZS lifetime</div>` and timestamps `<span class="text-xs text-muted-foreground tabular">· Apr 29, 2026 at 3:26 PM</span>`. The "11px" perception is real even though `text-xs` is technically 13px in our scale — at typical button density and mid-grey muted-foreground contrast, 13px reads as too-small in flowing meta.
+3. Shadcn's stock `Button` primitive bakes `text-xs` into `size="sm"`. That carve-out was the source of half the regressions. **Removed.** All button sizes now inherit base `text-sm`.
+
+**How to apply:**
+
+`text-xs` (13px) is RESERVED. Allowed ONLY in:
+- chip / badge bodies (`StatusBadge`, `TierBadge`, `SeverityBadge`, `ui/badge.tsx`, status / tag / count chips)
+- count badges inside circular hosts (must use `h-5 w-5` / `min-w-5` minimum to accept 13px — never shrink the badge to fit a smaller circle)
+- `<kbd>` keyboard hints (`KeyboardHint`, ⌘K hint, shortcut chips)
+- uppercase + tracking-wider section labels (Sidebar headers, TableHead, KPI category labels, "WEBHOOK EVENTS" / "RAW RESPONSE" group headings, ErrorCell retryable)
+- avatar fallback initials
+- tooltip body (shadcn default — small surface, intentional)
+
+`text-xs` is **forbidden** in:
+- ❌ Buttons of any size (including `size="sm"`) — base `text-sm` (14px) wins.
+- ❌ Flowing meta text — timestamps, relative-time labels ("47m ago", "Apr 29, 2026 at 3:26 PM"), card subtitles, lifetime stats lines, character counters in form fields, table-row sublines, breadcrumb items, KPI delta percent, legend items, recipient/sender phone/email sublines, mono IDs displayed inline (`external_tx_id`, fx rate ID), form sub-labels.
+- ❌ Inline disabled-action reason text.
+- ❌ Recharts `tick.fontSize` / `contentStyle.fontSize` — minimum 13. (Covered separately by the 13px floor.)
+
+`text-[10px]`, `text-[11px]`, `text-[12px]` and any `text-[<13px>]` are forbidden everywhere — full stop. If a layout "needs" smaller text, the layout is wrong.
+
+**Carve-out: SVG glyph sizing inside logos.** The `SchemeLogo` primitive uses SVG `fontSize` attributes (e.g. `fontSize="11"` on the HUMO placeholder) inside a `viewBox="0 0 56 32"` with variable `width`/`height`. These are SVG-coordinate-system units, not CSS pixels — actual rendered glyph size depends on the SVG's render scale. Logo glyph sizing is a separate visual-design concern and is not subject to this typography rule. Real-brand-asset replacements would render via `<img>` and bypass this entirely.
+
+**Quick grep to verify:**
+```
+# Direct sub-13px:
+grep -rE 'text-\[1[0-2]px\]|fontSize:\s*1[0-2]\b' dashboard/src
+# (must return 0 hits)
+
+# text-xs in buttons (review and replace any hit):
+grep -rE 'Button.*text-xs|<button[^>]*text-xs' dashboard/src
+
+# Flowing-text text-xs (review case-by-case — some are chips/uppercase, some need bumping to text-sm):
+grep -rn 'text-xs' dashboard/src | grep -vE 'rounded-full|uppercase|tracking-wider|kbd|Avatar|tooltip|badge'
+```
+
+**Context:** Transfer Detail page polish, 2026-05-01. The carve-out for `size="sm"` buttons was retired; `Button.tsx` `sm` variant edited to drop `text-xs`. ~20 detail-page flowing-text usages bumped from `text-xs` to `text-sm`. The earlier LESSON 2026-04-29 (typography floor + reserved `text-xs`) is still in force, with this LESSON narrowing the reserved list.
+
+---
+
 ### 2026-04-30 — Never sticky table `<thead>` / column headers in the dashboard
 
 **Why:** Three rounds of feedback converged on this rule:
@@ -88,8 +132,9 @@ xs=13px  sm=14px  base=15px  lg=16px  xl=18px  2xl=22px  3xl=28px  4xl=36px
 - `<kbd>` keyboard hints (KeyboardHint, ⌘K hint, shortcut chips)
 - uppercase + tracking-wider section labels (Sidebar headers, TableHead, HelpOverlay group headings, ErrorCell retryable, KPI category labels)
 - avatar fallback initials
-- button `size="sm"` variant
 - tooltip body (small surface, intentional)
+
+> **Updated 2026-05-01:** Buttons (including `size="sm"`) are NO LONGER on this list — they must use base `text-sm`. The shadcn `Button` `sm` variant has been edited to drop `text-xs` accordingly. See the 2026-05-01 LESSON above for the firmer rule.
 
 **`text-sm` (14px) — DEFAULT for any flowing text:**
 - timestamps and relative-time labels ("about 8 hours ago")
