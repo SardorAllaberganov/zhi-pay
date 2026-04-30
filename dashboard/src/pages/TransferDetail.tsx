@@ -1,954 +1,918 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
-  ChevronDown,
+  Check,
+  ChevronLeft,
   ChevronRight,
   Copy,
-  ExternalLink,
-  RotateCw,
-  ShieldAlert,
-  ShieldCheck,
+  FileText,
+  Inbox,
+  RefreshCw,
   User as UserIcon,
 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Money } from '@/components/zhipay/Money';
-import { MaskedPan } from '@/components/zhipay/MaskedPan';
 import { StatusBadge } from '@/components/zhipay/StatusBadge';
-import { TierBadge } from '@/components/zhipay/TierBadge';
-import { DestinationBadge } from '@/components/zhipay/DestinationBadge';
-import { SeverityBadge } from '@/components/zhipay/SeverityBadge';
-import { ErrorCell } from '@/components/zhipay/ErrorCell';
+import { StatusTimeline } from '@/components/zhipay/StatusTimeline';
+import { FxFeesCard } from '@/components/transfer-detail/cards/FxFeesCard';
+import { SenderCard } from '@/components/transfer-detail/cards/SenderCard';
+import { RecipientCard } from '@/components/transfer-detail/cards/RecipientCard';
+import { CardUsedCard } from '@/components/transfer-detail/cards/CardUsedCard';
+import { AmlFlagsCard } from '@/components/transfer-detail/cards/AmlFlagsCard';
+import { InternalNotesCard } from '@/components/transfer-detail/cards/InternalNotesCard';
+import { ProviderResponseCard } from '@/components/transfer-detail/cards/ProviderResponseCard';
+import { AdminActionHistoryCard } from '@/components/transfer-detail/cards/AdminActionHistoryCard';
+import { RightRail } from '@/components/transfer-detail/RightRail';
+import { MobileActionBar } from '@/components/transfer-detail/MobileActionBar';
+import { AddNoteDialog, type AddNoteSubmit } from '@/components/transfer-detail/modals/AddNoteDialog';
 import {
-  cn,
-  formatDateTime,
-  formatNumber,
-  formatRelative,
-  maskPinfl,
-  statusLabel,
-  statusToTone,
-  toneClasses,
-} from '@/lib/utils';
-import { t } from '@/lib/i18n';
-import { USERS, FX_RATES } from '@/data/mock';
+  ResendWebhookDialog,
+  type ResendWebhookSubmit,
+} from '@/components/transfer-detail/modals/ResendWebhookDialog';
 import {
-  getAmlFlagsForTransfer,
+  ForceFailDialog,
+  type ForceFailSubmit,
+} from '@/components/transfer-detail/modals/ForceFailDialog';
+import {
+  MarkCompletedDialog,
+  type MarkCompletedSubmit,
+} from '@/components/transfer-detail/modals/MarkCompletedDialog';
+import {
+  ReverseDialog,
+  type ReverseSubmit,
+} from '@/components/transfer-detail/modals/ReverseDialog';
+import {
+  RefundPartialDialog,
+  type RefundSubmit,
+} from '@/components/transfer-detail/modals/RefundPartialDialog';
+import {
+  STUCK_MS,
+  type DetailActionKey,
+} from '@/components/transfer-detail/ActionMenu';
+import {
+  TRANSFERS_FULL,
   getEventsForTransfer,
-  getTransferById,
+  getAmlFlagsForTransfer,
 } from '@/data/mockTransfers';
-import type { Transfer, TransferEvent, TransferStatus } from '@/types';
-
-type ActionKey = 'reverse' | 'force-fail';
+import {
+  computeNeighbors,
+  getTransferDetail,
+  type AdminActionEntry,
+  type AdminActionType,
+  type InternalNote,
+  type PagerNeighbors,
+  type TransferDetailBundle,
+} from '@/data/mockTransferDetail';
+import {
+  applyFilters,
+  sortTransfers,
+  type SortState,
+  type TransferFilters,
+} from '@/components/transfers/types';
+import { readTransfersState } from '@/components/transfers/filterState';
+import { cn, formatDateTime, formatMoney, formatNumber, formatRelative } from '@/lib/utils';
+import { t } from '@/lib/i18n';
+import type {
+  Transfer,
+  TransferEvent,
+  TransferStatus,
+} from '@/types';
 
 const TRANSFERS_BASE = '/operations/transfers';
+
+// Anchor "now" so the prototype renders consistently with the seeded dataset.
+const NOW = new Date('2026-04-29T10:30:00Z');
 
 export function TransferDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
-  const transfer = id ? getTransferById(id) : undefined;
+  // Skeleton on initial mount and on pager nav (id change).
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    setLoading(true);
+    const tid = window.setTimeout(() => setLoading(false), 600);
+    return () => window.clearTimeout(tid);
+  }, [id]);
 
-  // Local mutable state — admin actions update the transfer in place for the
-  // mock prototype. Backend integration takes over when API lands.
+  // Mock-only state — admin actions mutate locally so the UI reflects them.
+  // Reset on every navigation so back-and-forth doesn't bleed state across rows.
   const [statusOverride, setStatusOverride] = useState<TransferStatus | null>(null);
   const [appendedEvents, setAppendedEvents] = useState<TransferEvent[]>([]);
+  const [appendedNotes, setAppendedNotes] = useState<InternalNote[]>([]);
+  const [appendedActions, setAppendedActions] = useState<AdminActionEntry[]>([]);
+  const [activeModal, setActiveModal] = useState<DetailActionKey | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [realtimeHealthy, setRealtimeHealthy] = useState(true);
+  const [copiedId, setCopiedId] = useState(false);
 
-  const events = useMemo(() => {
-    if (!transfer) return [];
-    return [...getEventsForTransfer(transfer.id), ...appendedEvents].sort(
+  useEffect(() => {
+    setStatusOverride(null);
+    setAppendedEvents([]);
+    setAppendedNotes([]);
+    setAppendedActions([]);
+    setActiveModal(null);
+    setCopiedId(false);
+  }, [id]);
+
+  const bundle = useMemo<TransferDetailBundle | null>(
+    () => (id ? getTransferDetail(id) : null),
+    [id],
+  );
+
+  const baseTransfer = bundle?.transfer ?? null;
+  const effectiveTransfer = useMemo<Transfer | null>(() => {
+    if (!baseTransfer) return null;
+    return statusOverride
+      ? { ...baseTransfer, status: statusOverride }
+      : baseTransfer;
+  }, [baseTransfer, statusOverride]);
+
+  const mergedEvents = useMemo<TransferEvent[]>(() => {
+    if (!bundle) return [];
+    return [...bundle.events, ...appendedEvents].sort(
       (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
     );
-  }, [transfer, appendedEvents]);
+  }, [bundle, appendedEvents]);
 
-  const aml = useMemo(() => (transfer ? getAmlFlagsForTransfer(transfer.id) : []), [transfer]);
+  const mergedNotes = useMemo<InternalNote[]>(() => {
+    if (!bundle) return [];
+    return [...appendedNotes, ...bundle.internalNotes];
+  }, [bundle, appendedNotes]);
 
-  // Action dialog state
-  const [activeAction, setActiveAction] = useState<ActionKey | null>(null);
-  const [reason, setReason] = useState('');
-  const [reasonError, setReasonError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const mergedActions = useMemo<AdminActionEntry[]>(() => {
+    if (!bundle) return [];
+    return [...appendedActions, ...bundle.adminActions].sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
+  }, [bundle, appendedActions]);
 
-  // Auto-open dialog when ?action=reverse|force-fail comes from list-page menu
-  useEffect(() => {
-    const a = searchParams.get('action');
-    if (a === 'reverse' || a === 'force-fail') {
-      setActiveAction(a as ActionKey);
-      const next = new URLSearchParams(searchParams);
-      next.delete('action');
-      setSearchParams(next, { replace: true });
+  // Live stuck-detection — drives Force-fail promotion & "Stuck for Xm" chip.
+  const stuckMs = useMemo(() => {
+    if (!effectiveTransfer) return 0;
+    if (effectiveTransfer.status !== 'processing') return 0;
+    let last = 0;
+    for (const ev of mergedEvents) {
+      if (ev.toStatus === 'processing') {
+        last = Math.max(last, ev.createdAt.getTime());
+      }
     }
-  }, [searchParams, setSearchParams]);
+    const baseline = last || effectiveTransfer.createdAt.getTime();
+    return Math.max(0, NOW.getTime() - baseline);
+  }, [effectiveTransfer, mergedEvents]);
+
+  // ---------- Pager (j/k between filtered list) ----------
+  const pager = usePager(id, searchParams);
+
+  // ---------- Real-time refresh simulation ----------
+  useEffect(() => {
+    if (!effectiveTransfer) return;
+    if (effectiveTransfer.status !== 'processing') return;
+    const tid = window.setInterval(() => {
+      // 25% chance per tick to advance to completed.
+      if (Math.random() < 0.25) {
+        const newEvent: TransferEvent = {
+          id: `e_local_${Date.now()}`,
+          transferId: effectiveTransfer.id,
+          fromStatus: 'processing',
+          toStatus: 'completed',
+          actor: 'provider',
+          context: {
+            simulated: true,
+            external_tx_id: effectiveTransfer.externalTxId,
+          },
+          createdAt: new Date(),
+        };
+        setAppendedEvents((prev) => [...prev, newEvent]);
+        setStatusOverride('completed');
+        setToast(
+          t('admin.transfer-detail.timeline.live-update-toast', {
+            from: 'processing',
+            to: 'completed',
+          }),
+        );
+      }
+    }, 10_000);
+    return () => window.clearInterval(tid);
+  }, [effectiveTransfer]);
 
   // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(() => setToast(null), 2400);
-    return () => window.clearTimeout(timer);
+    const tid = window.setTimeout(() => setToast(null), 2400);
+    return () => window.clearTimeout(tid);
   }, [toast]);
 
-  // ----- Keyboard shortcuts -----
-  // b / Backspace → back to list
-  // r → reverse (when status=completed)
-  // c → copy transfer id
-  // u → open user profile
-  // Esc → does nothing (per spec, no overlay to dismiss except action dialog)
+  // ---------- Action submit handlers ----------
+  const recordAdminAction = useCallback(
+    (type: AdminActionType, reason: string) => {
+      if (!effectiveTransfer) return;
+      const entry: AdminActionEntry = {
+        id: `act_local_${Date.now()}`,
+        transferId: effectiveTransfer.id,
+        type,
+        actorName: 'You',
+        actorInitials: 'YO',
+        reason,
+        createdAt: new Date(),
+      };
+      setAppendedActions((prev) => [entry, ...prev]);
+    },
+    [effectiveTransfer],
+  );
+
+  const appendEvent = useCallback(
+    (toStatus: TransferStatus, fromStatus: TransferStatus, ctx: Record<string, unknown>) => {
+      if (!effectiveTransfer) return;
+      const ev: TransferEvent = {
+        id: `e_local_${Date.now()}`,
+        transferId: effectiveTransfer.id,
+        fromStatus,
+        toStatus,
+        actor: 'admin',
+        context: ctx,
+        createdAt: new Date(),
+      };
+      setAppendedEvents((prev) => [...prev, ev]);
+    },
+    [effectiveTransfer],
+  );
+
+  const onAddNote = useCallback(
+    (payload: AddNoteSubmit) => {
+      if (!effectiveTransfer) return;
+      const note: InternalNote = {
+        id: `note_local_${Date.now()}`,
+        transferId: effectiveTransfer.id,
+        authorName: 'You',
+        authorInitials: 'YO',
+        authorRole: 'Operations',
+        tag: payload.tag,
+        body: payload.body,
+        createdAt: new Date(),
+      };
+      setAppendedNotes((prev) => [note, ...prev]);
+      recordAdminAction('note_added', `Tagged ${payload.tag}. ${payload.body.slice(0, 80)}`);
+      setToast(
+        t('admin.transfer-detail.action.toast.success', {
+          action: t('admin.transfer-detail.action.add-note'),
+        }),
+      );
+    },
+    [effectiveTransfer, recordAdminAction],
+  );
+
+  const onResendWebhook = useCallback(
+    (payload: ResendWebhookSubmit) => {
+      if (!effectiveTransfer) return;
+      recordAdminAction('webhook_resent', payload.reason);
+      // No state transition on resend by itself.
+      setToast(
+        t('admin.transfer-detail.action.toast.success', {
+          action: t('admin.transfer-detail.action.resend-webhook'),
+        }),
+      );
+    },
+    [effectiveTransfer, recordAdminAction],
+  );
+
+  const onForceFail = useCallback(
+    (payload: ForceFailSubmit) => {
+      if (!effectiveTransfer) return;
+      const from: TransferStatus = effectiveTransfer.status;
+      setStatusOverride('failed');
+      appendEvent('failed', from, {
+        force_failed: true,
+        failure_code: payload.failureCode,
+        reason: payload.reason,
+        notify_user: payload.notifyUser,
+      });
+      recordAdminAction('force_failed', payload.reason);
+      setToast(
+        t('admin.transfer-detail.action.toast.success', {
+          action: t('admin.transfer-detail.action.force-fail'),
+        }),
+      );
+    },
+    [effectiveTransfer, appendEvent, recordAdminAction],
+  );
+
+  const onMarkCompleted = useCallback(
+    (payload: MarkCompletedSubmit) => {
+      if (!effectiveTransfer) return;
+      const from: TransferStatus = effectiveTransfer.status;
+      setStatusOverride('completed');
+      appendEvent('completed', from, {
+        manual_completion: true,
+        provider_tx_id: payload.providerTxId,
+        reason: payload.reason,
+      });
+      recordAdminAction('marked_completed', payload.reason);
+      setToast(
+        t('admin.transfer-detail.action.toast.success', {
+          action: t('admin.transfer-detail.action.mark-completed'),
+        }),
+      );
+    },
+    [effectiveTransfer, appendEvent, recordAdminAction],
+  );
+
+  const onReverse = useCallback(
+    (payload: ReverseSubmit) => {
+      if (!effectiveTransfer) return;
+      const from: TransferStatus = effectiveTransfer.status;
+      setStatusOverride('reversed');
+      appendEvent('reversed', from, {
+        reason: payload.reason,
+        target: payload.recipient,
+      });
+      recordAdminAction('reversed', payload.reason);
+      setToast(
+        t('admin.transfer-detail.action.toast.success', {
+          action: t('admin.transfer-detail.action.reverse'),
+        }),
+      );
+    },
+    [effectiveTransfer, appendEvent, recordAdminAction],
+  );
+
+  const onRefund = useCallback(
+    (payload: RefundSubmit) => {
+      if (!effectiveTransfer) return;
+      // Partial refund does NOT change status — original transfer remains completed.
+      recordAdminAction(
+        'refunded',
+        `${formatMoney(payload.amountTiyins, 'UZS')} — ${payload.reason}`,
+      );
+      setToast(
+        t('admin.transfer-detail.action.toast.success', {
+          action: t('admin.transfer-detail.action.refund'),
+        }),
+      );
+    },
+    [effectiveTransfer, recordAdminAction],
+  );
+
+  // ---------- Keyboard shortcuts ----------
   useEffect(() => {
+    const tr = effectiveTransfer;
+    if (!tr) return;
     function onKey(e: KeyboardEvent) {
-      // Inside the action dialog the textarea handles its own Esc / typing.
-      if (isTypingContext(e.target)) return;
+      if (isTypingTarget(e.target)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (!tr) return;
 
-      if (activeAction) return; // dialog open — let Radix handle keys
-
-      if (e.key === 'b' || e.key === 'Backspace') {
+      const k = e.key;
+      // pager
+      if (k === 'j' && pager?.nextId) {
+        e.preventDefault();
+        navigate(`${TRANSFERS_BASE}/${pager.nextId}`);
+        return;
+      }
+      if (k === 'k' && pager?.prevId) {
+        e.preventDefault();
+        navigate(`${TRANSFERS_BASE}/${pager.prevId}`);
+        return;
+      }
+      // back
+      if (k === 'b' || k === 'Backspace') {
         e.preventDefault();
         navigate(TRANSFERS_BASE);
         return;
       }
-      if (e.key === 'c' && transfer) {
+      // copy id
+      if (k === 'c') {
         e.preventDefault();
-        copyId(transfer.id);
-        setToast(t('admin.transfers.action.success.id-copied'));
+        copyTransferId();
         return;
       }
-      if (e.key === 'u' && transfer) {
+      // user nav
+      if (k === 'u' && bundle?.user) {
         e.preventDefault();
-        navigate(`/customers/users/${transfer.userId}`);
+        navigate(`/customers/users/${tr.userId}`);
         return;
       }
-      if (e.key === 'r' && transfer) {
-        const status = statusOverride ?? transfer.status;
-        if (status === 'completed') {
-          e.preventDefault();
-          setActiveAction('reverse');
-        }
+      // action shortcuts
+      if (k === 'n') {
+        e.preventDefault();
+        setActiveModal('add-note');
+        return;
+      }
+      if (k === 'r' && tr.status === 'completed') {
+        e.preventDefault();
+        setActiveModal('reverse');
+        return;
+      }
+      if (k === 'f' && (tr.status === 'created' || tr.status === 'processing')) {
+        e.preventDefault();
+        setActiveModal('force-fail');
+        return;
+      }
+      if (k === 'm' && tr.status === 'processing') {
+        e.preventDefault();
+        setActiveModal('mark-completed');
+        return;
+      }
+      if (k === 'w' && (tr.status === 'processing' || tr.status === 'failed')) {
+        e.preventDefault();
+        setActiveModal('resend-webhook');
+        return;
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transfer, statusOverride, activeAction]);
+  }, [effectiveTransfer, pager, bundle]);
 
-  // ----- Not found -----
-  if (!transfer) {
-    return (
-      <div className="space-y-4">
-        <BackLink />
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <AlertTriangle className="h-8 w-8 text-warning-700 mb-3" aria-hidden="true" />
-            <div className="text-sm font-medium">
-              {t('admin.transfers.detail.not-found.title')}
-            </div>
-            <div className="text-sm text-muted-foreground mt-1 max-w-md">
-              {t('admin.transfers.detail.not-found.body')}
-            </div>
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate(TRANSFERS_BASE)}>
-              {t('admin.transfers.detail.back-to-list')}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  function copyTransferId() {
+    if (!effectiveTransfer) return;
+    if (!navigator.clipboard?.writeText) return;
+    navigator.clipboard.writeText(effectiveTransfer.id);
+    setCopiedId(true);
+    window.setTimeout(() => setCopiedId(false), 1500);
   }
 
-  const sender = USERS.find((u) => u.id === transfer.userId);
-  const fx = FX_RATES.find((f) => f.pair === 'UZS_CNY');
-  const status: TransferStatus = statusOverride ?? transfer.status;
-  const ageMs = Date.now() - transfer.createdAt.getTime();
-  const stuck = status === 'processing' && ageMs > 10 * 60 * 1000;
+  // ---------- Render: 404 / loading / page ----------
 
-  // ----- Action confirmation -----
-  function confirmAction() {
-    if (!activeAction || !transfer) return;
-    if (reason.trim().length < 10) {
-      setReasonError(t('admin.transfers.action.reason-too-short'));
-      return;
-    }
-    const newStatus: TransferStatus = activeAction === 'reverse' ? 'reversed' : 'failed';
-    setStatusOverride(newStatus);
-    setAppendedEvents((prev) => [
-      ...prev,
-      {
-        id: `e_local_${Date.now()}`,
-        transferId: transfer.id,
-        fromStatus: status,
-        toStatus: newStatus,
-        actor: 'admin',
-        context: { reason: reason.trim(), admin_id: 'admin_super_01' },
-        createdAt: new Date(),
-      },
-    ]);
-    setToast(
-      activeAction === 'reverse'
-        ? t('admin.transfers.action.success.reversed')
-        : t('admin.transfers.action.success.force-failed'),
-    );
-    setActiveAction(null);
-    setReason('');
-    setReasonError(null);
+  if (loading) {
+    return <DetailSkeleton />;
   }
 
-  function onResendWebhook() {
-    if (!transfer) return;
-    setToast(
-      t('admin.transfers.action.success.webhook-resent', {
-        destination: transfer.destination,
-      }),
-    );
-  }
-
-  function onCopyId() {
-    if (!transfer) return;
-    copyId(transfer.id);
-    setToast(t('admin.transfers.action.success.id-copied'));
+  if (!bundle || !effectiveTransfer) {
+    return <NotFoundState onBack={() => navigate(TRANSFERS_BASE)} />;
   }
 
   return (
-    <div className="space-y-6 pb-24">
-      {/* Sticky header zone */}
-      <div
-        className={cn(
-          'sticky top-0 z-20 -mx-4 md:-mx-6 px-4 md:px-6 py-3',
-          'bg-background/95 backdrop-blur border-b border-border',
-        )}
-      >
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2 min-w-0">
-            <BackLink />
-            <div className="flex flex-wrap items-center gap-3">
-              <StatusBadge
-                status={status}
-                domain="transfer"
-                className="!text-sm !px-3 !py-1"
-              />
-              <CopyableId id={transfer.id} onCopy={onCopyId} />
-              <span
-                className="text-sm text-muted-foreground tabular hidden sm:inline"
-                title={transfer.createdAt.toISOString()}
-              >
-                {formatDateTime(transfer.createdAt)}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/customers/users/${transfer.userId}`)}
-            >
-              <UserIcon className="h-3.5 w-3.5" />
-              {t('admin.transfers.detail.open-user')}
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="space-y-6">
-        {/* Amount + FX (full width) */}
-        <AmountCard transfer={transfer} fx={fx} />
-        <FxBreakdownCard transfer={transfer} />
-
-        {/* Card + Recipient (2-col on lg, single below) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <CardCard
-            transfer={transfer}
-            onOpen={() => navigate(`/customers/cards/${transfer.cardId}`)}
-          />
-          <RecipientCard transfer={transfer} />
-        </div>
-
-        {/* Sender + AML (2-col on lg; sender alone if no AML) */}
-        <div className={cn('grid grid-cols-1 gap-6', aml.length > 0 && 'lg:grid-cols-2')}>
-          <SenderCard
-            transfer={transfer}
-            sender={sender}
-            onOpen={() => navigate(`/customers/users/${transfer.userId}`)}
-          />
-          {aml.length > 0 && (
-            <AmlCard flags={aml} onOpenTriage={() => navigate('/aml-triage')} />
-          )}
-        </div>
-
-        <TimelineCard events={events} />
-        <ProviderResponseCard transfer={transfer} events={events} />
-      </div>
-
-      {/* Sticky bottom admin actions bar */}
-      <AdminActionsBar
-        transfer={{ ...transfer, status }}
-        stuck={stuck}
-        onReverse={() => setActiveAction('reverse')}
-        onForceFail={() => setActiveAction('force-fail')}
-        onResendWebhook={onResendWebhook}
-        onCopyId={onCopyId}
-        onOpenAudit={() => navigate('/audit-log')}
-      />
-
-      {/* Reverse / Force-fail dialog */}
-      <AlertDialog
-        open={activeAction !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setActiveAction(null);
-            setReason('');
-            setReasonError(null);
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {activeAction === 'reverse'
-                ? t('admin.transfers.action.reverse.title')
-                : t('admin.transfers.action.force-fail.title')}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {activeAction === 'reverse'
-                ? t('admin.transfers.action.reverse.description')
-                : t('admin.transfers.action.force-fail.description')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="action-reason">
-              {t('admin.transfers.action.reason-label')}
-            </Label>
-            <textarea
-              id="action-reason"
-              rows={3}
-              value={reason}
-              onChange={(e) => {
-                setReason(e.target.value);
-                if (reasonError && e.target.value.trim().length >= 10) setReasonError(null);
-              }}
-              placeholder={t('admin.transfers.action.reason-placeholder')}
-              className={cn(
-                'w-full rounded-md border bg-background px-3 py-2 text-sm font-mono',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                reasonError ? 'border-danger-600/50' : 'border-border',
-              )}
-              autoFocus
-            />
-            {reasonError && (
-              <p className="text-sm text-danger-600">{reasonError}</p>
-            )}
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('admin.transfers.action.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                confirmAction();
-              }}
-              className="bg-danger-600 text-white hover:bg-danger-600/90"
-            >
-              {activeAction === 'reverse'
-                ? t('admin.transfers.action.reverse.confirm')
-                : t('admin.transfers.action.force-fail.confirm')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
+    <div className="space-y-4">
       {/* Toast */}
       {toast && (
         <div
           role="status"
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 rounded-md border border-border bg-card px-4 py-2 shadow-lg text-sm font-medium"
+          className="fixed top-4 right-4 z-40 max-w-sm rounded-md border border-success-600/30 bg-success-50 px-4 py-2 text-sm text-success-700 shadow-lg dark:bg-success-700/15 dark:text-success-600"
         >
           {toast}
         </div>
       )}
-    </div>
-  );
-}
 
-// =====================================================================
-// Header pieces
-// =====================================================================
-
-function BackLink() {
-  const navigate = useNavigate();
-  return (
-    <button
-      type="button"
-      onClick={() => navigate(TRANSFERS_BASE)}
-      className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline dark:text-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-    >
-      <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-      {t('admin.transfers.detail.back-to-list')}
-    </button>
-  );
-}
-
-function CopyableId({ id, onCopy }: { id: string; onCopy: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onCopy}
-      className="group inline-flex items-center gap-1.5 rounded-sm px-1.5 py-0.5 font-mono tabular text-sm text-foreground/85 hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      title={t('admin.transfers.detail.copy-id')}
-      aria-label={t('admin.transfers.detail.copy-id')}
-    >
-      {id}
-      <Copy className="h-3 w-3 opacity-60 group-hover:opacity-100" aria-hidden="true" />
-    </button>
-  );
-}
-
-// =====================================================================
-// Body cards
-// =====================================================================
-
-function AmountCard({
-  transfer,
-  fx,
-}: {
-  transfer: Transfer;
-  fx?: (typeof FX_RATES)[number];
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{t('admin.transfers.detail.amount.title')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
-          <Money
-            amount={transfer.amountUzs}
-            currency="UZS"
-            className="text-3xl font-bold"
-          />
-          <ArrowRight className="h-5 w-5 text-muted-foreground hidden lg:block" />
-          <Money
-            amount={transfer.amountCny}
-            currency="CNY"
-            className="text-3xl font-bold text-muted-foreground"
-          />
-        </div>
+      {/* Realtime feed lost banner (defensive — not currently triggered) */}
+      {!realtimeHealthy && (
         <div
-          className="mt-4 inline-flex items-center gap-1 rounded-sm bg-slate-100 px-2 py-1 text-sm dark:bg-slate-800"
-          title={
-            fx
-              ? t('admin.transfers.detail.amount.tooltip', {
-                  id: fx.id,
-                  validFrom: formatDateTime(fx.validFrom),
-                  source: fx.source,
-                })
-              : ''
-          }
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-md border border-warning-600/30 bg-warning-50 px-3 py-2 text-sm dark:bg-warning-700/15"
         >
-          <span className="text-muted-foreground">
-            {t('admin.transfers.detail.amount.locked-rate', {
-              rate: formatNumber(transfer.clientRate),
-            })}
-          </span>
+          <div className="flex items-start gap-2 text-warning-700 dark:text-warning-600">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            {t('admin.transfer-detail.timeline.realtime-lost-banner')}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setRealtimeHealthy(true)}>
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+            {t('admin.transfer-detail.timeline.realtime-retry')}
+          </Button>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function FxBreakdownCard({ transfer }: { transfer: Transfer }) {
-  const [open, setOpen] = useState(true);
-  const feePct = (Number(transfer.feeUzs) / Number(transfer.amountUzs)) * 100;
-  return (
-    <Card>
-      <CardHeader>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="flex w-full items-center justify-between text-left"
-        >
-          <CardTitle className="text-base">
-            {t('admin.transfers.detail.fx-breakdown')}
-          </CardTitle>
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 text-muted-foreground transition-transform',
-              !open && '-rotate-90',
-            )}
-            aria-hidden="true"
-          />
-        </button>
-      </CardHeader>
-      {open && (
-        <CardContent>
-          <dl className="space-y-2.5 max-w-2xl">
-            <FxRow
-              label={t('admin.transfers.detail.fx.amount')}
-              value={<Money amount={transfer.amountUzs} currency="UZS" />}
-            />
-            <FxRow
-              label={`${t('admin.transfers.detail.fx.fee')} (${feePct.toFixed(1)}%)`}
-              value={<Money amount={transfer.feeUzs} currency="UZS" />}
-            />
-            <FxRow
-              label={t('admin.transfers.detail.fx.spread')}
-              value={<Money amount={transfer.fxSpreadUzs} currency="UZS" />}
-            />
-            <div className="border-t pt-2.5">
-              <FxRow
-                label={t('admin.transfers.detail.fx.total')}
-                value={
-                  <Money
-                    amount={transfer.totalChargeUzs}
-                    currency="UZS"
-                    className="font-semibold"
-                  />
-                }
-                strong
-              />
-            </div>
-            <div className="border-t pt-2.5">
-              <FxRow
-                label={t('admin.transfers.detail.fx.recipient-gets')}
-                value={
-                  <Money
-                    amount={transfer.amountCny}
-                    currency="CNY"
-                    className="font-semibold"
-                  />
-                }
-                strong
-              />
-            </div>
-          </dl>
-        </CardContent>
       )}
-    </Card>
-  );
-}
 
-function FxRow({
-  label,
-  value,
-  strong,
-}: {
-  label: string;
-  value: React.ReactNode;
-  strong?: boolean;
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className={cn('text-sm', strong ? 'text-foreground font-medium' : 'text-muted-foreground')}>
-        {label}
-      </dt>
-      <dd className="text-sm tabular">{value}</dd>
+      {/* Zone 1 — Page header (NOT sticky per project direction) */}
+      <DetailHeader
+        transfer={effectiveTransfer}
+        copiedId={copiedId}
+        onCopyId={copyTransferId}
+        onBack={() => navigate(TRANSFERS_BASE)}
+        backLabel={pagerBackLabel(searchParams)}
+        pager={pager}
+        feeUzs={effectiveTransfer.feeUzs + effectiveTransfer.fxSpreadUzs}
+        onPagerPrev={() => pager?.prevId && navigate(`${TRANSFERS_BASE}/${pager.prevId}`)}
+        onPagerNext={() => pager?.nextId && navigate(`${TRANSFERS_BASE}/${pager.nextId}`)}
+        onOpenUser={() => navigate(`/customers/users/${effectiveTransfer.userId}`)}
+        onOpenAudit={() => navigate(`/audit-log?entity=transfer&id=${effectiveTransfer.id}`)}
+        userDeleted={bundle.senderDeleted}
+      />
+
+      {/* Zone 2 — Body grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Left column — primary content. `flex flex-col gap-4` (not space-y)
+            so the hidden-on-lg tablet timeline doesn't add a phantom 16px
+            margin above the FX card on desktop. */}
+        <div className="lg:col-span-8 flex flex-col gap-4 min-w-0">
+          {/* Tablet (md → lg): timeline pinned just below the headline */}
+          <div className="lg:hidden">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">
+                  {t('admin.transfer-detail.timeline.title')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <StatusTimeline events={mergedEvents} domain="transfer" />
+              </CardContent>
+            </Card>
+          </div>
+
+          <FxFeesCard transfer={effectiveTransfer} />
+          <SenderCard
+            user={bundle.user}
+            deleted={bundle.senderDeleted}
+            pinflLast4Fallback={effectiveTransfer.userId.slice(-4)}
+            userPhoneFallback={effectiveTransfer.userPhone}
+            userNameFallback={effectiveTransfer.userName}
+            lifetime={bundle.userLifetime}
+            onOpenUser={(uid) => navigate(`/customers/users/${uid}`)}
+          />
+          <RecipientCard
+            destination={effectiveTransfer.destination}
+            identifier={effectiveTransfer.recipientIdentifier}
+            recipientTransferCount={bundle.recipientTransferCount}
+            recipientDeleted={bundle.recipientDeleted}
+            onOpenRecipient={() =>
+              navigate(`/recipients?identifier=${encodeURIComponent(effectiveTransfer.recipientIdentifier)}`)
+            }
+          />
+          <CardUsedCard
+            card={bundle.card}
+            cardRemoved={bundle.cardRemoved}
+            schemeFallback={effectiveTransfer.cardScheme}
+            maskedPanFallback={effectiveTransfer.cardMaskedPan}
+            bankFallback={effectiveTransfer.cardBank}
+            holderName={effectiveTransfer.userName}
+            onOpenCard={(cid) => navigate(`/customers/cards/${cid}`)}
+          />
+          <AmlFlagsCard
+            flags={bundle.amlFlags}
+            onOpenFlag={(flagId) => navigate(`/operations/aml-triage/${flagId}`)}
+          />
+          <InternalNotesCard
+            notes={mergedNotes}
+            onAdd={() => setActiveModal('add-note')}
+          />
+          {bundle.providerResponse && (
+            <ProviderResponseCard
+              providerResponse={bundle.providerResponse}
+              transferStatus={effectiveTransfer.status}
+            />
+          )}
+          <AdminActionHistoryCard
+            actions={mergedActions}
+            onViewFullAudit={() =>
+              navigate(`/audit-log?entity=transfer&id=${effectiveTransfer.id}`)
+            }
+          />
+        </div>
+
+        {/* Right column — desktop sticky rail */}
+        <aside className="lg:col-span-4 min-w-0">
+          <RightRail
+            transfer={effectiveTransfer}
+            events={mergedEvents}
+            stuckMs={stuckMs}
+            onAction={(k) => setActiveModal(k)}
+          />
+        </aside>
+      </div>
+
+      {/* Zone 3 — mobile sticky bottom action bar */}
+      <MobileActionBar
+        transfer={effectiveTransfer}
+        events={mergedEvents}
+        stuckMs={stuckMs}
+        onAction={(k) => setActiveModal(k)}
+      />
+
+      {/* Modals */}
+      <AddNoteDialog
+        open={activeModal === 'add-note'}
+        onOpenChange={(o) => !o && setActiveModal(null)}
+        onSubmit={onAddNote}
+      />
+      <ResendWebhookDialog
+        open={activeModal === 'resend-webhook'}
+        onOpenChange={(o) => !o && setActiveModal(null)}
+        provider={effectiveTransfer.destination}
+        externalTxId={effectiveTransfer.externalTxId ?? '—'}
+        onSubmit={onResendWebhook}
+      />
+      <ForceFailDialog
+        open={activeModal === 'force-fail'}
+        onOpenChange={(o) => !o && setActiveModal(null)}
+        onSubmit={onForceFail}
+      />
+      <MarkCompletedDialog
+        open={activeModal === 'mark-completed'}
+        onOpenChange={(o) => !o && setActiveModal(null)}
+        amountCnyFen={effectiveTransfer.amountCny}
+        onSubmit={onMarkCompleted}
+      />
+      <ReverseDialog
+        open={activeModal === 'reverse'}
+        onOpenChange={(o) => !o && setActiveModal(null)}
+        userId={effectiveTransfer.userId}
+        sourceCardId={effectiveTransfer.cardId}
+        sourceCardScheme={effectiveTransfer.cardScheme}
+        sourceCardMaskedPan={effectiveTransfer.cardMaskedPan}
+        amountUzsTiyins={effectiveTransfer.amountUzs}
+        onSubmit={onReverse}
+      />
+      <RefundPartialDialog
+        open={activeModal === 'refund'}
+        onOpenChange={(o) => !o && setActiveModal(null)}
+        userId={effectiveTransfer.userId}
+        sourceCardId={effectiveTransfer.cardId}
+        sourceCardScheme={effectiveTransfer.cardScheme}
+        sourceCardMaskedPan={effectiveTransfer.cardMaskedPan}
+        originalAmountTiyins={effectiveTransfer.amountUzs}
+        onSubmit={onRefund}
+      />
     </div>
   );
 }
 
-function CardCard({
-  transfer,
-  onOpen,
-}: {
+// ====================================================================
+// Header
+// ====================================================================
+
+interface DetailHeaderProps {
   transfer: Transfer;
-  onOpen: () => void;
-}) {
-  const country =
-    transfer.cardScheme === 'uzcard' || transfer.cardScheme === 'humo' ? 'UZ' : 'INTL';
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-base">{t('admin.transfers.detail.card.title')}</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onOpen}>
-            {t('admin.transfers.detail.card.details')}
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <MaskedPan value={transfer.cardMaskedPan} scheme={transfer.cardScheme} size="md" />
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <div>
-              <dt className="text-muted-foreground">{t('admin.transfers.detail.card.bank')}</dt>
-              <dd className="mt-0.5">{transfer.cardBank}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">{t('admin.transfers.detail.card.holder')}</dt>
-              <dd className="mt-0.5">{transfer.userName}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">{t('admin.transfers.detail.card.country')}</dt>
-              <dd className="mt-0.5 font-mono tabular">{country}</dd>
-            </div>
-          </dl>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  copiedId: boolean;
+  onCopyId: () => void;
+  onBack: () => void;
+  backLabel: string;
+  pager: PagerNeighbors | null;
+  feeUzs: bigint;
+  onPagerPrev: () => void;
+  onPagerNext: () => void;
+  onOpenUser: () => void;
+  onOpenAudit: () => void;
+  userDeleted: boolean;
 }
 
-function RecipientCard({ transfer }: { transfer: Transfer }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{t('admin.transfers.detail.recipient.title')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <DestinationBadge destination={transfer.destination} />
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <div>
-              <dt className="text-muted-foreground">{t('admin.transfers.detail.recipient.handle')}</dt>
-              <dd className="mt-0.5 font-mono tabular">{transfer.recipientIdentifier}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">
-                {t('admin.transfers.detail.recipient.display-name')}
-              </dt>
-              <dd className="mt-0.5 text-muted-foreground">—</dd>
-            </div>
-            <div className="col-span-2">
-              <dt className="text-muted-foreground">{t('admin.transfers.detail.recipient.saved')}</dt>
-              <dd className="mt-0.5 text-sm text-muted-foreground">
-                {t('admin.transfers.detail.recipient.unsaved')}
-              </dd>
-            </div>
-          </dl>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function SenderCard({
+function DetailHeader({
   transfer,
-  sender,
-  onOpen,
-}: {
-  transfer: Transfer;
-  sender: (typeof USERS)[number] | undefined;
-  onOpen: () => void;
-}) {
-  const initials = (transfer.userName || '?')
-    .split(' ')
-    .map((s) => s[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-base">{t('admin.transfers.detail.sender.title')}</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onOpen}>
-            {t('admin.transfers.detail.sender.open-profile')}
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-start gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 text-xs font-semibold">
-              {initials || '?'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="font-medium">{transfer.userName}</div>
-            <div className="text-sm text-muted-foreground tabular">{transfer.userPhone}</div>
-            <div className="mt-2 flex items-center gap-2 text-sm">
-              {sender && <TierBadge tier={sender.kycTier} />}
-              {sender && (
-                <span className="text-muted-foreground">
-                  PINFL {maskPinfl(sender.pinflLast4 + '000000')}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function TimelineCard({ events }: { events: TransferEvent[] }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{t('admin.transfers.detail.timeline')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ol className="relative space-y-4 border-l border-border pl-6">
-          {events.map((event, idx) => (
-            <TimelineItem key={event.id} event={event} isLast={idx === events.length - 1} />
-          ))}
-        </ol>
-      </CardContent>
-    </Card>
-  );
-}
-
-function TimelineItem({ event, isLast }: { event: TransferEvent; isLast: boolean }) {
-  const [open, setOpen] = useState(false);
-  const tone = statusToTone(event.toStatus, 'transfer');
-  const tc = toneClasses(tone);
-  const hasContext = event.context && Object.keys(event.context).length > 0;
+  copiedId,
+  onCopyId,
+  onBack,
+  backLabel,
+  pager,
+  feeUzs,
+  onPagerPrev,
+  onPagerNext,
+  onOpenUser,
+  onOpenAudit,
+  userDeleted,
+}: DetailHeaderProps) {
+  const idPreview = transfer.id.length > 12 ? `${transfer.id.slice(0, 12)}…` : transfer.id;
 
   return (
-    <li className="relative">
-      <span
-        className={cn(
-          'absolute -left-[1.625rem] top-1 h-3 w-3 rounded-full border-2',
-          isLast
-            ? cn('bg-background animate-pulse-dot border-current', tc.text)
-            : cn(tc.dot, 'border-transparent'),
-        )}
-        aria-hidden="true"
-      />
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-sm font-medium">
-            {statusLabel(event.toStatus, 'transfer')}
-          </div>
-          <div className="text-sm text-muted-foreground capitalize">{event.actor}</div>
-          {event.failureCode && (
-            <div className="text-sm text-danger-600 mt-1 font-mono">{event.failureCode}</div>
-          )}
-        </div>
-        <div className="text-sm text-muted-foreground tabular shrink-0">
-          {formatRelative(event.createdAt)}
-        </div>
-      </div>
-      {hasContext && (
+    <header className="space-y-3 lg:space-y-4">
+      {/* Row 1 — back + pager */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="mt-1.5 inline-flex items-center gap-1 text-xs text-brand-600 hover:underline dark:text-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
-          aria-expanded={open}
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
         >
-          {t('admin.transfers.detail.timeline.context')}
-          <ChevronRight
-            className={cn('h-3 w-3 transition-transform', open && 'rotate-90')}
-            aria-hidden="true"
-          />
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          {backLabel}
         </button>
-      )}
-      {hasContext && open && (
-        <pre className="mt-2 overflow-x-auto rounded-md bg-slate-100 p-2 text-xs font-mono dark:bg-slate-900">
-          {JSON.stringify(event.context, null, 2)}
-        </pre>
-      )}
-    </li>
-  );
-}
 
-function ProviderResponseCard({
-  transfer,
-  events,
-}: {
-  transfer: Transfer;
-  events: TransferEvent[];
-}) {
-  const [open, setOpen] = useState(false);
-  const lastProviderEvent = [...events].reverse().find((e) => e.actor === 'provider');
-  const hasResponse = !!transfer.externalTxId || !!lastProviderEvent;
-  return (
-    <Card>
-      <CardHeader>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="flex w-full items-center justify-between text-left"
-        >
-          <CardTitle className="text-base">
-            {t('admin.transfers.detail.provider-response')}
-          </CardTitle>
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 text-muted-foreground transition-transform',
-              !open && '-rotate-90',
-            )}
-            aria-hidden="true"
-          />
-        </button>
-      </CardHeader>
-      {open && (
-        <CardContent>
-          {hasResponse ? (
+        <div className="flex items-center gap-2">
+          {pager ? (
             <>
-              {transfer.externalTxId && (
-                <div className="text-sm text-muted-foreground mb-2">
-                  external_tx_id ={' '}
-                  <span className="font-mono tabular text-foreground/90">
-                    {transfer.externalTxId}
-                  </span>
-                </div>
-              )}
-              <pre className="overflow-x-auto rounded-md bg-slate-100 p-2 text-xs font-mono dark:bg-slate-900">
-                {lastProviderEvent
-                  ? JSON.stringify(lastProviderEvent.context ?? {}, null, 2)
-                  : '{}'}
-              </pre>
+              <span className="text-xs text-muted-foreground tabular bg-muted/50 rounded-full px-2.5 py-1">
+                {t('admin.transfer-detail.pager.position', {
+                  position: pager.position,
+                  total: pager.total,
+                })}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!pager.prevId}
+                onClick={onPagerPrev}
+                aria-label={t('admin.transfer-detail.pager.prev')}
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!pager.nextId}
+                onClick={onPagerNext}
+                aria-label={t('admin.transfer-detail.pager.next')}
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              {t('admin.transfers.detail.provider-response.empty')}
-            </p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground/70 cursor-help">
+                    <ChevronLeft className="h-3.5 w-3.5 opacity-50" />
+                    <ChevronRight className="h-3.5 w-3.5 opacity-50" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  {t('admin.transfer-detail.pager.disabled-tooltip')}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
-        </CardContent>
-      )}
-    </Card>
-  );
-}
-
-function AmlCard({
-  flags,
-  onOpenTriage,
-}: {
-  flags: ReturnType<typeof getAmlFlagsForTransfer>;
-  onOpenTriage: () => void;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-base inline-flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-danger-600" aria-hidden="true" />
-            {t('admin.transfers.detail.aml-flags')}
-          </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onOpenTriage}>
-            {t('admin.transfers.detail.aml.open-triage')}
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
         </div>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-3">
-          {flags.map((f) => (
-            <li
-              key={f.id}
-              className="flex items-start gap-3 rounded-md border border-border p-3"
-            >
-              <SeverityBadge severity={f.severity} />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium capitalize">{f.flagType.replace('_', ' ')}</div>
-                <div className="text-sm text-muted-foreground">{f.description}</div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">
-                  {f.status}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  );
-}
+      </div>
 
-// =====================================================================
-// Sticky bottom action bar
-// =====================================================================
-
-function AdminActionsBar({
-  transfer,
-  stuck,
-  onReverse,
-  onForceFail,
-  onResendWebhook,
-  onCopyId,
-  onOpenAudit,
-}: {
-  transfer: Transfer;
-  stuck: boolean;
-  onReverse: () => void;
-  onForceFail: () => void;
-  onResendWebhook: () => void;
-  onCopyId: () => void;
-  onOpenAudit: () => void;
-}) {
-  return (
-    <div
-      className={cn(
-        'sticky bottom-0 z-10 -mx-4 md:-mx-6 px-4 md:px-6 py-3',
-        'bg-background/95 backdrop-blur border-t border-border',
-      )}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {transfer.status === 'completed' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onReverse}
-              className="border-danger-600/30 text-danger-700 hover:bg-danger-50 dark:text-danger-600 dark:hover:bg-danger-700/15"
-            >
-              <RotateCw className="h-3.5 w-3.5" />
-              {t('admin.transfers.action.reverse')}
-            </Button>
-          )}
-          {stuck && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onForceFail}
-              className="border-danger-600/30 text-danger-700 hover:bg-danger-50 dark:text-danger-600 dark:hover:bg-danger-700/15"
-            >
-              <ShieldAlert className="h-3.5 w-3.5" />
-              {t('admin.transfers.action.force-fail')}
-            </Button>
-          )}
-          {transfer.status === 'failed' && (
-            <Button variant="outline" size="sm" onClick={onResendWebhook}>
-              <RotateCw className="h-3.5 w-3.5" />
-              {t('admin.transfers.action.resend-webhook')}
-            </Button>
-          )}
-          <Button variant="outline" size="sm" onClick={onCopyId}>
-            <Copy className="h-3.5 w-3.5" />
-            {t('admin.transfers.action.copy-id')}
-          </Button>
-          <Button variant="outline" size="sm" onClick={onOpenAudit}>
-            <ExternalLink className="h-3.5 w-3.5" />
-            {t('admin.transfers.action.open-audit')}
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5 ml-auto">
-          <ShieldCheck className="h-3.5 w-3.5 text-success-600 shrink-0" aria-hidden="true" />
-          <span className="hidden sm:inline">
-            All admin actions are logged to the audit log with the actor's super-admin id.
+      {/* Row 2 — identity */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap min-w-0">
+          <StatusBadge status={transfer.status} domain="transfer" />
+          <button
+            type="button"
+            onClick={onCopyId}
+            className="inline-flex items-center gap-1.5 rounded-sm font-mono tabular text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            title={transfer.id}
+          >
+            <span>{transfer.id.split('').slice(0, 12).join('')}</span>
+            {copiedId ? (
+              <Check className="h-3.5 w-3.5 text-success-600" aria-hidden="true" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+            )}
+          </button>
+          <span
+            className="text-sm text-muted-foreground tabular"
+            title={formatDateTime(transfer.createdAt)}
+          >
+            {formatRelative(transfer.createdAt)}
           </span>
-        </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {!userDeleted && (
+            <Button
+              variant="outline"
+              onClick={onOpenUser}
+              className="gap-2"
+            >
+              <UserIcon className="h-4 w-4" aria-hidden="true" />
+              {t('admin.transfer-detail.header.open-user')}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={onOpenAudit}
+            className="gap-2"
+          >
+            <FileText className="h-4 w-4" aria-hidden="true" />
+            {t('admin.transfer-detail.header.open-audit')}
+          </Button>
+        </div>
+      </div>
+
+      {/* Row 3 — headline numbers */}
+      <div className="flex items-end justify-between gap-3 flex-wrap pt-1">
+        <div className="space-y-1 min-w-0">
+          <div className="flex items-baseline gap-3 flex-wrap text-2xl lg:text-3xl">
+            <Money amount={transfer.amountUzs} currency="UZS" className="font-semibold" />
+            <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0" aria-hidden="true" />
+            <Money amount={transfer.amountCny} currency="CNY" className="font-semibold" />
+          </div>
+          <div className="text-sm text-muted-foreground tabular">
+            {t('admin.transfer-detail.header.locked-rate', {
+              rate: formatNumber(transfer.clientRate, 2),
+            })}
+          </div>
+        </div>
+        <div className="text-sm text-muted-foreground tabular">
+          {t('admin.transfer-detail.header.total-fees', {
+            amount: formatMoney(feeUzs, 'UZS'),
+          })}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ====================================================================
+// Pager hook — reads cached list state to compute neighbors
+// ====================================================================
+
+function usePager(currentId: string | undefined, search: URLSearchParams) {
+  return useMemo<PagerNeighbors | null>(() => {
+    if (!currentId) return null;
+    const ctx = search.get('context');
+    if (ctx === 'aml') {
+      // AML detail navigation has no list context.
+      return null;
+    }
+    if (ctx === 'user') {
+      const userId = search.get('user_id');
+      if (!userId) return null;
+      const ids = TRANSFERS_FULL.filter((t) => t.userId === userId)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .map((t) => t.id);
+      return computeNeighbors(currentId, ids);
+    }
+    // Default: read transfers-list cache
+    const cache = readTransfersState();
+    if (!cache) return null;
+    const filters: TransferFilters = cache.filters;
+    const sort: SortState = cache.sort;
+    const filtered = applyFilters(
+      TRANSFERS_FULL,
+      filters,
+      (id) => getAmlFlagsForTransfer(id).length > 0,
+    );
+    const sorted = sortTransfers(filtered, sort);
+    return computeNeighbors(currentId, sorted.map((t) => t.id));
+  }, [currentId, search]);
+}
+
+function pagerBackLabel(search: URLSearchParams): string {
+  const ctx = search.get('context');
+  if (ctx === 'aml') return t('admin.transfer-detail.back-link.aml');
+  if (ctx === 'user') {
+    const userName = search.get('user_name');
+    if (userName) return t('admin.transfer-detail.back-link.user', { name: userName });
+  }
+  return t('admin.transfer-detail.back-link.list');
+}
+
+// ====================================================================
+// Skeleton + Not-found
+// ====================================================================
+
+function DetailSkeleton() {
+  return (
+    <div className="space-y-4 lg:space-y-6">
+      <header className="space-y-3 lg:space-y-4">
+        <div className="flex justify-between gap-3">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-5 w-24" />
+        </div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-6 w-24 rounded-full" />
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-5 w-24" />
+        </div>
+        <div className="flex items-end justify-between gap-3">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-[420px]" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-4 w-32" />
+        </div>
+      </header>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+        <div className="lg:col-span-8 space-y-4">
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+        <div className="lg:col-span-4 space-y-4">
+          <Skeleton className="h-80 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
       </div>
     </div>
   );
 }
 
-// =====================================================================
-// Helpers
-// =====================================================================
-
-function copyId(id: string) {
-  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(id);
+function NotFoundState({ onBack }: { onBack: () => void }) {
+  return (
+    <div className={cn('flex flex-col items-center justify-center text-center py-16 gap-4')}>
+      <Inbox className="h-12 w-12 text-muted-foreground/60" aria-hidden="true" />
+      <div>
+        <div className="text-base font-semibold">
+          {t('admin.transfer-detail.error.not-found.title')}
+        </div>
+        <div className="mt-1 text-sm text-muted-foreground max-w-md">
+          {t('admin.transfer-detail.error.not-found.body')}
+        </div>
+      </div>
+      <Button onClick={onBack}>
+        {t('admin.transfer-detail.error.not-found.cta')}
+      </Button>
+    </div>
+  );
 }
 
 const TYPING_TAGS = ['INPUT', 'TEXTAREA', 'SELECT'];
-function isTypingContext(target: EventTarget | null): boolean {
+function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (TYPING_TAGS.includes(target.tagName)) return true;
   if (target.isContentEditable) return true;
   return false;
 }
+
+// silence unused-event import in some setups (TransferEvent already used above)
+void getEventsForTransfer;

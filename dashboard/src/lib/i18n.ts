@@ -361,6 +361,218 @@ const EN: Record<string, string> = {
   'common.errors.SANCTIONS_HIT.title': 'Under review',
   'common.errors.SANCTIONS_HIT.body':
     'We are reviewing this transfer for compliance. We will notify you within 24 hours.',
+
+  // ====================================================================
+  // Transfer detail page
+  // ====================================================================
+  'admin.transfer-detail.back-link.list': 'Transfers',
+  'admin.transfer-detail.back-link.user': "{name}'s transfers",
+  'admin.transfer-detail.back-link.aml': 'AML flag',
+  'admin.transfer-detail.pager.position': '{position} of {total}',
+  'admin.transfer-detail.pager.prev': 'Previous transfer',
+  'admin.transfer-detail.pager.next': 'Next transfer',
+  'admin.transfer-detail.pager.disabled-tooltip':
+    'Open from the transfers list to navigate between transfers',
+  'admin.transfer-detail.header.transfer-id': 'Transfer ID',
+  'admin.transfer-detail.header.created-at': 'Created {relative}',
+  'admin.transfer-detail.header.locked-rate': 'Locked at 1 CNY = {rate} UZS',
+  'admin.transfer-detail.header.total-fees': '+ {amount} fees',
+  'admin.transfer-detail.header.open-user': 'Open user',
+  'admin.transfer-detail.header.open-audit': 'Open in audit log',
+  'admin.transfer-detail.header.copied': 'Copied',
+  'admin.transfer-detail.header.copy': 'Copy',
+
+  'admin.transfer-detail.fx-fees.title': 'FX & fees breakdown',
+  'admin.transfer-detail.fx-fees.amount-sent': 'Amount sent',
+  'admin.transfer-detail.fx-fees.service-fee': 'Service fee',
+  'admin.transfer-detail.fx-fees.fx-spread': 'FX spread',
+  'admin.transfer-detail.fx-fees.total-charged': 'Total charged',
+  'admin.transfer-detail.fx-fees.recipient-receives': 'Recipient receives',
+  'admin.transfer-detail.fx-fees.rate-source':
+    '1 CNY = {rate} UZS · {source} · locked at {time}',
+  'admin.transfer-detail.fx-fees.rate-popover-title': 'Locked FX rate',
+  'admin.transfer-detail.fx-fees.rate-popover.id': 'Rate ID',
+  'admin.transfer-detail.fx-fees.rate-popover.source': 'Source',
+  'admin.transfer-detail.fx-fees.rate-popover.valid-from': 'Valid from',
+  'admin.transfer-detail.fx-fees.rate-popover.valid-to': 'Valid to',
+  'admin.transfer-detail.fx-fees.rate-popover.spread': 'Spread',
+  'admin.transfer-detail.fx-fees.rate-popover.mid-rate': 'Mid rate',
+  'admin.transfer-detail.fx-fees.chart.title': '24h rate trend',
+  'admin.transfer-detail.fx-fees.chart.locked-marker': 'Lock time',
+
+  'admin.transfer-detail.sender.title': 'Sender',
+  'admin.transfer-detail.sender.lifetime-stats': '{count} transfers · {total} lifetime',
+  'admin.transfer-detail.sender.deleted': 'Account deleted',
+  'admin.transfer-detail.sender.open-profile': 'Open user profile',
+
+  'admin.transfer-detail.recipient.title': 'Recipient',
+  'admin.transfer-detail.recipient.transfer-count.first': 'First transfer to this recipient',
+  'admin.transfer-detail.recipient.transfer-count.nth':
+    '{count}th transfer to this recipient',
+  'admin.transfer-detail.recipient.deleted': 'Recipient no longer saved',
+  'admin.transfer-detail.recipient.saved-badge': 'Saved',
+  'admin.transfer-detail.recipient.open': 'Open recipient',
+
+  'admin.transfer-detail.card.title': 'Card used',
+  'admin.transfer-detail.card.removed': 'Card removed',
+  'admin.transfer-detail.card.open': 'Open card',
+
+  'admin.transfer-detail.aml.title': 'AML flags',
+  'admin.transfer-detail.aml.sanctions-banner':
+    'Sanctions match — review compliance protocol before any action.',
+  'admin.transfer-detail.aml.open': 'Open flag',
+
+  'admin.transfer-detail.notes.title': 'Internal notes',
+  'admin.transfer-detail.notes.empty':
+    'No internal notes yet. Add one to share context with other ops.',
+  'admin.transfer-detail.notes.add': 'Add note',
+  'admin.transfer-detail.notes.tag.compliance': 'Compliance',
+  'admin.transfer-detail.notes.tag.fraud': 'Fraud',
+  'admin.transfer-detail.notes.tag.customer-support': 'Customer support',
+  'admin.transfer-detail.notes.tag.general': 'General',
+
+  'admin.transfer-detail.provider.title': 'Provider response',
+  'admin.transfer-detail.provider.last-webhook': 'Last webhook {relative}',
+  'admin.transfer-detail.provider.copy-json': 'Copy raw JSON',
+  'admin.transfer-detail.provider.events': 'Webhook events',
+  'admin.transfer-detail.provider.raw': 'Raw response',
+  'admin.transfer-detail.provider.event-row':
+    '{type} · HTTP {code} · retry {retry}',
+
+  'admin.transfer-detail.audit.title': 'Admin action history',
+  'admin.transfer-detail.audit.empty': 'No admin actions on this transfer.',
+  'admin.transfer-detail.audit.view-full': 'View full audit trail',
+  'admin.transfer-detail.audit.action.note_added': 'Added note',
+  'admin.transfer-detail.audit.action.webhook_resent': 'Resent webhook',
+  'admin.transfer-detail.audit.action.force_failed': 'Force-failed',
+  'admin.transfer-detail.audit.action.marked_completed': 'Marked completed',
+  'admin.transfer-detail.audit.action.reversed': 'Reversed',
+  'admin.transfer-detail.audit.action.refunded': 'Refunded',
+
+  'admin.transfer-detail.timeline.title': 'Status timeline',
+  'admin.transfer-detail.timeline.actor.system': 'System',
+  'admin.transfer-detail.timeline.actor.user': 'User',
+  'admin.transfer-detail.timeline.actor.provider': 'Provider',
+  'admin.transfer-detail.timeline.actor.admin': 'Admin',
+  'admin.transfer-detail.timeline.live-update-toast':
+    'Status updated: {from} → {to}',
+  'admin.transfer-detail.timeline.realtime-lost-banner':
+    'Realtime updates unavailable. Manual refresh required.',
+  'admin.transfer-detail.timeline.realtime-retry': 'Retry',
+  'admin.transfer-detail.timeline.context-toggle': 'Show context',
+
+  // Actions — primary buttons + descriptions
+  'admin.transfer-detail.action.add-note': 'Add note',
+  'admin.transfer-detail.action.add-note.title': 'Add internal note',
+  'admin.transfer-detail.action.add-note.description':
+    'Notes are visible to other admins and append to the audit log.',
+  'admin.transfer-detail.action.add-note.body': 'Note',
+  'admin.transfer-detail.action.add-note.body-placeholder':
+    'Share context — what you saw, what you did, what others should know.',
+  'admin.transfer-detail.action.add-note.tag': 'Tag',
+  'admin.transfer-detail.action.add-note.submit': 'Add note',
+
+  'admin.transfer-detail.action.resend-webhook': 'Resend webhook',
+  'admin.transfer-detail.action.resend-webhook.title': 'Resend webhook',
+  'admin.transfer-detail.action.resend-webhook.body':
+    'Re-attempt the webhook to {provider} for external_tx_id: {id}. The provider will respond fresh — current transfer state may change.',
+  'admin.transfer-detail.action.resend-webhook.reason': 'Reason',
+  'admin.transfer-detail.action.resend-webhook.notify-user': 'Notify user',
+  'admin.transfer-detail.action.resend-webhook.submit': 'Resend webhook',
+
+  'admin.transfer-detail.action.force-fail': 'Force fail',
+  'admin.transfer-detail.action.force-fail.title': 'Force fail transfer',
+  'admin.transfer-detail.action.force-fail.warning':
+    'Force-failing skips provider confirmation. Use only when the provider has confirmed failure out-of-band or the transfer is stuck.',
+  'admin.transfer-detail.action.force-fail.failure-code': 'Failure code',
+  'admin.transfer-detail.action.force-fail.reason': 'Reason',
+  'admin.transfer-detail.action.force-fail.reason-placeholder':
+    'Explain why force-failing instead of waiting for provider response (≥30 chars).',
+  'admin.transfer-detail.action.force-fail.notify-user': 'Notify user',
+  'admin.transfer-detail.action.force-fail.submit': 'Force fail',
+  'admin.transfer-detail.action.force-fail.confirm-title': 'Force fail this transfer?',
+  'admin.transfer-detail.action.force-fail.confirm-body':
+    'Status will move to failed and cannot be undone.',
+
+  'admin.transfer-detail.action.mark-completed': 'Mark completed',
+  'admin.transfer-detail.action.mark-completed.title': 'Mark as completed',
+  'admin.transfer-detail.action.mark-completed.warning':
+    'Manual completion bypasses provider confirmation. Use only when the provider has confirmed delivery out-of-band (e.g. via support ticket or phone).',
+  'admin.transfer-detail.action.mark-completed.provider-tx-id':
+    'Provider transaction ID',
+  'admin.transfer-detail.action.mark-completed.provider-tx-id-placeholder':
+    'Paste the actual ID from the provider portal',
+  'admin.transfer-detail.action.mark-completed.reason': 'Reason',
+  'admin.transfer-detail.action.mark-completed.reason-placeholder':
+    'High-audit context — explain how the out-of-band confirmation was obtained (≥50 chars).',
+  'admin.transfer-detail.action.mark-completed.acknowledge':
+    'I confirm the recipient received {amount} CNY',
+  'admin.transfer-detail.action.mark-completed.submit': 'Mark as completed',
+  'admin.transfer-detail.action.mark-completed.confirm-title':
+    'Manually complete this transfer?',
+  'admin.transfer-detail.action.mark-completed.confirm-body':
+    'Status will move to completed. Recipient will be notified.',
+
+  'admin.transfer-detail.action.reverse': 'Reverse',
+  'admin.transfer-detail.action.reverse.title': 'Reverse completed transfer',
+  'admin.transfer-detail.action.reverse.warning':
+    'Reversing returns funds to the source card via the acquirer. Original amount is credited; fees are not refunded.',
+  'admin.transfer-detail.action.reverse.reason': 'Reason',
+  'admin.transfer-detail.action.reverse.reason-placeholder':
+    'High-audit context — explain why this reversal is being issued (≥50 chars).',
+  'admin.transfer-detail.action.reverse.recipient.label': 'Refund recipient',
+  'admin.transfer-detail.action.reverse.recipient.source-card':
+    'Original source card',
+  'admin.transfer-detail.action.reverse.recipient.alternate-card':
+    'Alternate card',
+  'admin.transfer-detail.action.reverse.recipient.external-bank':
+    'External bank account',
+  'admin.transfer-detail.action.reverse.bank.name': 'Bank name',
+  'admin.transfer-detail.action.reverse.bank.holder': 'Account holder',
+  'admin.transfer-detail.action.reverse.bank.number': 'Account number',
+  'admin.transfer-detail.action.reverse.notify-user': 'Notify user',
+  'admin.transfer-detail.action.reverse.notify-locked-tooltip':
+    'Refunds and reversals always notify the user (compliance requirement).',
+  'admin.transfer-detail.action.reverse.submit': 'Reverse transfer',
+  'admin.transfer-detail.action.reverse.confirm-title': 'Reverse this transfer?',
+  'admin.transfer-detail.action.reverse.confirm-body':
+    'Source card will be credited {amount} UZS. This cannot be undone.',
+
+  'admin.transfer-detail.action.refund': 'Refund partial',
+  'admin.transfer-detail.action.refund.title': 'Refund partial amount',
+  'admin.transfer-detail.action.refund.warning':
+    'Partial refund credits a chosen amount back to the source. Original transfer status remains completed.',
+  'admin.transfer-detail.action.refund.amount': 'Refund amount (UZS)',
+  'admin.transfer-detail.action.refund.reason': 'Reason',
+  'admin.transfer-detail.action.refund.reason-placeholder':
+    'Explain why this partial refund is being issued (≥30 chars).',
+  'admin.transfer-detail.action.refund.preview-line':
+    'Refunding {refund} of {original}',
+  'admin.transfer-detail.action.refund.preview-target': 'to {target}',
+  'admin.transfer-detail.action.refund.preview-keeps':
+    'Original transfer remains: Completed',
+  'admin.transfer-detail.action.refund.submit': 'Issue refund',
+  'admin.transfer-detail.action.refund.confirm-title':
+    'Issue partial refund of {amount}?',
+  'admin.transfer-detail.action.refund.confirm-body':
+    'This cannot be reversed except by issuing another transfer.',
+
+  'admin.transfer-detail.action.disabled.wrong-status':
+    '{action} is only available for {status} transfers.',
+  'admin.transfer-detail.action.more': 'More',
+  'admin.transfer-detail.action.toast.success':
+    '{action} recorded — see audit log for details.',
+  'admin.transfer-detail.stuck.warning-chip': 'Stuck for {minutes}m',
+
+  'admin.transfer-detail.error.not-found.title': 'Transfer not found',
+  'admin.transfer-detail.error.not-found.body':
+    'Maybe it was hard-deleted, or the ID is wrong.',
+  'admin.transfer-detail.error.not-found.cta': 'Back to transfers',
+
+  'admin.transfer-detail.mobile.timeline-button': 'Timeline',
+  'admin.transfer-detail.mobile.more-button': 'More',
+
+  'admin.transfer-detail.shortcuts.group': 'Transfer detail page',
 };
 
 /**

@@ -29,6 +29,17 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['r'], label: 'Reject (in queues)', group: 'Lists' },
   { keys: ['e'], label: 'Escalate (AML)', group: 'Lists' },
   { keys: ['c'], label: 'Clear (AML)', group: 'Lists' },
+  // Transfer detail page (page-scoped)
+  { keys: ['j'], label: 'Next transfer in filtered set', group: 'Transfer detail' },
+  { keys: ['k'], label: 'Previous transfer', group: 'Transfer detail' },
+  { keys: ['n'], label: 'Add note', group: 'Transfer detail' },
+  { keys: ['r'], label: 'Reverse (only if completed)', group: 'Transfer detail' },
+  { keys: ['f'], label: 'Force fail (only if applicable)', group: 'Transfer detail' },
+  { keys: ['m'], label: 'Mark completed (only if processing)', group: 'Transfer detail' },
+  { keys: ['w'], label: 'Resend webhook', group: 'Transfer detail' },
+  { keys: ['c'], label: 'Copy transfer ID', group: 'Transfer detail' },
+  { keys: ['u'], label: 'Open user profile', group: 'Transfer detail' },
+  { keys: ['b'], label: 'Back to list', group: 'Transfer detail' },
 ];
 
 interface HelpOverlayProps {
@@ -37,7 +48,7 @@ interface HelpOverlayProps {
 }
 
 export function HelpOverlay({ open, onOpenChange }: HelpOverlayProps) {
-  const groups = ['Global', 'Navigation', 'Lists'];
+  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
