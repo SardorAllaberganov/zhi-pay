@@ -6,6 +6,9 @@ dist-ssr/
 .env.*
 !.env.example
 
+# TypeScript incremental build cache — regenerated on every tsc run
+*.tsbuildinfo
+
 # Editor
 .vscode/*
 !.vscode/extensions.json
