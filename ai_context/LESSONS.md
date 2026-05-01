@@ -31,6 +31,65 @@ Lead with the **rule itself**. The Why and How-to-apply lines exist so you can j
 
 ## Lessons
 
+### 2026-05-03 — Calendar / date-picker header is `[<]   Month YYYY   [>]` with `justify-between` — never the default react-day-picker chrome
+
+**Why:** The `<DateTimeInput>` Popover initially passed through react-day-picker v9's default header — month/year text in `month_caption` with the `Nav` (prev / next chevrons) absolutely positioned by rdp's stylesheet. Result: the chevrons hugged the caption text instead of sitting on the sides of the calendar panel, which read as cramped and inconsistent with `<DateRangePicker>` (which already renders a custom `<  Month A | Month B  >` bar via `classNames={{ nav: 'hidden' }}`). User feedback: "the top controller of date picker in fx should be `< may 2026 >` with space between the arrow should be in the side". The fix is one canonical header pattern for **every** Calendar usage in the dashboard, single-month or range.
+
+**How to apply:** Every Calendar consumer (zhipay primitive or page-scoped wrapper) renders its own header above `<Calendar>` and hides rdp's defaults. Contract:
+
+```tsx
+// Above the <Calendar>
+<div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+  <button
+    type="button"
+    onClick={() => setDisplayMonth(addMonths(displayMonth, -1))}
+    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-foreground/80 hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    aria-label="Previous month"
+  >
+    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+  </button>
+  <span className="text-base font-semibold tracking-tight truncate">
+    {format(displayMonth, 'MMMM yyyy')}
+  </span>
+  <button
+    type="button"
+    onClick={() => setDisplayMonth(addMonths(displayMonth, 1))}
+    className="…same as prev…"
+    aria-label="Next month"
+  >
+    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+  </button>
+</div>
+
+<Calendar
+  mode="single"          // or "range" for DateRangePicker
+  month={displayMonth}
+  onMonthChange={setDisplayMonth}
+  classNames={{ nav: 'hidden', month_caption: 'hidden' }}
+  …
+/>
+```
+
+- `nav: 'hidden'` removes rdp's default prev/next buttons. **Always.**
+- `month_caption: 'hidden'` removes rdp's "Month YYYY" text so it doesn't double-render alongside the custom header. **Required for single-month pickers.** (`<DateRangePicker>`'s 2-month layout currently leaves caption visible because each month has its own — re-evaluate if a future picker shifts to a single header for both months.)
+- The header gets its own `border-b` so it visually sections off from the calendar grid.
+- Buttons are `h-8 w-8` boxed icons with the same hover / focus-ring styling — never bare lucide icons sitting on a transparent background.
+- Title is `text-base font-semibold tracking-tight` — never `text-lg` (overweight inside the popover) or `text-sm` (too quiet).
+- Layout is `flex items-center justify-between gap-3` — `gap-3` matters because if the title wraps it shouldn't crash into the buttons.
+- Both pickers (`DateTimeInput` + `DateRangePicker`) keep their own `displayMonth` state passed through `month` + `onMonthChange` so the prev/next buttons drive the visible month without re-triggering `selected`.
+
+**Forbidden:** `<Calendar>` without an explicit custom header. Falling back to rdp's default chrome — even if it visually "works" on first glance — is forbidden because the default nav button placement varies between rdp versions and the bare chevrons fail to match the rest of the design system's button styling.
+
+**Quick grep to verify:**
+```
+grep -rE "<Calendar\b" dashboard/src | grep -v "month_caption"
+# (every hit should already render a custom header — flag any that doesn't)
+```
+
+**Context:** FX Config DateTime picker polish, 2026-05-03. The single-month picker shipped with rdp's default chrome and was corrected to mirror `DateRangePicker`'s already-canonical custom header.
+
+---
+
 ### 2026-05-02 — Detail-page back link is `<ArrowLeft> Back to <list>` (icon component only — no `← ` text prefix)
 
 **Why:** Cards Detail shipped with `'admin.cards.detail.back': '← Cards'` as the i18n string — the JSX also rendered an `ArrowLeft` icon next to it, so the result was a double-arrow `[icon] ← Cards`. Two of the Transfer Detail back-links had the same problem (`'← Card transfers'`), and the labels themselves were inconsistent: User Detail said "Back to users", Card Detail said "Cards", Transfer Detail said "Transfers" / "{name}'s transfers" / "AML flag" / "Card transfers". User asked for one canonical pattern: a single left-arrow icon followed by `Back to <list>` text.

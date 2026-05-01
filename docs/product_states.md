@@ -2,7 +2,7 @@
 
 > Snapshot of build progress per surface across the two scopes (admin dashboard + mobile app).
 > Source: [`ai_context/AI_CONTEXT.md`](../ai_context/AI_CONTEXT.md) + [`dashboard/src/router.tsx`](../dashboard/src/router.tsx).
-> Last updated: 2026-05-02.
+> Last updated: 2026-05-03.
 
 ## Legend
 
@@ -50,7 +50,7 @@ Tech stack: Vite + React 18 + TS + Tailwind + shadcn/ui · Router: HashRouter ·
 | Compliance — Blacklist | `/blacklist` | ❌ | Placeholder |
 | Compliance — KYC Tiers admin | `/kyc-tiers` | ❌ | Placeholder · tier-limit configuration |
 | Compliance — Audit log | `/audit-log` | ❌ | Placeholder · referenced from transfer detail "Open in audit log" |
-| Finance — FX config | `/fx-config` | ❌ | Placeholder · rate sources / spread / refresh cadence |
+| Finance — FX config | `/finance/fx-config` (+ `/new`) | ✅ | List + full-page Update form · 19-version mock spanning 60 days (incl. one historic 1.5% manual-override version) · `mockFxRates.ts` is single source of truth (immutable rows — `addFxRate` only inserts new versions and closes the previous active window) · active rate card with 4-cell grid (mid · spread · client · source) + health badge (Healthy / Drifting / Stale based on spread bands + `validTo` expiry) · trend chart with 24h/7d/30d/90d range tabs (mid line dashed slate, client line solid brand) · sortable version history table with inline expand showing full record + diff vs previous · mobile card stack mirrors the table · Update form with Source select (central_bank locks numeric inputs · provider_x / manual unlock) · `<StepperNumberInput>` (↑↓ ±0.01, Shift+↑↓ ±0.10) · auto-computed client rate · 2-pane layout (form left, sticky DiffPreview right · mobile "Show diff" toggle) · ≥20-char reason note · AlertDialog confirms with in-flight count line · `setInFlightCounter` wiring keeps mockFxRates free of a circular import on mockTransfers · Cmd/Ctrl+Enter submit · `u` hotkey from list opens Update page |
 | Finance — Commission rules | `/commission-rules` | ❌ | Placeholder · versioned rule editor |
 | System — Services & Health | `/services` | ❌ | Placeholder · provider availability + kill switches |
 | System — App versions | `/app-versions` | ❌ | Placeholder · mobile build manifest + force-update flags |
