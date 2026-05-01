@@ -12,10 +12,11 @@ import { Cards } from '@/pages/Cards';
 import { CardDetail } from '@/pages/CardDetail';
 import { Recipients } from '@/pages/Recipients';
 import { RecipientDetail } from '@/pages/RecipientDetail';
+import { FxConfig } from '@/pages/FxConfig';
+import { FxConfigUpdate } from '@/pages/FxConfigUpdate';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES = [
-  '/fx-config',
   '/commission-rules',
   '/audit-log',
   '/blacklist',
@@ -59,6 +60,10 @@ export function Router() {
         <Route path="/customers/recipients" element={<Recipients />} />
         <Route path="/customers/recipients/:id" element={<RecipientDetail />} />
 
+        {/* Finance — FX Config (nested) */}
+        <Route path="/finance/fx-config" element={<FxConfig />} />
+        <Route path="/finance/fx-config/new" element={<FxConfigUpdate />} />
+
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
         <Route
@@ -73,6 +78,8 @@ export function Router() {
         <Route path="/cards/:id" element={<Navigate to="/customers/cards" replace />} />
         <Route path="/recipients" element={<Navigate to="/customers/recipients" replace />} />
         <Route path="/recipients/:id" element={<Navigate to="/customers/recipients" replace />} />
+        <Route path="/fx-config" element={<Navigate to="/finance/fx-config" replace />} />
+        <Route path="/fx-config/new" element={<Navigate to="/finance/fx-config/new" replace />} />
 
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />

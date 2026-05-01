@@ -92,6 +92,12 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['b'], label: 'Back to list', group: 'Recipient detail' },
   { keys: ['Backspace'], label: 'Back to list', group: 'Recipient detail' },
   { keys: ['Delete'], label: 'Open hard-delete confirm', group: 'Recipient detail' },
+  // FX Config page (page-scoped)
+  { keys: ['u'], label: 'Open Update rate page', group: 'FX Config' },
+  // Update FX rate page (page-scoped)
+  { keys: ['⌘', 'Enter'], label: 'Submit (when reason filled)', group: 'Update FX rate' },
+  { keys: ['↑', '↓'], label: 'Step number ± 0.01', group: 'Update FX rate' },
+  { keys: ['Shift', '↑↓'], label: 'Step number ± 0.10', group: 'Update FX rate' },
 ];
 
 interface HelpOverlayProps {
@@ -100,7 +106,7 @@ interface HelpOverlayProps {
 }
 
 export function HelpOverlay({ open, onOpenChange }: HelpOverlayProps) {
-  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users', 'Cards', 'Card detail', 'Recipients', 'Recipient detail'];
+  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users', 'Cards', 'Card detail', 'Recipients', 'Recipient detail', 'FX Config', 'Update FX rate'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -1588,6 +1588,160 @@ const EN: Record<string, string> = {
   'admin.recipients.toast.exported-body': '{count} recipients written to CSV',
   'admin.recipients.toast.deleted': 'Recipient deleted',
   'admin.recipients.toast.delete-failed': 'Delete failed — please retry',
+
+  // ============================================================
+  // FX Config — /finance/fx-config
+  // ============================================================
+  'admin.fx-config.title': 'FX Config',
+  'admin.fx-config.subtitle': 'Manage UZS → CNY exchange rate',
+  'admin.fx-config.action.update': 'Update rate',
+
+  // Active rate card
+  'admin.fx-config.active.title': 'Active rate',
+  'admin.fx-config.active.subtitle': 'New transfers price against this rate immediately.',
+  'admin.fx-config.active.empty': 'No active FX rate configured. Add one to begin pricing transfers.',
+  'admin.fx-config.active.mid-rate': 'Mid rate',
+  'admin.fx-config.active.spread': 'Spread',
+  'admin.fx-config.active.client-rate': 'Client rate',
+  'admin.fx-config.active.source': 'Source',
+  'admin.fx-config.active.pair': 'Pair',
+  'admin.fx-config.active.valid-from': 'Valid from',
+  'admin.fx-config.active.valid-to': 'Valid to',
+  'admin.fx-config.active.valid-to.open': 'open-ended',
+  'admin.fx-config.active.in-flight-locked': 'Currently locked at this rate',
+  'admin.fx-config.active.in-flight-locked.value': '{count} in-flight transfers',
+
+  // Status badge
+  'admin.fx-config.active.status.healthy': 'Healthy',
+  'admin.fx-config.active.status.drifting': 'Drifting',
+  'admin.fx-config.active.status.stale': 'Stale',
+
+  // Source chip
+  'admin.fx-config.source.central_bank': 'Central bank',
+  'admin.fx-config.source.provider_x': 'Provider X',
+  'admin.fx-config.source.manual': 'Manual',
+
+  // Units
+  'admin.fx-config.unit.uzs-per-cny': 'UZS/CNY',
+
+  // Trend chart
+  'admin.fx-config.chart.title': 'Trend',
+  'admin.fx-config.chart.range-aria': 'Chart range',
+  'admin.fx-config.chart.tab.24h': '24h',
+  'admin.fx-config.chart.tab.7d': '7d',
+  'admin.fx-config.chart.tab.30d': '30d',
+  'admin.fx-config.chart.tab.90d': '90d',
+  'admin.fx-config.chart.legend.mid': 'Mid rate',
+  'admin.fx-config.chart.legend.client': 'Client rate',
+
+  // Version history
+  'admin.fx-config.history.title': 'Version history',
+  'admin.fx-config.history.count': '{count} versions',
+  'admin.fx-config.history.empty': 'No prior versions yet — only the active rate exists.',
+  'admin.fx-config.history.column.effective-from': 'Effective from',
+  'admin.fx-config.history.column.effective-to': 'Effective to',
+  'admin.fx-config.history.column.mid-rate': 'Mid rate',
+  'admin.fx-config.history.column.spread': 'Spread',
+  'admin.fx-config.history.column.client-rate': 'Client rate',
+  'admin.fx-config.history.column.source': 'Source',
+  'admin.fx-config.history.column.active': 'Active',
+  'admin.fx-config.history.column.created-by': 'Created by',
+  'admin.fx-config.history.active.yes': 'Yes',
+  'admin.fx-config.history.active.no': 'No',
+  'admin.fx-config.history.row.actions.aria': 'Row actions',
+  'admin.fx-config.history.row.action.view': 'View record',
+  'admin.fx-config.history.row.action.collapse': 'Collapse record',
+  'admin.fx-config.history.row.action.open-audit': 'Open audit log entry',
+  'admin.fx-config.history.mobile.spread': 'spread {value}%',
+
+  // Expanded record + diff
+  'admin.fx-config.history.expanded.full-record': 'Full record',
+  'admin.fx-config.history.expanded.diff': 'Diff vs previous version',
+  'admin.fx-config.history.expanded.no-previous':
+    'This is the earliest version — no previous record to compare.',
+  'admin.fx-config.history.expanded.no-reason': 'No reason note recorded.',
+  'admin.fx-config.history.expanded.field.id': 'ID',
+  'admin.fx-config.history.expanded.field.pair': 'Pair',
+  'admin.fx-config.history.expanded.field.mid-rate': 'Mid rate',
+  'admin.fx-config.history.expanded.field.spread': 'Spread',
+  'admin.fx-config.history.expanded.field.client-rate': 'Client rate',
+  'admin.fx-config.history.expanded.field.source': 'Source',
+  'admin.fx-config.history.expanded.field.created-by': 'Created by',
+  'admin.fx-config.history.expanded.field.reason': 'Reason note',
+
+  // Diff
+  'admin.fx-config.diff.column.field': 'Field',
+  'admin.fx-config.diff.column.previous': 'Previous',
+  'admin.fx-config.diff.column.current': 'Current',
+  'admin.fx-config.diff.column.new': 'New',
+  'admin.fx-config.diff.row.mid-rate': 'Mid rate',
+  'admin.fx-config.diff.row.spread': 'Spread %',
+  'admin.fx-config.diff.row.client-rate': 'Client rate',
+  'admin.fx-config.diff.row.source': 'Source',
+  'admin.fx-config.diff.row.valid-from': 'Valid from',
+  'admin.fx-config.diff.row.valid-to': 'Valid to',
+
+  // Update page
+  'admin.fx-config.update.title': 'Update FX rate',
+  'admin.fx-config.update.back': 'Back to FX Config',
+  'admin.fx-config.update.warning':
+    'This creates a new fx_rates version. The current rate stays valid for in-flight transfers — only new transfers will use the new rate.',
+  'admin.fx-config.update.diff': 'Diff preview',
+  'admin.fx-config.update.diff.subtitle.empty':
+    'Enter a mid rate and spread to see the diff.',
+  'admin.fx-config.update.show-diff': 'Show diff',
+  'admin.fx-config.update.section.source': 'Source',
+  'admin.fx-config.update.section.rates': 'Rates',
+  'admin.fx-config.update.section.window': 'Validity window',
+  'admin.fx-config.update.section.reason': 'Reason note',
+  'admin.fx-config.update.reason-required': 'Reason note required (min 20 chars)',
+  'admin.fx-config.update.confirm.title': 'Update rate now?',
+  'admin.fx-config.update.confirm.body':
+    '{count} transfers currently locked at the old rate will not be affected.',
+  'admin.fx-config.update.confirm.cta': 'Yes, update rate',
+
+  // Form fields
+  'admin.fx-config.form.source.label': 'Source',
+  'admin.fx-config.form.source.help.central_bank':
+    'Central-bank-fetched rates lock the rate inputs below. Switch to Manual to override.',
+  'admin.fx-config.form.source.help.provider_x':
+    'Provider X feed. Edits are still allowed — values prefilled from the current active rate.',
+  'admin.fx-config.form.source.help.manual':
+    'Manual override. Compliance review required for spread changes above the configured band.',
+  'admin.fx-config.form.mid-rate.label': 'Mid rate (UZS / CNY)',
+  'admin.fx-config.form.mid-rate.help':
+    'Stored at numeric(20,8). Display rounds to 2 decimals.',
+  'admin.fx-config.form.spread.label': 'Spread %',
+  'admin.fx-config.form.spread.help':
+    'Stored at numeric(8,4). Healthy ≤ 1.5%, Drifting up to 2.0%.',
+  'admin.fx-config.form.client-rate.label': 'Client rate (auto-computed)',
+  'admin.fx-config.form.client-rate.help':
+    'Formula: mid_rate × (1 + spread_pct / 100). This is the rate offered to users.',
+  'admin.fx-config.form.valid-from.label': 'Valid from',
+  'admin.fx-config.form.valid-to.label': 'Valid to',
+  'admin.fx-config.form.valid-to.help':
+    'Leave empty for an open-ended window. The previous active row will be closed automatically.',
+  'admin.fx-config.form.reason.label': 'Reason note',
+  'admin.fx-config.form.reason.placeholder':
+    'Why are you updating the rate? Reference any compliance ticket or PBoC / CBU communication.',
+  'admin.fx-config.form.reason.help': 'Reason note recorded — meets minimum length.',
+
+  // Datetime picker (Popover-based)
+  'admin.fx-config.datetime.placeholder': 'Pick a date and time',
+  'admin.fx-config.datetime.time': 'Time',
+  'admin.fx-config.datetime.hour': 'Hour',
+  'admin.fx-config.datetime.minute': 'Minute',
+  'admin.fx-config.datetime.clear': 'Clear',
+  'admin.fx-config.datetime.no-selection': 'No date selected',
+  'admin.fx-config.datetime.prev-month': 'Previous month',
+  'admin.fx-config.datetime.next-month': 'Next month',
+
+  // Toasts
+  'admin.fx-config.update.toast.success.title': 'Rate updated',
+  'admin.fx-config.update.toast.success.body': 'New version {id} is now active.',
+  'admin.fx-config.update.toast.error.title': 'Update failed',
+  'admin.fx-config.update.toast.error.body':
+    'The new rate could not be applied. Please retry — your inputs were preserved.',
 };
 
 /**
