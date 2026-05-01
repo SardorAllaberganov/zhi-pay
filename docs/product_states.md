@@ -41,7 +41,7 @@ Tech stack: Vite + React 18 + TS + Tailwind + shadcn/ui · Router: HashRouter ·
 | Transfer Detail | `/operations/transfers/:id` | ✅ | 8 left cards · sticky right rail · 6 action modals · real-time refresh sim · 11 hotkeys |
 | KYC Review Queue | `/operations/kyc-queue` (+ `/:id`) | ✅ | Master-detail · 30-row mock · 4 edge classes · 4 action modals · 8 hotkeys |
 | AML Triage | `/operations/aml-triage` (+ `/:id` + `/new`) | ✅ | Master-detail · 26-flag mock · 5 typed contexts · 4 action modals · manual-flag form · 6 hotkeys |
-| Customers — Users | `/users` | ❌ | Placeholder · referenced by `?focus=...` from transfer / KYC / AML |
+| Customers — Users | `/customers/users` (+ `/:id`) | ✅ | List + full-page detail · 50-row mock · 8 tabs (`?tab=...` deep-link) · 7 admin actions · 4 contextual modals · cross-store sync to AML on block/soft-delete · MyID profile card (5 sections + raw JSON) · lifetime stats derived from `TRANSFERS_FULL` so KPIs / charts / recent activity / Transfers tab stay consistent · MyID enforced as the hard gate for transfers (`tier_0` / `tier_1` are partial-registration with 0 limits) |
 | Customers — Cards | `/cards` | ❌ | Placeholder · `/cards/:id` referenced from transfer detail |
 | Customers — Recipients | `/recipients` | ❌ | Placeholder |
 | Compliance — Blacklist | `/blacklist` | ❌ | Placeholder |
