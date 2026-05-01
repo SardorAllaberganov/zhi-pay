@@ -31,6 +31,133 @@ Lead with the **rule itself**. The Why and How-to-apply lines exist so you can j
 
 ## Lessons
 
+### 2026-05-02 — Detail-page back link is `<ArrowLeft> Back to <list>` (icon component only — no `← ` text prefix)
+
+**Why:** Cards Detail shipped with `'admin.cards.detail.back': '← Cards'` as the i18n string — the JSX also rendered an `ArrowLeft` icon next to it, so the result was a double-arrow `[icon] ← Cards`. Two of the Transfer Detail back-links had the same problem (`'← Card transfers'`), and the labels themselves were inconsistent: User Detail said "Back to users", Card Detail said "Cards", Transfer Detail said "Transfers" / "{name}'s transfers" / "AML flag" / "Card transfers". User asked for one canonical pattern: a single left-arrow icon followed by `Back to <list>` text.
+
+**How to apply:** Every detail-page back link follows this contract:
+
+- Icon: `<ArrowLeft className="h-4 w-4" aria-hidden="true" />` (lucide-react). **No** `<ChevronLeft>`, no inline SVG, no Unicode arrow. Size locked at `h-4 w-4`.
+- Label: `Back to <list>` — verbatim, in i18n. Examples (canonical):
+  - `'admin.users.detail.back-to-list': 'Back to users'`
+  - `'admin.cards.detail.back': 'Back to cards'`
+  - `'admin.transfer-detail.back-link.list': 'Back to transfers'`
+  - `'admin.transfer-detail.back-link.user': "Back to {name}'s transfers"`
+  - `'admin.transfer-detail.back-link.aml': 'Back to AML flag'`
+  - `'admin.transfer-detail.back-link.card': 'Back to card transfers'`
+- Container: `<button>` or `<Link>` with `inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm`.
+- Forbidden: `← ` prefix in i18n strings (renders alongside the icon = double arrow). Forbidden: omitting `Back to ` (e.g. just `Cards`) — the action verb is part of the contract.
+
+**Quick grep to verify:**
+```
+grep -rE "← " dashboard/src/lib/i18n.ts | grep back
+# (must return 0 hits)
+```
+
+**Context:** Cards Detail polish, 2026-05-02. Six i18n strings normalized; `UserHeader` swapped `ChevronLeft` → `ArrowLeft` for icon parity.
+
+---
+
+### 2026-05-02 — Detail-page sticky-bottom action bar uses the canonical `fixed inset-x-0 bottom-0 md:left-16` overlay (page wrapper carries `pb-28`)
+
+**Why:** Card Detail tried `sticky bottom-0 -mx-4 md:-mx-6 -mb-4 md:-mb-6` to span the full main width. User feedback: "the fixed bottom button group should be a fixed and with full width of main section now it with paddings". The sticky-inside-main approach left the bar subject to `<main>`'s `p-4 md:p-6` padding via the negative-margin compensation, and the bar's bottom edge was the bottom of the scrollable content, not the viewport edge. KYC Queue and AML Triage already use the right pattern: `fixed inset-x-0 bottom-0 md:left-16` — pinned to the viewport's bottom edge, escaping `<main>` entirely, offset on md+ by the collapsed-sidebar width (64px).
+
+**How to apply:** Detail pages with a persistent action bar use one canonical bar pattern:
+
+```tsx
+<div className={cn(
+  'fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card',
+  'md:left-[var(--sidebar-width,4rem)]',
+  'px-4 md:px-6 py-3',
+)}>
+  {/* … buttons … */}
+</div>
+```
+
+And the page outer wrapper:
+```tsx
+<div className="space-y-6 pb-28">
+  {/* … header / cards / activity … */}
+  <ActionBar … />
+</div>
+```
+
+The `pb-28` (112px) reserves room so the last content card clears the fixed bar at full scroll.
+
+**`--sidebar-width` is set by [`AppShell`](../dashboard/src/components/layout/AppShell.tsx) on the shell-root flex container** — `64px` when collapsed, `240px` when expanded — so action bars on `md+` align with the live main-content edge regardless of sidebar state. On `<md` the sidebar lives in a Sheet drawer and is not in the flex flow; `inset-x-0` gives the bar full viewport width and the `md:left-[…]` rule doesn't apply.
+
+**Earlier hardcoded `md:left-16` is forbidden** — it only matched the collapsed-sidebar width and overlapped the expanded sidebar on `lg+`.
+
+**Forbidden:** `position: sticky bottom-0 -mb-...` for the action bar on a detail page (was the failed Card Detail variant). Sticky is fine for filter bars, bulk-action bars, and right-rail action panels, but the persistent action bar at the bottom of a detail page is `position: fixed` overlay.
+
+**Quick grep to verify:**
+```
+grep -rE 'fixed inset-x-0 bottom-0' dashboard/src/components/**/ActionBar.tsx dashboard/src/components/**/CardActionBar.tsx
+# (every detail-page action bar should match)
+```
+
+**Context:** Cards Detail polish, 2026-05-02. Action bar realigned to the KYC/AML overlay pattern; page wrapper got `pb-28`.
+
+---
+
+### 2026-05-02 — Detail-page headers flow inline (NEVER sticky); structure is back-link / identity / chips
+
+**Why:** Cards Detail shipped with a sticky `bg-card` header band that bled full-width via negative margins. User came back: "the header of the cards details page is not the same as user details, transfer details, fix it and make that lesson". Both [`UserHeader`](dashboard/src/components/users/UserHeader.tsx) and the [`DetailHeader`](dashboard/src/pages/TransferDetail.tsx) for transfers flow inline in the page rhythm — no `sticky`, no bleed, no `bg-card` band. The Cards Detail variant created visual disagreement between the three detail surfaces and made the page feel like a different product. Detail-page headers are content, not chrome — they scroll away naturally and let the body breathe.
+
+**How to apply:** Every detail-page header (Card / User / Transfer / and any future detail surface) follows this contract:
+
+- Container: `<header className="space-y-3 lg:space-y-4">` (or similar inline spacing) — **no `sticky top-0`, no negative `-mx-*` margins, no `bg-card` band, no `border-b` strip**.
+- Row 1 — back link: `<button>` or `<Link>` with `<ChevronLeft|ArrowLeft>` icon + back-label, in `text-sm text-muted-foreground hover:text-foreground`. Mirrors [`UserHeader`](../dashboard/src/components/users/UserHeader.tsx) lines 42-50 and the `DetailHeader` first row in [`TransferDetail.tsx`](../dashboard/src/pages/TransferDetail.tsx) lines 692-700.
+- Row 2 — identity: avatar / scheme-logo / status badge + primary identifier (name, masked PAN, transfer ID) + secondary metadata. Wraps via `flex flex-wrap items-center gap-3` so it adapts to mobile.
+- Row 3 (optional) — chips: created date / last seen / KYC expiry / pager position, etc. Local `<Chip>` primitive or stat strip.
+- Right-side admin/page actions can sit on the identity row (`md:flex-row md:items-start md:justify-between`) or below (chips row) — either is fine, but the back link is **always the first row alone**.
+
+**Forbidden:** `sticky top-0` / `position: sticky` on the header container. Sticky chrome is reserved for filter bars (list pages), bulk-action bars (multi-select states), and the right-rail action panel on Transfer Detail. Detail-page headers are not chrome.
+
+**Quick grep to verify:**
+```
+grep -rE 'sticky top-0' dashboard/src/pages/*Detail.tsx
+# (must return 0 hits — no detail page should sticky its header)
+```
+
+**Context:** Cards Detail polish, 2026-05-02. Sticky header + bg-card band removed; structure realigned to match `UserHeader` + `DetailHeader`.
+
+---
+
+### 2026-05-02 — Data-table column headers use Title Case + `text-sm font-medium text-muted-foreground` — no `uppercase tracking-wider`
+
+**Why:** User feedback during the Cards surface build: "make in all pages tables header be in Capitalized style and in one color" — they pointed at the inconsistency between static `<TableHead>` cells (rendered ALL-CAPS via the shadcn primitive's `uppercase tracking-wider`) and `SortableHeader` buttons (which sometimes inherited the transform, sometimes didn't, depending on browser/element resets). Net effect was a visually mismatched header row across surfaces. The fix is one canonical style for **every** column header, sortable or not, in every table.
+
+**How to apply:**
+
+Single source of truth: `dashboard/src/components/ui/table.tsx` `<TableHead>` carries `text-sm font-medium text-muted-foreground` (Title Case as authored in i18n, single muted color, 14px).
+
+Every `SortableHeader` / custom `<th>` button across the codebase mirrors this exactly:
+- `text-sm font-medium text-muted-foreground hover:text-foreground`
+- **No active-state color differential.** Sorting state is communicated through the arrow icon (`ArrowUpDown` / `ArrowUp` / `ArrowDown`) only — never by darkening the active header to `text-foreground`. User feedback 2026-05-02: making the active sort header darker than the rest reads as a visual inconsistency, not a sort indicator.
+- never `uppercase`, never `tracking-wider`, never `text-xs` for table column headers
+
+i18n column labels (`admin.*.column.*`) are authored in Title Case ("Card", "Lifetime volume", "Last login") — relying on CSS to uppercase them is forbidden.
+
+**Affected canonical files (audit-grep these if you add a new table):**
+- `dashboard/src/components/ui/table.tsx` — `<TableHead>` primitive
+- `dashboard/src/components/users/UsersTable.tsx` — `SortableHeader`
+- `dashboard/src/components/cards/CardsTable.tsx` — `SortableHeader`
+- `dashboard/src/components/transfers/TransfersTable.tsx` — `Th` + `SortHead`
+
+**Narrowing of LESSON 2026-04-29:** The reserved-`text-xs` "uppercase + tracking-wider section labels" bucket no longer includes `TableHead`. It still applies to: Sidebar headers, HelpOverlay group headings, ErrorCell retryable, KPI category labels, `<dt>` definition labels in detail-page cards, mobile-card-stack section labels, filter-popover headers. Only **column headers in data tables** are excluded.
+
+**Quick grep to verify:**
+```
+# Any table-header still using uppercase tracking-wider:
+grep -nE 'uppercase tracking-wider' dashboard/src/components/*/Table*.tsx dashboard/src/components/ui/table.tsx
+# (must return 0 hits)
+```
+
+**Context:** Cards surface follow-up, 2026-05-02. Fix landed in a single sweep across ui/table.tsx + UsersTable / CardsTable / TransfersTable.
+
+---
+
 ### 2026-05-01 — Buttons and flowing-text spans must be ≥ `text-sm` (14px) — never `text-xs`
 
 **Why:** Several rounds of feedback have converged on this rule:

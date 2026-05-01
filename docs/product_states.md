@@ -2,7 +2,7 @@
 
 > Snapshot of build progress per surface across the two scopes (admin dashboard + mobile app).
 > Source: [`ai_context/AI_CONTEXT.md`](../ai_context/AI_CONTEXT.md) + [`dashboard/src/router.tsx`](../dashboard/src/router.tsx).
-> Last updated: 2026-05-01.
+> Last updated: 2026-05-02.
 
 ## Legend
 
@@ -24,6 +24,9 @@ Tech stack: Vite + React 18 + TS + Tailwind + shadcn/ui · Router: HashRouter ·
 |---|:---:|---|
 | Design tokens (brand 50→950, slate, semantic, shadcn light/dark) | ✅ | [`globals.css`](../dashboard/src/styles/globals.css) + [`tailwind.config.ts`](../dashboard/tailwind.config.ts) |
 | Type scale (13px floor, locked) | ✅ | xs=13 / sm=14 / base=15. See [LESSONS](../ai_context/LESSONS.md) 2026-04-29 + 2026-05-01 |
+| Table column-header style (locked) | ✅ | Title Case + `text-sm font-medium text-muted-foreground` everywhere — no uppercase/tracking, no active-sort color differential. See [LESSONS](../ai_context/LESSONS.md) 2026-05-02 |
+| Detail-page header convention (locked) | ✅ | Inline (NEVER sticky) · structure: back-link / identity / chips · uniform `<ArrowLeft> Back to <list>` link. See [LESSONS](../ai_context/LESSONS.md) 2026-05-02 |
+| Detail-page sticky-bottom action bar (locked) | ✅ | `fixed inset-x-0 bottom-0 md:left-[var(--sidebar-width,4rem)]` · AppShell exposes the live sidebar width as a CSS var. See [LESSONS](../ai_context/LESSONS.md) 2026-05-02 |
 | shadcn primitives (21) | ✅ | [`components/ui/`](../dashboard/src/components/ui/) |
 | ZhiPay domain primitives (12) | ✅ | StatusBadge · TierBadge · SeverityBadge · Money · MaskedPan · SchemeLogo · StatusTimeline · ErrorCell · KeyboardHint · ReviewQueueRow · DestinationBadge · DateRangePicker |
 | App shell (Sidebar / TopBar / breadcrumbs / CommandPalette / HelpOverlay / ThemeProvider / keyboard shortcuts) | ✅ | [`components/layout/`](../dashboard/src/components/layout/) |
@@ -42,7 +45,7 @@ Tech stack: Vite + React 18 + TS + Tailwind + shadcn/ui · Router: HashRouter ·
 | KYC Review Queue | `/operations/kyc-queue` (+ `/:id`) | ✅ | Master-detail · 30-row mock · 4 edge classes · 4 action modals · 8 hotkeys |
 | AML Triage | `/operations/aml-triage` (+ `/:id` + `/new`) | ✅ | Master-detail · 26-flag mock · 5 typed contexts · 4 action modals · manual-flag form · 6 hotkeys |
 | Customers — Users | `/customers/users` (+ `/:id`) | ✅ | List + full-page detail · 50-row mock · 8 tabs (`?tab=...` deep-link) · 7 admin actions · 4 contextual modals · cross-store sync to AML on block/soft-delete · MyID profile card (5 sections + raw JSON) · lifetime stats derived from `TRANSFERS_FULL` so KPIs / charts / recent activity / Transfers tab stay consistent · MyID enforced as the hard gate for transfers (`tier_0` / `tier_1` are partial-registration with 0 limits) |
-| Customers — Cards | `/cards` | ❌ | Placeholder · `/cards/:id` referenced from transfer detail |
+| Customers — Cards | `/customers/cards` (+ `/:id`) | ✅ | List + full-page detail · 80-card mock across 33 owners (73 active / 4 frozen / 2 expired / 1 removed) · 6-filter chip row (scheme · status · bank · country · last-used date-range picker · default-only / never-used toggles) · sortable desktop table + mobile card stack · CSV export · 4-button action bar (Freeze ↔ Unfreeze · Copy token · Open transfers) · 2 action modals (Freeze · Unfreeze) — Force-expire dropped (admin-unilateral termination conflicts with the user-only-unlinks policy) · `?context=card&card_id=` filter on Transfers list + transfer-detail pager · cross-store sync via `mockCards.freezeAllUserActiveCards` invoked from `mockUsers.blockUser` |
 | Customers — Recipients | `/recipients` | ❌ | Placeholder |
 | Compliance — Blacklist | `/blacklist` | ❌ | Placeholder |
 | Compliance — KYC Tiers admin | `/kyc-tiers` | ❌ | Placeholder · tier-limit configuration |
