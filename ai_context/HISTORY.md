@@ -4,6 +4,98 @@
 
 ---
 
+### 2026-05-01 — Admin AML Triage page (master-detail) + cross-surface mobile-layout fix-up
+
+- **Summary**: Built the AML Triage queue at `/operations/aml-triage` (+ `/:id` + `/new`) — Phase 5 of the dashboard. Master-detail (520px list + flex detail on `lg+`, single-pane stacked on mobile/tablet). Severity-driven prioritization with critical pinning. Flag-type-decorated detail (velocity / amount / pattern / sanctions / manual). Sanctions-only-escalate + critical-escalate-blocks-user compliance rules wired into UI and PRD §9.2. Manual-flag form is a separate full-page route, not a modal. **Also a cross-surface mobile-layout overhaul** that retroactively cleans up the KYC Queue too: action bar switched from `sticky bottom-0` (which stopped pinning under various wrapper-overflow strategies) to `position: fixed inset-x-0 bottom-0 md:left-16 lg:static`; detail body adds `pt-4 pb-28 lg:pb-4` to clear the fixed bar; row critical/selected indicator switched to inset box-shadow; JSON code viewers drop their internal scroll caps in favor of page scroll.
+  - **Mock dataset (26 flags)** — `dashboard/src/data/mockAmlTriage.ts`. Status mix: 19 status=open (3 critical = 2 sanctions + 1 amount-anomaly · 12 warning · 4 info) + 7 status=reviewing (mix of severities, already assigned). Per-type structured `context` payloads — `VelocityContext` (window_minutes + transfer_count + threshold + recent_transfer_ids), `AmountContext` (amount_uzs + user_avg_uzs + std_dev_count + multiplier), `PatternContext` (rule_name + matched_signal + pattern_description), `SanctionsContext` (matched_list + matched_name + match_score + recipient_handle + recipient_destination), `ManualContext` (filer_admin_id + filer_admin_name + filer_note). User pool with lifetime stats (count + UZS volume) and mutable `users.status` so `blockAmlUser()` can flip a user to `'blocked'` for the critical-escalate side effect. Module-level audit-log store with 6 action types (claim / unclaim / reassign / clear / escalate / create_manual). `extraManualFlags` store so the manual-flag form's submissions appear on the next AmlTriage mount. Sanctions compliance template builder (`buildSanctionsEscalateTemplate`) used by the EscalateDialog.
+  - **`reviewing` is derived UI** — same pattern as KYC Queue. `aml_flags.status` enum stays `open / reviewing / cleared / escalated` per [`models.md` §5.1](../docs/models.md#51-er-diagram). The header chip "X reviewing" computes from `status='reviewing'`. No state-machine change.
+  - **Schema additions to `docs/models.md` §5.1** — added `aml_flags.context` (jsonb, "per-flag-type structured payload"), `aml_flags.clear_reason` (enum, populated on cleared status), and annotated `description` ("auto-generated reason") + `resolution_notes` ("captured on clear / escalate"). The KYC `kyc_verifications.assignee_id` gap is still open (PRD §12 q6).
+  - **Compliance rules added to `docs/product_requirements_document.md` §9.2** — two new bullets: (1) sanctions hits **cannot be cleared** from the AML triage view, only escalated, with reviewer-facing UX hiding Clear and auto-filling a compliance template into Escalate; (2) escalating a **critical-severity** flag transitions the linked `users.status` to `'blocked'`. Lower severities escalate without blocking.
+  - **Pattern layer** (`dashboard/src/components/aml-triage/`):
+    - `types.ts` — `AmlFilters` shape (severities / types / statuses / assigned / hasTransfer), `applyFilters` + `applySort` helpers. `applySort` enforces critical-row pinning regardless of user-selected sort: critical rows always sort first by oldest-age within their bucket; non-critical rows then apply the user's sort choice (`severity-age` / `newest` / `oldest`).
+    - `filterState.ts` — module-level cache for round-trip preservation (mirrors KYC + Transfers).
+    - `AmlFilterBar.tsx` — inline chip row: severity (multi, default `warning+critical`) / type (multi) / status (multi, default `open+reviewing`) / assigned / has-linked-transfer toggle (custom button with Check icon when active, replacing the earlier color-only square). Multi-select popovers got a sticky header strip with the filter label + "Clear" link, brand-tinted active rows, internal scroll for long option lists. Single-select popover similarly polished with a Check icon on the active option.
+    - `AmlRow.tsx` — 4-line list row: line 1 `[checkbox][shield-if-sanctions][severity badge][type chip] {push} [status badge]`, line 2 `phone · masked PINFL {push} age`, line 3 description (truncated to 80), line 4 (optional, when transfer or assignee present) `Tx prefix {push} Reviewing: <name>`. Critical rows get an inset box-shadow `shadow-[inset_2px_0_0_theme(colors.danger.600)]`, selected gets brand version. The kebab "⋮" menu was dropped — clicking the row already goes to detail and detail has every action.
+    - `AmlListPane.tsx` — header (select-all + "N of M" count + sort DropdownMenu with `Check` icon on active option) + body + bulk-action sticky bar (X-first layout, Assign-to-me only). Empty / filtered-empty / error / 8-row loading skeleton. Sort lives in the list-pane header (same as KYC Queue) — was originally in the filter row but moved out for visual consistency.
+    - `AmlDetailPane.tsx` — top bar (severity + type chip + flag-id mono + Copy + status + age) + scrollable body composing **SanctionsBanner** (top, when applicable) + UserCard + LinkedTransferCard + FlagContextCard + resolution-notes echo + Open-user-profile shortcut at the bottom + fixed-bottom ActionBar.
+    - `ActionBar.tsx` — Clear (auto-blocked with tooltip on sanctions or terminal) · Escalate (destructive variant) · Assign to me (outline) · Reassign (outline). 2-col grid on mobile; flex-wrap row on `lg+`. ClearButton uses a `<span>` wrapper for the tooltip-on-disabled-button trick.
+  - **Cards**:
+    - `UserCard` — phone, masked PINFL, tier badge, account-status (highlighted danger when `'blocked'`), lifetime count + compact volume, joined date, BLOCKED chip when applicable, Open-user-profile button.
+    - `LinkedTransferCard` — transfer summary (status, UZS→CNY amount, recipient with DestinationBadge, scheme + masked PAN), Open transfer link. Hard-deleted handling and "user-level flag, no linked transfer" empty state.
+    - `FlagContextCard` — typed-decorated rendering per `flagType`:
+      - `velocity` → headline + threshold + sparkline (red bar past threshold) + recent transfer-id chips
+      - `amount` → headline + user-avg + multiplier + σ count
+      - `pattern` → rule-name + matched-signal + why-this-matters description
+      - `sanctions` → matched_list + matched_name + match_score + recipient_handle (red-toned header)
+      - `manual` → filer_admin_name + filer_note (whitespace-pre-wrap)
+      Plus a collapsible raw JSON viewer (`<pre><code>` with bigint-safe replacer + Copy).
+    - `SanctionsBanner` (top of detail when sanctions) — red banner with title "Sanctions match — escalate only" + body about not communicating match details.
+    - `CriticalBanner` (page-top when any open+critical+unassigned) — red banner with count + "Assign first to me" CTA that claims the oldest unassigned critical.
+  - **Modals**:
+    - `ClearDialog` — reason-code select (`false_positive` / `verified_legitimate` / `low_risk` / `other`) + ≥20 char notes textarea. Sanctions never reach this modal (Clear button disabled).
+    - `EscalateDialog` — for sanctions, **auto-fills compliance template** (`Sanctions hit on watchlist [LIST]. Recipient handle [HANDLE] (...) matched [NAME] at score [SCORE]. Escalating to senior compliance per protocol. Source-of-funds documentation requested. Customer not to be informed of match details.`) into the textarea + validates that the reviewer added meaningful context (`<≥20 chars` and `template prefix unedited`+`<30 chars beyond template length` → invalid). For non-sanctions critical, surfaces a warning that the user account will be auto-blocked. Two-step flow: Dialog form → AlertDialog confirm with extra body for critical-block.
+    - `ReassignDialog` — assignee `<select>` with admin pool + "Unassigned" option. Choosing Unassigned reverts `reviewing → open`.
+  - **State transitions enforced**:
+    - **Clear** → `cleared`, captures `resolutionNotes` + `clearReason` + `resolved_at`, auto-claims assignee for audit.
+    - **Escalate** → `escalated`, captures `resolutionNotes` + `resolved_at`, auto-claims assignee. **Critical severity additionally calls `blockAmlUser(userId)` → `users.status='blocked'`**. Toast says "Flag escalated · user blocked" when blocked, otherwise just "Flag escalated".
+    - **Assign to me** (claim) — sets `assigneeId` + transitions `open → reviewing`. Cleared/escalated stay terminal.
+    - **Reassign** — updates `assigneeId`; "Unassigned" reverts `reviewing → open`.
+  - **Bulk actions** — Assign to me only (Clear/Escalate inherently single-row in v1). The list pane's bulk-action sticky bar surfaces only when ≥1 row selected.
+  - **Page-scoped hotkeys (6)** — `j/k` move focus + auto-select / `Enter` open / `c` Clear (gated by sanctions + terminal) / `e` Escalate (gated by terminal) / `m` Assign to me / `a` Reassign. Disabled on touch viewports (`max-width: 1023px`). Help overlay gets a new "AML Triage" group.
+  - **Routing** — `/operations/aml-triage` (list/master-detail), `/operations/aml-triage/:id` (detail in master-detail or full-page on mobile), `/operations/aml-triage/new` (full-page manual-flag form). `/aml-triage` redirects to the nested form. Sidebar entry + `g+a` global shortcut updated.
+  - **Manual flag full-page form** (`AmlTriageNew.tsx`) — typeahead user picker (search by phone or name with `<ul>` dropdown), optional transfer-id-prefix picker, severity radio (info / warning / critical with severity-tinted active state), type select, JSON context textarea (with parse validation on blur, falls back to `{}` if empty), filer note textarea (≥20 chars). Submit creates an `AmlReview` with `manual` context that mixes the filer info + user's parsed JSON, pushes into `extraManualFlags`, navigates to `/operations/aml-triage/:id` with the new id.
+  - **Cross-surface mobile-layout overhaul** (also retroactively applied to KYC Queue):
+    - **Action bar position** — was `sticky bottom-0` which stopped pinning under various overflow strategies the wrapper went through. Switched to `fixed inset-x-0 bottom-0 z-30 md:left-16 lg:static lg:left-auto lg:right-auto`. `position: fixed` escapes ancestor `overflow-hidden`. On `<md` (no sidebar) the bar spans full mobile width; on `md` to `<lg` (collapsed 64px sidebar) it offsets via `md:left-16`; on `lg+` it reverts to in-flow at the bottom of the detail pane.
+    - **Action bar mobile layout** — `grid grid-cols-2 gap-2` on mobile so 4 buttons → 2 rows of equal-width. `lg:flex lg:flex-wrap lg:items-center` on desktop. Each button: `w-full lg:w-auto`. Disabled-button tooltip wrapper `<span>` got the same `w-full lg:w-auto` treatment.
+    - **Detail-pane body padding** — `pt-4 pb-28 space-y-4 lg:pb-4` so the last card stays visible above the fixed bar (~112px reserved for the 2-row × 2-col bar + py-3 padding).
+    - **Master-detail wrapper** — back to always-on `overflow-hidden` (was briefly `lg:overflow-hidden` and then `[clip-path:inset(0_round_0.5rem)]` during the iteration). With the action bar now `position: fixed`, the wrapper's `overflow-hidden` no longer breaks anything and properly clips the rounded corners on every viewport.
+    - **Row indicator** — switched from `border-l-2 border-l-danger-600 -ml-[2px]` to `shadow-[inset_2px_0_0_theme(colors.danger.600)]` on critical rows and the brand equivalent on selected rows. The inset shadow draws inside the row's box, so `overflow-hidden` on the pane doesn't clip it. Applied to `KycRow` + `AmlRow`.
+    - **JSON code viewers** — `<pre>` panels in `MyIdResponseCard` (KYC) + `FlagContextCard` (AML) dropped their `max-h-[*] overflow-y-auto` internal scroll caps; now use `overflow-x-auto overflow-y-hidden`. Long single lines still scroll horizontally; the page handles vertical scroll.
+    - **Header buttons on mobile** — Refresh + New flag now 50/50-width row on `<md` (each `flex-1 md:flex-none`). AssigneeQuickToggle hidden on `<md` (still available via filter chip on the row below). On `<sm`, "New manual flag" label collapses to "New flag" to save more horizontal space.
+    - **Filter dropdowns polish** — same treatment in both KYC + AML filter bars: wider `w-60` popovers (or `w-auto min-w-[14rem]` for single-select), sticky header strip with filter label + "Clear" link when active, brand-tinted active rows, `whitespace-nowrap` for long single-line options. Sort moved out of AML filter row into the list-pane header (consistent with KYC).
+- **Files created (~17)**:
+  - `dashboard/src/data/mockAmlTriage.ts`
+  - `dashboard/src/pages/AmlTriage.tsx`, `dashboard/src/pages/AmlTriageNew.tsx`
+  - `dashboard/src/components/aml-triage/{types,filterState}.ts`
+  - `dashboard/src/components/aml-triage/{AmlFilterBar,AmlRow,AmlListPane,AmlDetailPane,ActionBar}.tsx`
+  - `dashboard/src/components/aml-triage/cards/{UserCard,LinkedTransferCard,FlagContextCard,SanctionsBanner,CriticalBanner}.tsx`
+  - `dashboard/src/components/aml-triage/modals/{ClearDialog,EscalateDialog,ReassignDialog}.tsx`
+- **Files modified**:
+  - `dashboard/src/router.tsx` — added `/operations/aml-triage` + `/:id` + `/new`; redirect from `/aml-triage`; removed `/aml-triage` from PLACEHOLDER_ROUTES
+  - `dashboard/src/components/layout/Sidebar.tsx` — AML nav `to` updated to `/operations/aml-triage`
+  - `dashboard/src/hooks/useKeyboardShortcuts.ts` — `g+a` → `/operations/aml-triage`
+  - `dashboard/src/components/layout/HelpOverlay.tsx` — new "AML Triage" group with j/k/Enter/c/e/m/a
+  - `dashboard/src/lib/i18n.ts` — ~70 new `admin.aml-triage.*` keys
+  - `dashboard/src/components/kyc-queue/{ActionBar,KycDetailPane,KycListPane,KycRow,KycFilterBar,cards/MyIdResponseCard}.tsx` — cross-surface mobile-layout overhaul (see above)
+  - `dashboard/src/pages/KycQueue.tsx` — wrapper `overflow-hidden` always-on; `lg:`-prefixed flex layout
+  - `docs/models.md` — `aml_flags.context` + `aml_flags.clear_reason` added in §5.1, annotations on `description` + `resolution_notes`
+  - `docs/product_requirements_document.md` — §9.2 added two compliance rules (sanctions-no-clear; critical-escalate-blocks-user)
+  - `ai_context/AI_CONTEXT.md` — current phase rewrite (5 surfaces), 8 new "Decisions made" rows, file map extended with `aml-triage/` tree, AML triage workstream flipped to ☑, q7 added to Open questions
+  - `ai_context/HISTORY.md` — this entry
+- **Docs updated**: `docs/models.md`, `docs/product_requirements_document.md`, `ai_context/AI_CONTEXT.md`, `ai_context/HISTORY.md`. **No** `docs/mermaid_schemas/` change — AML state machine remains canonical 4 states (`open / reviewing / cleared / escalated`).
+- **Key decisions**:
+  - **AML routes — nested** (`/operations/aml-triage` + `/:id` + `/new`); `/aml-triage` redirects.
+  - **Manual flag form is a separate full-page route**, not a modal — per spec.
+  - **`reviewing` is derived UI** — consistent with KYC.
+  - **Sanctions special handling** — Clear permanently disabled, Escalate auto-fills compliance template that reviewer must edit ≥30 chars beyond, SanctionsBanner reminds reviewer not to communicate match details.
+  - **Critical-severity escalation auto-blocks the linked user** — `users.status='blocked'` side effect, EscalateDialog warns reviewer, AlertDialog confirms.
+  - **Critical-row pinning is enforced regardless of sort** — even when reviewer flips to "newest first", critical rows pin to the top within their bucket.
+  - **`aml_flags.context` jsonb shape is a per-type contract** — committed to `models.md` §5.1. Backend can emit jsonb when ready. Manual flags ship with freeform JSON in v1 (PRD q7 left open for typed-form vs freeform decision).
+  - **`aml_flags.clear_reason` enum** — committed to `models.md` §5.1. UI captures via the ClearDialog reason-code select.
+  - **Master-detail layout pattern is locked** — list pane (480px KYC / 520px AML) + flex detail pane on `lg+`, single-pane stacked on mobile/tablet via URL. Future review surfaces follow this template.
+  - **Action-bar layout pattern is locked** — `fixed inset-x-0 bottom-0 z-30 md:left-16 lg:static lg:left-auto lg:right-auto` with `grid grid-cols-2` on mobile. `position: fixed` escapes any ancestor `overflow-hidden`/`clip-path`. Cross-applied to KYC + AML.
+  - **Row indicators use inset box-shadow**, not negative margins. Cross-applied to KycRow + AmlRow.
+  - **JSON code viewers drop internal scroll caps** — `overflow-x-auto overflow-y-hidden`, no `max-h-[*]`. Page handles vertical scroll.
+- **Open items**:
+  - Tablet (`md` to `<lg`) fixed action bar uses `md:left-16` to match the collapsed-sidebar width — exact match by design but should be visually verified on a real tablet viewport.
+  - Bulk-action bar in list pane is still `sticky bottom-0` (not `fixed`) — pins to wrapper bottom on mobile, not viewport. Acceptable since bulk select on touch is rare.
+  - Customer-area routes (`/users?focus=...`, `/cards/:id`) referenced from "Open user profile" / "Open transfer" still hit the catch-all Placeholder.
+  - Manual-flag form's typeahead pickers are local-only (filtered against in-memory mock) — real backend would replace with paginated search.
+  - Bulk reject for KYC and bulk clear/escalate for AML are deferred — single-row pattern covers the common path.
+  - Senior-role wiring for AML escalate / KYC escalate is still a stub (audit-log entry only).
+
+---
+
 ### 2026-05-01 — Admin KYC Review Queue (master-detail) + minimal UZ-ID-card placeholder
 
 - **Summary**: Built the KYC Review Queue at `/operations/kyc-queue` (+ `/:id`) — Phase 4 of the dashboard. Master-detail layout: 480px list pane + flex detail pane on `lg+`, single-pane stacked on mobile/tablet via the URL (no overlay). Volume-processing oriented — reviewers move through pending verifications fast with `j/k/Enter/a/r/i/e/m`. Fixed page height (`100dvh − topbar − main padding`) keeps each pane scrolling independently and the action bar docked at the bottom of the right pane. Header matches Overview/Transfers (`text-2xl` + subtitle below + right-aligned actions group); filter bar is an inline chip row with no own `bg`/`border`. Master-detail body wrapped as a card (`rounded-lg border bg-background overflow-hidden`).
