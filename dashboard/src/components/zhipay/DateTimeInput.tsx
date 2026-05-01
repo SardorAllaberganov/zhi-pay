@@ -22,11 +22,11 @@ interface DateTimeInputProps {
 /**
  * Datetime picker — Popover-anchored Calendar + time-of-day selects.
  *
- * Replaces native `<input type="datetime-local">` (its system-rendered
- * stepped numeric picker is awkward, especially on macOS). Mirrors the
- * `<DateRangePicker>` style: anchored Popover, calendar on top, footer
- * with Cancel / Apply (+ Clear when `allowEmpty`). Time stepped at 5min
- * granularity so the minute select stays scannable.
+ * Mirrors the `<DateRangePicker>` style: anchored Popover, calendar on top,
+ * footer with Cancel / Apply (+ Clear when `allowEmpty`). Time stepped at
+ * 5min granularity so the minute select stays scannable. Custom calendar
+ * header per LESSONS 2026-05-03 — `< Month YYYY >` with `justify-between`,
+ * react-day-picker default chrome hidden via `classNames`.
  */
 export function DateTimeInput({
   id,
@@ -46,8 +46,6 @@ export function DateTimeInput({
   }>(() => deriveDraft(value));
   const [displayMonth, setDisplayMonth] = useState<Date>(value ?? new Date());
 
-  // Reset draft + reposition the visible month on every open so
-  // cancel-then-reopen returns to the committed value.
   useEffect(() => {
     if (open) {
       setDraft(deriveDraft(value));
@@ -99,7 +97,7 @@ export function DateTimeInput({
           <span className="inline-flex items-center gap-2 min-w-0 truncate">
             <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
             <span className="tabular truncate">
-              {value ? label : t('admin.fx-config.datetime.placeholder')}
+              {value ? label : t('common.datetime.placeholder')}
             </span>
           </span>
           {value && allowEmpty && (
@@ -112,7 +110,7 @@ export function DateTimeInput({
                 clear();
               }}
               className="inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent text-muted-foreground hover:text-foreground"
-              aria-label={t('admin.fx-config.datetime.clear')}
+              aria-label={t('common.datetime.clear')}
             >
               <X className="h-3.5 w-3.5" aria-hidden="true" />
             </span>
@@ -127,15 +125,12 @@ export function DateTimeInput({
           'w-[min(360px,calc(100vw-2rem))]',
         )}
       >
-        {/* Custom header — `<  Month YYYY  >` with arrows on the sides
-            (LESSONS 2026-05-03 — Calendar header convention). The default
-            react-day-picker chrome is hidden via `classNames`. */}
         <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
           <button
             type="button"
             onClick={() => setDisplayMonth(addMonths(displayMonth, -1))}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-foreground/80 hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-label={t('admin.fx-config.datetime.prev-month')}
+            aria-label={t('common.datetime.prev-month')}
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -146,7 +141,7 @@ export function DateTimeInput({
             type="button"
             onClick={() => setDisplayMonth(addMonths(displayMonth, 1))}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-foreground/80 hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-label={t('admin.fx-config.datetime.next-month')}
+            aria-label={t('common.datetime.next-month')}
           >
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -174,15 +169,14 @@ export function DateTimeInput({
           />
         </div>
 
-        {/* Time row */}
         <div className="border-t px-4 py-3 bg-muted/30">
           <div className="flex items-center gap-3">
             <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium shrink-0">
-              {t('admin.fx-config.datetime.time')}
+              {t('common.datetime.time')}
             </span>
             <div className="flex items-center gap-1 ml-auto">
               <select
-                aria-label={t('admin.fx-config.datetime.hour')}
+                aria-label={t('common.datetime.hour')}
                 value={draft.hour}
                 onChange={(e) =>
                   setDraft((cur) => ({ ...cur, hour: Number(e.target.value) }))
@@ -197,7 +191,7 @@ export function DateTimeInput({
               </select>
               <span className="text-muted-foreground tabular">:</span>
               <select
-                aria-label={t('admin.fx-config.datetime.minute')}
+                aria-label={t('common.datetime.minute')}
                 value={draft.minute}
                 onChange={(e) =>
                   setDraft((cur) => ({ ...cur, minute: Number(e.target.value) }))
@@ -218,12 +212,12 @@ export function DateTimeInput({
           <div className="text-sm tabular text-foreground/80">
             {draft.date
               ? `${format(draft.date, 'MMM d, yyyy')} · ${String(draft.hour).padStart(2, '0')}:${String(draft.minute).padStart(2, '0')}`
-              : t('admin.fx-config.datetime.no-selection')}
+              : t('common.datetime.no-selection')}
           </div>
           <div className="flex items-center justify-end gap-2">
             {allowEmpty && value && (
               <Button variant="ghost" size="sm" onClick={clear}>
-                {t('admin.fx-config.datetime.clear')}
+                {t('common.datetime.clear')}
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={() => setOpen(false)}>

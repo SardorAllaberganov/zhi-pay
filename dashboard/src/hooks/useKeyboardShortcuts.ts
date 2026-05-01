@@ -88,6 +88,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
         else if (e.key === 'c') navigate('/customers/cards');
         else if (e.key === 'r') navigate('/customers/recipients');
         else if (e.key === 'f') navigate('/finance/fx-config');
+        else if (e.key === 'm') navigate('/finance/commissions');
         else if (e.key === 's') navigate('/services');
         else if (e.key === 'l') navigate('/audit-log');
         else if (e.key === 'b') navigate('/blacklist');

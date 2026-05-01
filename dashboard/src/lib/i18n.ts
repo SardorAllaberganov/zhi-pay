@@ -23,6 +23,16 @@ const EN: Record<string, string> = {
   'common.daterange.cancel': 'Cancel',
   'common.daterange.apply': 'Apply',
 
+  // shared datetime picker (Popover-anchored Calendar + time selects)
+  'common.datetime.placeholder': 'Pick a date and time',
+  'common.datetime.time': 'Time',
+  'common.datetime.hour': 'Hour',
+  'common.datetime.minute': 'Minute',
+  'common.datetime.clear': 'Clear',
+  'common.datetime.no-selection': 'No date selected',
+  'common.datetime.prev-month': 'Previous month',
+  'common.datetime.next-month': 'Next month',
+
   'common.actions.search': 'Search transfers, users, cards…',
   'common.actions.cancel': 'Cancel',
   'common.actions.confirm': 'Confirm',
@@ -1726,15 +1736,7 @@ const EN: Record<string, string> = {
     'Why are you updating the rate? Reference any compliance ticket or PBoC / CBU communication.',
   'admin.fx-config.form.reason.help': 'Reason note recorded — meets minimum length.',
 
-  // Datetime picker (Popover-based)
-  'admin.fx-config.datetime.placeholder': 'Pick a date and time',
-  'admin.fx-config.datetime.time': 'Time',
-  'admin.fx-config.datetime.hour': 'Hour',
-  'admin.fx-config.datetime.minute': 'Minute',
-  'admin.fx-config.datetime.clear': 'Clear',
-  'admin.fx-config.datetime.no-selection': 'No date selected',
-  'admin.fx-config.datetime.prev-month': 'Previous month',
-  'admin.fx-config.datetime.next-month': 'Next month',
+  // (datetime keys lifted to common.datetime.* — see top of file's common.* block)
 
   // Toasts
   'admin.fx-config.update.toast.success.title': 'Rate updated',
@@ -1742,6 +1744,134 @@ const EN: Record<string, string> = {
   'admin.fx-config.update.toast.error.title': 'Update failed',
   'admin.fx-config.update.toast.error.body':
     'The new rate could not be applied. Please retry — your inputs were preserved.',
+
+  // ====================================================================
+  // Commission Rules — /finance/commissions
+  // ====================================================================
+  'admin.commissions.title': 'Commission Rules',
+  'admin.commissions.subtitle': 'Pricing rules for transfer fees',
+
+  // Tabs
+  'admin.commissions.tab.personal': 'Personal',
+  'admin.commissions.tab.corporate': 'Corporate',
+
+  // Active rule card
+  'admin.commissions.active.title': 'Active version',
+  'admin.commissions.active.empty': 'No active commission rule for this account type.',
+  'admin.commissions.active.min-pct': 'Min %',
+  'admin.commissions.active.max-pct': 'Max %',
+  'admin.commissions.active.min-fee': 'Min fee',
+  'admin.commissions.active.volume-threshold': 'Volume threshold',
+  'admin.commissions.active.corporate-pct': 'Corporate %',
+  'admin.commissions.active.effective-from': 'Effective from',
+  'admin.commissions.active.effective-to': 'Effective to',
+  'admin.commissions.active.effective-to.open': 'open-ended',
+  'admin.commissions.active.created-by': 'Created by',
+  'admin.commissions.action.new-version': 'New version',
+
+  // Worked example
+  'admin.commissions.example.title': 'Worked example',
+  'admin.commissions.example.subtitle': 'How the rule applies to a sample 5,000,000 UZS transfer.',
+  'admin.commissions.example.empty': 'Worked example unavailable — no active rule.',
+  'admin.commissions.example.sample-amount': 'Sample transfer amount',
+  'admin.commissions.example.commission-pct.label': 'Commission %',
+  'admin.commissions.example.commission-pct.detail':
+    'Midpoint of the [{minPct}% – {maxPct}%] band — illustrative typical charge.',
+  'admin.commissions.example.commission-uzs.label': 'Commission UZS',
+  'admin.commissions.example.min-fee.label': 'Min-fee floor',
+  'admin.commissions.example.min-fee.applies': 'Floor applies — total raised to min fee.',
+  'admin.commissions.example.min-fee.doesnt-apply': 'Does not apply — commission > floor.',
+  'admin.commissions.example.total-fee.label': 'Total fee',
+  'admin.commissions.example.above-threshold.title': 'Above volume threshold',
+  'admin.commissions.example.above-threshold.body':
+    'When the customer crosses the {threshold} volume threshold, the commission drops to corporate_pct ({corporatePct}%).',
+  'admin.commissions.example.above-threshold.commission-uzs.label': 'Discounted commission',
+
+  // Version history
+  'admin.commissions.history.title': 'Version history',
+  'admin.commissions.history.count': '{count} versions',
+  'admin.commissions.history.empty': 'No previous versions.',
+  'admin.commissions.history.column.version': 'Version',
+  'admin.commissions.history.column.effective-from': 'Effective from',
+  'admin.commissions.history.column.effective-to': 'Effective to',
+  'admin.commissions.history.column.min-pct': 'Min %',
+  'admin.commissions.history.column.max-pct': 'Max %',
+  'admin.commissions.history.column.min-fee': 'Min fee',
+  'admin.commissions.history.column.active': 'Active',
+  'admin.commissions.history.active.yes': 'Active',
+  'admin.commissions.history.active.no': '—',
+  'admin.commissions.history.row.actions.aria': 'Row actions',
+  'admin.commissions.history.row.action.view': 'View record',
+  'admin.commissions.history.row.action.collapse': 'Collapse record',
+  'admin.commissions.history.row.action.open-audit': 'Open audit log entry',
+  'admin.commissions.history.expanded.full-record': 'Full record',
+  'admin.commissions.history.expanded.diff': 'Diff vs previous version',
+  'admin.commissions.history.expanded.no-previous': 'This is the first version — no diff.',
+  'admin.commissions.history.expanded.field.id': 'ID',
+  'admin.commissions.history.expanded.field.version': 'Version',
+  'admin.commissions.history.expanded.field.account-type': 'Account type',
+  'admin.commissions.history.expanded.field.min-pct': 'Min %',
+  'admin.commissions.history.expanded.field.max-pct': 'Max %',
+  'admin.commissions.history.expanded.field.min-fee': 'Min fee',
+  'admin.commissions.history.expanded.field.volume-threshold': 'Volume threshold',
+  'admin.commissions.history.expanded.field.corporate-pct': 'Corporate %',
+  'admin.commissions.history.expanded.field.created-by': 'Created by',
+  'admin.commissions.history.expanded.field.reason': 'Reason',
+  'admin.commissions.history.mobile.min-fee': 'min',
+
+  // Diff (preview + history-expanded)
+  'admin.commissions.diff.column.field': 'Field',
+  'admin.commissions.diff.column.current': 'Current',
+  'admin.commissions.diff.column.previous': 'Previous',
+  'admin.commissions.diff.column.new': 'New',
+  'admin.commissions.diff.row.min-pct': 'Min %',
+  'admin.commissions.diff.row.max-pct': 'Max %',
+  'admin.commissions.diff.row.min-fee': 'Min fee',
+  'admin.commissions.diff.row.volume-threshold': 'Volume threshold',
+  'admin.commissions.diff.row.corporate-pct': 'Corporate %',
+  'admin.commissions.diff.row.effective-from': 'Effective from',
+  'admin.commissions.diff.row.effective-to': 'Effective to',
+
+  // New-version page
+  'admin.commissions.new.title.personal': 'New commission rule version (Personal)',
+  'admin.commissions.new.title.corporate': 'New commission rule version (Corporate)',
+  'admin.commissions.new.back': 'Back to commission rules',
+  'admin.commissions.new.warning':
+    'This creates a new version. The current rule remains active until this new version’s effective_from is reached.',
+  'admin.commissions.new.section.bands': 'Commission bands',
+  'admin.commissions.new.section.corporate': 'Corporate-tier discount',
+  'admin.commissions.new.section.window': 'Validity window',
+  'admin.commissions.new.section.reason': 'Reason note',
+  'admin.commissions.new.help.min-fee':
+    'Minimum charge applied when the percentage commission would otherwise fall below this floor.',
+  'admin.commissions.new.help.volume-threshold':
+    'Above this monthly volume (USD), the corporate customer pays the corporate_pct rate instead of the standard band.',
+  'admin.commissions.new.help.corporate-pct':
+    'Discounted commission applied above the volume threshold. Must be ≤ min_pct (corporate gets a discount).',
+  'admin.commissions.new.help.effective-to':
+    'Leave empty for an open-ended window — the most common choice.',
+  'admin.commissions.new.validation.min-le-max': 'min_pct must be ≤ max_pct.',
+  'admin.commissions.new.validation.corporate-le-min':
+    'corporate_pct must be ≤ min_pct (corporate is a discount, not a markup).',
+  'admin.commissions.new.validation.from-before-to':
+    'Effective-from must be earlier than Effective-to.',
+  'admin.commissions.new.reason.placeholder':
+    'Why are you creating this version? Reference any pricing review, regulator notice, or compliance ticket.',
+  'admin.commissions.new.reason-help': 'Reason note recorded — meets minimum length.',
+  'admin.commissions.new.reason-required': 'Reason note required (minimum 20 characters).',
+  'admin.commissions.new.show-diff': 'Show diff & worked example',
+  'admin.commissions.new.diff': 'Diff preview',
+  'admin.commissions.new.diff.empty': 'No changes yet — edit a field to preview the diff.',
+  'admin.commissions.new.action.create': 'Create version',
+  'admin.commissions.new.confirm.title': 'Activate new version now?',
+  'admin.commissions.new.confirm.body':
+    'Transfers created after {effectiveFrom} will use the new rule. The old version remains read-only in history.',
+  'admin.commissions.new.confirm.cta': 'Activate',
+  'admin.commissions.new.toast.success.title': 'Commission rule version created',
+  'admin.commissions.new.toast.success.body': '{accountType} {version} is now active.',
+  'admin.commissions.new.toast.error.title': 'Could not create version',
+  'admin.commissions.new.toast.error.body':
+    'The new rule could not be applied. Please retry — your inputs were preserved.',
 };
 
 /**

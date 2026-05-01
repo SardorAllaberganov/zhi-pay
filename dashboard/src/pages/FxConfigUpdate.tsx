@@ -12,10 +12,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  StepperNumberInput,
-} from '@/components/fx-config/StepperNumberInput';
-import { DateTimeInput } from '@/components/fx-config/DateTimeInput';
+import { StepperNumberInput } from '@/components/zhipay/StepperNumberInput';
+import { DateTimeInput } from '@/components/zhipay/DateTimeInput';
 import { DiffPreview, type DraftRate } from '@/components/fx-config/DiffPreview';
 import { UpdateConfirmDialog } from '@/components/fx-config/UpdateConfirmDialog';
 import {

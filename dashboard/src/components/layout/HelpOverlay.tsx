@@ -22,6 +22,7 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['g', 'c'], label: 'Go to Cards', group: 'Navigation' },
   { keys: ['g', 'r'], label: 'Go to Recipients', group: 'Navigation' },
   { keys: ['g', 'f'], label: 'Go to FX Config', group: 'Navigation' },
+  { keys: ['g', 'm'], label: 'Go to Commission Rules', group: 'Navigation' },
   { keys: ['g', 's'], label: 'Go to Services', group: 'Navigation' },
   { keys: ['j'], label: 'Move down in lists', group: 'Lists' },
   { keys: ['k'], label: 'Move up in lists', group: 'Lists' },
@@ -98,6 +99,12 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['⌘', 'Enter'], label: 'Submit (when reason filled)', group: 'Update FX rate' },
   { keys: ['↑', '↓'], label: 'Step number ± 0.01', group: 'Update FX rate' },
   { keys: ['Shift', '↑↓'], label: 'Step number ± 0.10', group: 'Update FX rate' },
+  // Commission Rules page (page-scoped)
+  { keys: ['n'], label: 'Open New version page (active tab)', group: 'Commission Rules' },
+  // Update commission version page (page-scoped)
+  { keys: ['⌘', 'Enter'], label: 'Submit (when reason filled)', group: 'New commission version' },
+  { keys: ['↑', '↓'], label: 'Step number ± 0.01 (% inputs) / ± 100 (money)', group: 'New commission version' },
+  { keys: ['Shift', '↑↓'], label: 'Step number ± 0.10 / ± 1000', group: 'New commission version' },
 ];
 
 interface HelpOverlayProps {
@@ -106,7 +113,7 @@ interface HelpOverlayProps {
 }
 
 export function HelpOverlay({ open, onOpenChange }: HelpOverlayProps) {
-  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users', 'Cards', 'Card detail', 'Recipients', 'Recipient detail', 'FX Config', 'Update FX rate'];
+  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users', 'Cards', 'Card detail', 'Recipients', 'Recipient detail', 'FX Config', 'Update FX rate', 'Commission Rules', 'New commission version'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

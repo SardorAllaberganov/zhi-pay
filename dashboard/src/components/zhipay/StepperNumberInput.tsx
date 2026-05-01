@@ -19,12 +19,10 @@ interface StepperNumberInputProps {
 }
 
 /**
- * Number input with arrow-key stepping per FX Config spec:
+ * Number input with arrow-key stepping.
  *   ↑ / ↓        → ± step       (default 0.01)
  *   Shift+↑/↓    → ± shiftStep  (default 0.10)
- *
- * `disabled` is honored — used when source = `central_bank` for mid rate
- * so reviewers can't free-edit a CBU-fetched value.
+ *   Cmd/Ctrl+Enter → onSubmit
  */
 export function StepperNumberInput({
   id,
@@ -74,7 +72,6 @@ export function StepperNumberInput({
       onValueChange('');
       return;
     }
-    // Allow trailing `.` or `,` while typing — only commit when parseable.
     const parsed = Number(raw.replace(',', '.'));
     if (Number.isNaN(parsed)) return;
     onValueChange(parsed);

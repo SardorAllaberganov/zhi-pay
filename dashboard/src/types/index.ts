@@ -21,7 +21,7 @@ export type CardScheme = 'uzcard' | 'humo' | 'visa' | 'mastercard';
 
 export type Destination = 'alipay' | 'wechat';
 
-export type Currency = 'UZS' | 'CNY';
+export type Currency = 'UZS' | 'CNY' | 'USD';
 
 export type Locale = 'en' | 'ru' | 'uz';
 

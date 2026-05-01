@@ -61,7 +61,7 @@ const SECTIONS: NavSection[] = [
     titleKey: 'admin.nav.section.finance',
     items: [
       { to: '/finance/fx-config', labelKey: 'admin.nav.fx-config', icon: TrendingUp },
-      { to: '/commission-rules', labelKey: 'admin.nav.commission-rules', icon: Percent },
+      { to: '/finance/commissions', labelKey: 'admin.nav.commission-rules', icon: Percent },
     ],
   },
   {
