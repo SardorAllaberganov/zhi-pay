@@ -51,7 +51,7 @@ export function MyIdResponseCard({ review }: MyIdResponseCardProps) {
           </Button>
         </div>
 
-        <pre className="rounded-md bg-muted/60 dark:bg-muted/40 p-3 text-sm overflow-x-auto max-h-[420px] overflow-y-auto">
+        <pre className="rounded-md bg-muted/60 dark:bg-muted/40 p-3 text-sm overflow-x-auto overflow-y-hidden">
           <code className="font-mono tabular text-foreground/90">{json}</code>
         </pre>
       </div>

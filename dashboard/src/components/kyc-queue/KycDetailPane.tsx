@@ -36,7 +36,7 @@ export function KycDetailPane({
     return (
       <div
         className={cn(
-          'flex flex-1 min-h-0 flex-col items-center justify-center text-center px-6 py-12',
+          'flex flex-col items-center justify-center text-center px-6 py-12 lg:flex-1 lg:min-h-0',
           className,
         )}
       >
@@ -52,7 +52,12 @@ export function KycDetailPane({
   }
 
   return (
-    <div className={cn('flex flex-1 min-h-0 flex-col bg-background', className)}>
+    <div
+      className={cn(
+        'flex flex-col bg-background lg:flex-1 lg:min-h-0',
+        className,
+      )}
+    >
       {/* Top bar — phone + status + open-user link */}
       <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 shrink-0">
         <div className="text-base font-semibold tabular truncate">
@@ -69,7 +74,7 @@ export function KycDetailPane({
 
       {/* Scrollable body */}
       <div
-        className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-4"
+        className="flex-1 px-4 pt-4 pb-28 space-y-4 lg:pb-4 lg:overflow-y-auto lg:min-h-0"
         data-kyc-detail-body
       >
         <EdgeCaseBanners review={review} />

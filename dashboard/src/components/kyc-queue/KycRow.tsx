@@ -52,7 +52,8 @@ export function KycRow({
       className={cn(
         'flex flex-col gap-1.5 border-b border-border px-3 py-2.5 cursor-pointer transition-colors min-w-0',
         'hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-        selected && 'bg-brand-50 dark:bg-brand-950/40 border-l-2 border-l-brand-600 -ml-[2px]',
+        // Inset box-shadow so the indicator survives overflow-hidden / clip-path on the wrapper.
+        selected && 'bg-brand-50 dark:bg-brand-950/40 shadow-[inset_2px_0_0_theme(colors.brand.600)]',
         !selected && focused && 'bg-muted/40',
       )}
       data-kyc-row

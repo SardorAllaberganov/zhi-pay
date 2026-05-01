@@ -1,4 +1,4 @@
-import { ChevronDown, X } from 'lucide-react';
+import { Check, ChevronDown, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -133,7 +133,7 @@ function ChipMulti<T extends string>({
   const summary = active
     ? values.length === 1
       ? renderOption(values[0])
-      : `${label}: ${values.length}`
+      : `${label} · ${values.length}`
     : label;
 
   function toggle(option: T) {
@@ -150,7 +150,7 @@ function ChipMulti<T extends string>({
             'inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-sm transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             active
-              ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300'
+              ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
               : 'border-border bg-background hover:bg-muted',
           )}
           data-kyc-chip
@@ -159,14 +159,33 @@ function ChipMulti<T extends string>({
           <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-56 p-2">
-        <div className="space-y-1">
+      <PopoverContent align="start" sideOffset={6} className="w-60 p-0 overflow-hidden">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30">
+          <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            {label}
+          </span>
+          {active && (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {t('admin.kyc-queue.filter.clear-all')}
+            </button>
+          )}
+        </div>
+        <div className="p-1.5 space-y-0.5 max-h-64 overflow-y-auto">
           {options.map((opt) => {
             const checked = values.includes(opt);
             return (
               <label
                 key={opt}
-                className="flex items-center gap-2.5 rounded-sm px-2 py-1.5 text-sm hover:bg-muted cursor-pointer"
+                className={cn(
+                  'flex items-center gap-2.5 rounded-md px-2 py-2 text-sm cursor-pointer transition-colors',
+                  checked
+                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+                    : 'hover:bg-muted',
+                )}
               >
                 <Checkbox checked={checked} onCheckedChange={() => toggle(opt)} />
                 <span className="flex-1">{renderOption(opt)}</span>
@@ -196,7 +215,7 @@ function ChipSingle<T extends string>({
 }: ChipSingleProps<T>) {
   // For "assigned": "anyone" is the default — non-default values activate.
   const isDefault = value === options[0];
-  const summary = isDefault ? label : `${label}: ${renderOption(value)}`;
+  const summary = isDefault ? label : `${label} · ${renderOption(value)}`;
 
   return (
     <Popover>
@@ -207,7 +226,7 @@ function ChipSingle<T extends string>({
             'inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-sm transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             !isDefault
-              ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300'
+              ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
               : 'border-border bg-background hover:bg-muted',
           )}
           data-kyc-chip
@@ -216,21 +235,33 @@ function ChipSingle<T extends string>({
           <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden="true" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-44 p-1">
+      <PopoverContent align="start" sideOffset={6} className="w-auto min-w-[14rem] p-1.5">
         <div className="space-y-0.5">
-          {options.map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => onChange(opt)}
-              className={cn(
-                'flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-muted',
-                value === opt && 'bg-muted font-medium',
-              )}
-            >
-              {renderOption(opt)}
-            </button>
-          ))}
+          {options.map((opt) => {
+            const selected = value === opt;
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => onChange(opt)}
+                className={cn(
+                  'flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm whitespace-nowrap transition-colors',
+                  selected
+                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+                    : 'hover:bg-muted',
+                )}
+              >
+                <Check
+                  className={cn(
+                    'h-3.5 w-3.5 shrink-0',
+                    selected ? 'opacity-100' : 'opacity-0',
+                  )}
+                  aria-hidden="true"
+                />
+                <span>{renderOption(opt)}</span>
+              </button>
+            );
+          })}
         </div>
       </PopoverContent>
     </Popover>

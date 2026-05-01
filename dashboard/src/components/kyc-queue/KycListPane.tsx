@@ -66,7 +66,7 @@ export const KycListPane = forwardRef<HTMLDivElement, KycListPaneProps>(
     return (
       <div
         ref={ref}
-        className="flex h-full flex-col bg-card"
+        className="flex flex-col bg-card lg:h-full"
         data-kyc-list-pane
       >
         {/* Header — sort + select-all + count */}
@@ -109,7 +109,7 @@ export const KycListPane = forwardRef<HTMLDivElement, KycListPaneProps>(
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto min-h-0" data-kyc-list-body>
+        <div className="flex-1 lg:overflow-y-auto lg:min-h-0" data-kyc-list-body>
           {loading ? (
             <ListSkeleton />
           ) : hasError ? (
@@ -134,12 +134,13 @@ export const KycListPane = forwardRef<HTMLDivElement, KycListPaneProps>(
           )}
         </div>
 
-        {/* Bulk-action bar (sticky bottom of pane) */}
+        {/* Bulk-action bar — sticky bottom so it pins inside the pane on lg+
+            and to the viewport on mobile (main scroll). */}
         {checkedCount > 0 && (
           <div
             className={cn(
               'border-t border-border bg-card shadow-[0_-4px_12px_rgba(0,0,0,0.04)]',
-              'flex flex-wrap items-center gap-2 px-3 py-2.5',
+              'flex flex-wrap items-center gap-2 px-3 py-2.5 sticky bottom-0',
             )}
             data-kyc-bulk-bar
           >

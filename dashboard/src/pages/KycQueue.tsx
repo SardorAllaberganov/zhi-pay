@@ -423,7 +423,7 @@ export function KycQueue() {
   // (2rem mobile / 3rem desktop). This puts the content exactly inside
   // main's content box; main's overflow-y-auto stays inactive.
   return (
-    <div className="flex h-[calc(100dvh-5.5rem)] md:h-[calc(100dvh-6.5rem)] flex-col gap-4">
+    <div className="flex flex-col gap-4 lg:h-[calc(100dvh-6.5rem)]">
       {/* Page header — matches Overview/Transfers (text-2xl + subtitle below + action group right) */}
       <header
         className={cn(
@@ -472,7 +472,7 @@ export function KycQueue() {
       </div>
 
       {/* Master + detail body — wrapped as a card so it visually matches the rest of the dashboard */}
-      <div className="flex flex-1 min-h-0 rounded-lg border border-border bg-background overflow-hidden">
+      <div className="rounded-lg border border-border bg-background overflow-hidden lg:flex lg:flex-1 lg:min-h-0">
         {/* List pane (left on desktop, full-width on mobile when no id) */}
         <div
           className={cn(

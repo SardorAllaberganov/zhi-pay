@@ -48,10 +48,11 @@ export function ActionBar({
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-2',
-        variant === 'desktop'
-          ? 'border-t border-border bg-card px-4 py-3 sticky bottom-0'
-          : 'border-t border-border bg-card px-4 py-3 sticky bottom-0',
+        // <lg: fixed bottom of viewport, full-width on mobile, offset by the
+        //      collapsed sidebar (64px) on md+. Escapes ancestor overflow.
+        // lg+: static, inline flex-wrap row inside the detail pane.
+        'fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-2 border-t border-border bg-card px-4 py-3 md:left-16',
+        'lg:static lg:left-auto lg:right-auto lg:flex lg:flex-wrap lg:items-center',
         className,
       )}
       data-kyc-action-bar={variant}
@@ -66,7 +67,7 @@ export function ActionBar({
         variant="destructive"
         onClick={onReject}
         disabled={rejectDisabled}
-        className="flex-1 sm:flex-none"
+        className="w-full lg:w-auto"
       >
         <X className="h-4 w-4 mr-1.5" aria-hidden="true" />
         {t('admin.kyc-queue.action.reject')}
@@ -76,7 +77,7 @@ export function ActionBar({
         variant="outline"
         onClick={onRequestInfo}
         disabled={infoDisabled}
-        className="flex-1 sm:flex-none"
+        className="w-full lg:w-auto"
       >
         <MessageSquarePlus className="h-4 w-4 mr-1.5" aria-hidden="true" />
         {t('admin.kyc-queue.action.request-info')}
@@ -86,7 +87,7 @@ export function ActionBar({
         variant="outline"
         onClick={onEscalate}
         disabled={escalateDisabled}
-        className="flex-1 sm:flex-none"
+        className="w-full lg:w-auto"
       >
         <ArrowUpRight className="h-4 w-4 mr-1.5" aria-hidden="true" />
         {t('admin.kyc-queue.action.escalate')}
@@ -103,7 +104,7 @@ interface ApproveButtonProps {
 
 function ApproveButton({ disabled, disabledReason, onClick }: ApproveButtonProps) {
   const button = (
-    <Button onClick={onClick} disabled={disabled} className="flex-1 sm:flex-none">
+    <Button onClick={onClick} disabled={disabled} className="w-full lg:w-auto">
       <Check className="h-4 w-4 mr-1.5" aria-hidden="true" />
       {t('admin.kyc-queue.action.approve')}
     </Button>
@@ -115,7 +116,7 @@ function ApproveButton({ disabled, disabledReason, onClick }: ApproveButtonProps
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span tabIndex={0} className="flex-1 sm:flex-none">
+          <span tabIndex={0} className="w-full lg:w-auto">
             {button}
           </span>
         </TooltipTrigger>
