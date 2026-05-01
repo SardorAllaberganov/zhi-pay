@@ -97,6 +97,20 @@ export function DateRangePicker({ value, onChange, children }: DateRangePickerPr
     () => resolveDateRange(value)?.from ?? startOfDay(NOW),
   );
 
+  // Match Tailwind's `md` breakpoint (768px). Below that we render a single
+  // month so the calendar fits on a phone without horizontal scroll.
+  const [isMobile, setIsMobile] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 767px)').matches;
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   // Reset pending state + reposition the calendar to the active range
   // whenever the picker opens.
   useEffect(() => {
@@ -152,11 +166,15 @@ export function DateRangePicker({ value, onChange, children }: DateRangePickerPr
       <PopoverContent
         align="start"
         sideOffset={6}
+        collisionPadding={8}
         className={cn(
           'p-0 overflow-hidden rounded-lg shadow-lg',
-          // Wide enough for the 200px sidebar + 2-month calendar; clamps
-          // inside the viewport on narrow screens.
-          'w-[min(860px,calc(100vw-2rem))]',
+          // On `md+` we run the 200px sidebar + 2-month calendar (≈860px ceil).
+          // On mobile a single month plus stacked sidebar fits in a narrower
+          // popover; clamp to the viewport so we never overflow. Combined
+          // with `collisionPadding`, Radix shifts the popover off the
+          // viewport edge when the trigger sits near the right border.
+          'w-[min(860px,calc(100vw-1rem))]',
         )}
         aria-label={t('common.daterange.title')}
       >
@@ -193,13 +211,17 @@ export function DateRangePicker({ value, onChange, children }: DateRangePickerPr
                 <span className="text-base font-semibold tracking-tight truncate">
                   {format(monthA, 'MMMM yyyy')}
                 </span>
-                <span
-                  className="h-5 w-px bg-border shrink-0"
-                  aria-hidden="true"
-                />
-                <span className="text-base font-semibold tracking-tight truncate">
-                  {format(monthB, 'MMMM yyyy')}
-                </span>
+                {!isMobile && (
+                  <>
+                    <span
+                      className="h-5 w-px bg-border shrink-0"
+                      aria-hidden="true"
+                    />
+                    <span className="text-base font-semibold tracking-tight truncate">
+                      {format(monthB, 'MMMM yyyy')}
+                    </span>
+                  </>
+                )}
               </div>
               <button
                 type="button"
@@ -211,10 +233,10 @@ export function DateRangePicker({ value, onChange, children }: DateRangePickerPr
               </button>
             </div>
 
-            <div className="flex-1 p-4 overflow-x-auto flex justify-center">
+            <div className="flex-1 p-3 md:p-4 flex justify-center">
               <Calendar
                 mode="range"
-                numberOfMonths={2}
+                numberOfMonths={isMobile ? 1 : 2}
                 month={displayMonth}
                 onMonthChange={setDisplayMonth}
                 selected={resolved}
