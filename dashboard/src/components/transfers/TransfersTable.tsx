@@ -521,7 +521,8 @@ function Th({
   return (
     <th
       className={cn(
-        'h-9 px-3 align-middle text-xs font-medium uppercase tracking-wider text-muted-foreground',
+        // Match canonical TableHead — Title Case, 14px, single muted color.
+        'h-9 px-3 align-middle text-sm font-medium text-muted-foreground',
         align === 'right' ? 'text-right' : 'text-left',
         className,
       )}
@@ -553,8 +554,11 @@ function SortHead({
         type="button"
         onClick={() => onSort(sortKey)}
         className={cn(
-          'inline-flex items-center gap-1 rounded-sm px-1 py-0.5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          active && 'text-foreground',
+          // Color stays uniform with non-sortable column headers; active
+          // state is conveyed by the arrow icon only.
+          'inline-flex items-center gap-1 rounded-sm px-1 py-0.5',
+          'text-muted-foreground hover:text-foreground',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           align === 'right' && 'flex-row-reverse',
         )}
         aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}

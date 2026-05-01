@@ -212,8 +212,11 @@ function SortableHeader({
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 hover:text-foreground transition-colors',
-        active ? 'text-foreground' : 'text-muted-foreground',
+        // Match TableHead exactly — Title Case, 14px, single muted color.
+        // Active-sort state is conveyed by the arrow icon only; color stays
+        // uniform with non-sortable column headers.
+        'inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 transition-colors',
+        'text-sm font-medium text-muted-foreground hover:text-foreground',
         align === 'right' && 'flex-row-reverse',
       )}
     >
