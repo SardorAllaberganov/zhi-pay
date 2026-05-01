@@ -400,10 +400,12 @@ erDiagram
     uuid transfer_id FK "nullable for user-level flags"
     enum flag_type "velocity|amount|pattern|sanctions|manual"
     enum severity "info|warning|critical"
-    string description
+    string description "auto-generated reason"
+    jsonb context "per-flag-type structured payload (velocity/amount/pattern/sanctions/manual)"
     enum status "open|reviewing|cleared|escalated"
     string assigned_to "admin user id"
-    string resolution_notes
+    enum clear_reason "false_positive|verified_legitimate|low_risk|other (set on cleared)"
+    string resolution_notes "captured on clear / escalate"
     timestamp resolved_at
     timestamp created_at
   }
