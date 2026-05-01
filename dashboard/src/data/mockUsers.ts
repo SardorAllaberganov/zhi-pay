@@ -15,7 +15,25 @@
 
 import { blockAmlUser, getInitialAmlList, ADMIN_POOL } from './mockAmlTriage';
 import { TRANSFERS_FULL } from './mockTransfers';
+import {
+  freezeCard as cardsFreezeCard,
+  unfreezeCard as cardsUnfreezeCard,
+  freezeAllUserActiveCards,
+  getCardsByUserId,
+  type CardEntry,
+  type CardScheme,
+  type CardStatus,
+  type FreezeSeverity,
+} from './mockCards';
 import type { Transfer } from '@/types';
+
+// Re-export card types under the legacy `UserCard*` names so existing
+// callers (UserCardsTab, CardActionDialog) keep compiling. mockCards is
+// now the single source of truth for linked-card data.
+export type UserCardScheme = CardScheme;
+export type UserCardStatus = CardStatus;
+export type UserCardEntry = CardEntry;
+export type { FreezeSeverity };
 
 // Per-user transfer index — built once, drives every "lifetime" / monthly /
 // status-breakdown stat so the user-detail page stays consistent with the
@@ -39,8 +57,6 @@ export type UserStatus = 'active' | 'blocked' | 'pending' | 'deleted';
 export type UserTier = 'tier_0' | 'tier_1' | 'tier_2';
 export type UserKycStatus = 'pending' | 'passed' | 'failed' | 'expired' | 'never';
 export type UserLanguage = 'uz' | 'ru' | 'en';
-export type UserCardStatus = 'active' | 'frozen' | 'expired' | 'removed';
-export type UserCardScheme = 'uzcard' | 'humo';
 
 export interface UserListRow {
   id: string;
@@ -159,20 +175,6 @@ export interface UserKycHistoryEntry {
   expiresAt?: Date;
   failureReason?: string;
   resultingTier?: UserTier;
-}
-
-export interface UserCardEntry {
-  id: string;
-  userId: string;
-  scheme: UserCardScheme;
-  maskedPan: string;
-  bank: string;
-  expiryMonth: number;
-  expiryYear: number;
-  status: UserCardStatus;
-  isDefault: boolean;
-  addedAt: Date;
-  freezeReason?: string;
 }
 
 export interface UserRecipientEntry {
@@ -376,7 +378,8 @@ const _SEED: UserSeedRow[] = [
 function _seedToRow(seed: UserSeedRow): UserListRow {
   // Lifetime volume + count are derived from real transfer records so the
   // user-detail "Recent activity" + Transfers tab + the lifetime KPI tiles
-  // stay in sync. The seed's lifetimeUzs / txCount fields are ignored.
+  // stay in sync. linkedCardsCount is similarly derived from mockCards so
+  // the count matches the Cards tab and the cross-user Cards page.
   const txs = _userTransfers(seed.id);
   const completed = txs.filter((t) => t.status === 'completed');
   const lifetimeVolume = completed.reduce<bigint>(
@@ -394,7 +397,7 @@ function _seedToRow(seed: UserSeedRow): UserListRow {
     kycStatus: seed.kycStatus,
     preferredLanguage: seed.lang,
     hasOpenAmlFlag: seed.hasOpenAml,
-    linkedCardsCount: seed.cards,
+    linkedCardsCount: getCardsByUserId(seed.id).length,
     lifetimeVolumeUzsTiyins: lifetimeVolume,
     lifetimeTransferCount: txs.length,
     lastLoginAt: seed.lastLoginMin === null ? null : minsAgo(seed.lastLoginMin),
@@ -666,55 +669,12 @@ function synthesizeMyIdResponse(u: UserListRow): MyIdResponse {
 }
 
 // ── Cards ──────────────────────────────────────────────────────────────
-
-const liveCards: UserCardEntry[] = [
-  // Sardor — 2 cards, UzCard default + Humo backup
-  { id: 'c_u03_uz', userId: 'u_03', scheme: 'uzcard', maskedPan: '860011••••9876', bank: 'Hamkorbank',  expiryMonth: 11, expiryYear: 2027, status: 'active', isDefault: true,  addedAt: daysAgo(300) },
-  { id: 'c_u03_h',  userId: 'u_03', scheme: 'humo',   maskedPan: '986007••••3344', bank: 'Hamkorbank',  expiryMonth:  3, expiryYear: 2028, status: 'active', isDefault: false, addedAt: daysAgo(180) },
-  // u_01, u_02, u_04, u_05 cards — synthesized minimal records
-  { id: 'c_u01_uz', userId: 'u_01', scheme: 'uzcard', maskedPan: '860011••••4242', bank: 'Universalbank', expiryMonth: 9, expiryYear: 2027, status: 'active', isDefault: true,  addedAt: daysAgo(450) },
-  { id: 'c_u01_uz2',userId: 'u_01', scheme: 'uzcard', maskedPan: '860011••••5454', bank: 'Trustbank',     expiryMonth: 6, expiryYear: 2026, status: 'active', isDefault: false, addedAt: daysAgo(300) },
-  { id: 'c_u02_h',  userId: 'u_02', scheme: 'humo',   maskedPan: '986007••••5511', bank: 'Kapitalbank',   expiryMonth: 4, expiryYear: 2028, status: 'active', isDefault: true,  addedAt: daysAgo(220) },
-  { id: 'c_u02_h2', userId: 'u_02', scheme: 'humo',   maskedPan: '986007••••8800', bank: 'Kapitalbank',   expiryMonth:11, expiryYear: 2026, status: 'active', isDefault: false, addedAt: daysAgo(150) },
-  { id: 'c_u04_uz', userId: 'u_04', scheme: 'uzcard', maskedPan: '860011••••8901', bank: 'Asakabank',     expiryMonth: 8, expiryYear: 2027, status: 'active', isDefault: true,  addedAt: daysAgo(85)  },
-  { id: 'c_u04_h',  userId: 'u_04', scheme: 'humo',   maskedPan: '986007••••8901', bank: 'Asakabank',     expiryMonth: 8, expiryYear: 2027, status: 'active', isDefault: false, addedAt: daysAgo(85)  },
-  { id: 'c_u05_uz', userId: 'u_05', scheme: 'uzcard', maskedPan: '860011••••7788', bank: "Ipak Yo'li Bank", expiryMonth: 12, expiryYear: 2026, status: 'active', isDefault: true,  addedAt: daysAgo(50) },
-  { id: 'c_u05_h',  userId: 'u_05', scheme: 'humo',   maskedPan: '986007••••7654', bank: 'Agrobank',      expiryMonth: 5, expiryYear: 2027, status: 'active', isDefault: false, addedAt: daysAgo(50)  },
-];
-
-// Generate placeholder cards for users without explicit entries
-const _BANKS = ['Universalbank', 'Hamkorbank', 'Kapitalbank', 'Asakabank', "Ipak Yo'li Bank", 'Agrobank', 'Trustbank', 'Davrbank'];
-function _ensurePlaceholderCards(userId: string, count: number): UserCardEntry[] {
-  const existing = liveCards.filter((c) => c.userId === userId);
-  if (existing.length > 0 || count === 0) return existing;
-  const cards: UserCardEntry[] = [];
-  const seedNum = parseInt(userId.replace('u_', ''), 10);
-  for (let i = 0; i < count; i++) {
-    const scheme: UserCardScheme = (seedNum + i) % 2 === 0 ? 'uzcard' : 'humo';
-    const prefix = scheme === 'uzcard' ? '860011' : '986007';
-    const last4 = String(1000 + ((seedNum * 137 + i * 53) % 9000));
-    cards.push({
-      id: `c_${userId}_${i}`,
-      userId,
-      scheme,
-      maskedPan: `${prefix}••••${last4}`,
-      bank: _BANKS[(seedNum + i) % _BANKS.length],
-      expiryMonth: ((seedNum + i) % 12) + 1,
-      expiryYear: 2026 + ((seedNum + i) % 3),
-      status: 'active',
-      isDefault: i === 0,
-      addedAt: daysAgo(30 + ((seedNum + i) % 200)),
-    });
-  }
-  liveCards.push(...cards);
-  return cards;
-}
+// Card data lives in `mockCards.ts` — single source of truth. This
+// thin wrapper preserves the legacy `getUserCards` signature so existing
+// callers (UserCardsTab) don't need to change.
 
 export function getUserCards(userId: string): UserCardEntry[] {
-  const u = getUserById(userId);
-  if (!u) return [];
-  // Detailed users have explicit entries; others get synthesized to match linkedCardsCount
-  return _ensurePlaceholderCards(userId, u.linkedCardsCount).slice();
+  return getCardsByUserId(userId);
 }
 
 // ── Recipients ─────────────────────────────────────────────────────────
@@ -953,12 +913,10 @@ export function blockUser(
   const u = liveUsers.find((x) => x.id === userId);
   if (!u) return { user: undefined, frozenCardIds: [] };
   u.status = 'blocked';
-  // Side effect: freeze all active linked cards
-  const cards = liveCards.filter((c) => c.userId === userId && c.status === 'active');
-  cards.forEach((c) => {
-    c.status = 'frozen';
-    c.freezeReason = `Auto-frozen — user blocked: ${reason.slice(0, 80)}`;
-  });
+  // Side effect: freeze all active linked cards via the canonical
+  // mockCards mutator so the Cards page sees the same state.
+  const frozen = freezeAllUserActiveCards(userId, reason, actor);
+  const frozenCardIds = frozen.map((c) => c.id);
   // Cross-store sync with AML
   blockAmlUser(userId);
   appendUserAudit({
@@ -967,10 +925,10 @@ export function blockUser(
     actorId: actor.id,
     actorName: actor.name,
     reason,
-    context: { frozenCardIds: cards.map((c) => c.id) },
+    context: { frozenCardIds },
   });
   liveUsers = liveUsers.slice();
-  return { user: u, frozenCardIds: cards.map((c) => c.id) };
+  return { user: u, frozenCardIds };
 }
 
 export function unblockUser(
@@ -1092,10 +1050,11 @@ export function freezeCard(
   reason: string,
   actor: ActorContext,
 ): UserCardEntry | undefined {
-  const card = liveCards.find((c) => c.id === cardId);
+  // Default severity for the user-detail-tab path is `user_request` since
+  // the freeze originates from the per-user actions surface; the cards
+  // page surfaces a richer severity dropdown.
+  const card = cardsFreezeCard(cardId, reason, 'user_request', actor);
   if (!card) return undefined;
-  card.status = 'frozen';
-  card.freezeReason = reason;
   appendUserAudit({
     userId,
     action: 'freeze_card',
@@ -1113,10 +1072,8 @@ export function unfreezeCard(
   reason: string,
   actor: ActorContext,
 ): UserCardEntry | undefined {
-  const card = liveCards.find((c) => c.id === cardId);
+  const card = cardsUnfreezeCard(cardId, reason, actor);
   if (!card) return undefined;
-  card.status = 'active';
-  card.freezeReason = undefined;
   appendUserAudit({
     userId,
     action: 'unfreeze_card',

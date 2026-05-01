@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Phone, ChevronLeft } from 'lucide-react';
+import { Phone, ArrowLeft } from 'lucide-react';
 import { TierBadge } from '@/components/zhipay/TierBadge';
 import { UserAvatar } from './UserAvatar';
 import { UserStatusBadge } from './UsersTable';
@@ -42,9 +42,9 @@ export function UserHeader({ user, kycExpiresAt, onAction }: UserHeaderProps) {
       <div className="mb-2">
         <Link
           to="/customers/users"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
         >
-          <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {t('admin.users.detail.back-to-list')}
         </Link>
       </div>

@@ -488,12 +488,27 @@ export function TransferDetail() {
         transfer={effectiveTransfer}
         copiedId={copiedId}
         onCopyId={copyTransferId}
-        onBack={() => navigate(TRANSFERS_BASE)}
+        onBack={() => {
+          // Card-context: return to the cards list with the card context
+          // preserved so the reviewer's filter survives the round-trip.
+          if (searchParams.get('context') === 'card') {
+            const cardId = searchParams.get('card_id');
+            if (cardId) {
+              navigate(`${TRANSFERS_BASE}?context=card&card_id=${cardId}`);
+              return;
+            }
+          }
+          navigate(TRANSFERS_BASE);
+        }}
         backLabel={pagerBackLabel(searchParams)}
         pager={pager}
         feeUzs={effectiveTransfer.feeUzs + effectiveTransfer.fxSpreadUzs}
-        onPagerPrev={() => pager?.prevId && navigate(`${TRANSFERS_BASE}/${pager.prevId}`)}
-        onPagerNext={() => pager?.nextId && navigate(`${TRANSFERS_BASE}/${pager.nextId}`)}
+        onPagerPrev={() =>
+          pager?.prevId && navigate(`${TRANSFERS_BASE}/${pager.prevId}?${searchParams.toString()}`)
+        }
+        onPagerNext={() =>
+          pager?.nextId && navigate(`${TRANSFERS_BASE}/${pager.nextId}?${searchParams.toString()}`)
+        }
         onOpenUser={() => navigate(`/customers/users/${effectiveTransfer.userId}`)}
         onOpenAudit={() => navigate(`/audit-log?entity=transfer&id=${effectiveTransfer.id}`)}
         userDeleted={bundle.senderDeleted}
@@ -821,6 +836,14 @@ function usePager(currentId: string | undefined, search: URLSearchParams) {
         .map((t) => t.id);
       return computeNeighbors(currentId, ids);
     }
+    if (ctx === 'card') {
+      const cardId = search.get('card_id');
+      if (!cardId) return null;
+      const ids = TRANSFERS_FULL.filter((t) => t.cardId === cardId)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .map((t) => t.id);
+      return computeNeighbors(currentId, ids);
+    }
     // Default: read transfers-list cache
     const cache = readTransfersState();
     if (!cache) return null;
@@ -843,6 +866,7 @@ function pagerBackLabel(search: URLSearchParams): string {
     const userName = search.get('user_name');
     if (userName) return t('admin.transfer-detail.back-link.user', { name: userName });
   }
+  if (ctx === 'card') return t('admin.transfer-detail.back-link.card');
   return t('admin.transfer-detail.back-link.list');
 }
 

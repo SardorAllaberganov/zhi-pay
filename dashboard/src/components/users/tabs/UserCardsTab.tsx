@@ -136,7 +136,7 @@ function CardTile({ card, onFreeze, onUnfreeze }: TileProps) {
             })}
           </div>
           <div className="mt-0.5 text-sm text-muted-foreground">
-            {t('admin.users.detail.cards.added-on', { date: formatDate(card.addedAt) })}
+            {t('admin.users.detail.cards.added-on', { date: formatDate(card.createdAt) })}
           </div>
         </div>
       </div>

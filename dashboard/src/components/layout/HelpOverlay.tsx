@@ -71,6 +71,17 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['8'], label: 'Jump to Audit tab', group: 'Users' },
   { keys: ['b'], label: 'Block (opens confirm)', group: 'Users' },
   { keys: ['e'], label: 'Open Audit tab', group: 'Users' },
+  // Cards page (page-scoped)
+  { keys: ['j'], label: 'Move down in list', group: 'Cards' },
+  { keys: ['k'], label: 'Move up in list', group: 'Cards' },
+  { keys: ['Enter'], label: 'Open focused card', group: 'Cards' },
+  { keys: ['/'], label: 'Focus search', group: 'Cards' },
+  // Card detail page (page-scoped)
+  { keys: ['b'], label: 'Back to list', group: 'Card detail' },
+  { keys: ['Backspace'], label: 'Back to list', group: 'Card detail' },
+  { keys: ['f'], label: 'Freeze (only when active)', group: 'Card detail' },
+  { keys: ['u'], label: 'Unfreeze (only when frozen)', group: 'Card detail' },
+  { keys: ['c'], label: 'Copy acquirer token', group: 'Card detail' },
 ];
 
 interface HelpOverlayProps {
@@ -79,7 +90,7 @@ interface HelpOverlayProps {
 }
 
 export function HelpOverlay({ open, onOpenChange }: HelpOverlayProps) {
-  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users'];
+  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users', 'Cards', 'Card detail'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

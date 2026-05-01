@@ -85,7 +85,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
         else if (e.key === 'k') navigate('/operations/kyc-queue');
         else if (e.key === 'a') navigate('/operations/aml-triage');
         else if (e.key === 'u') navigate('/customers/users');
-        else if (e.key === 'c') navigate('/cards');
+        else if (e.key === 'c') navigate('/customers/cards');
         else if (e.key === 'r') navigate('/recipients');
         else if (e.key === 'f') navigate('/fx-config');
         else if (e.key === 's') navigate('/services');

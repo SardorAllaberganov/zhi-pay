@@ -211,6 +211,7 @@ const EN: Record<string, string> = {
   'admin.transfers.column.transfer-id': 'Transfer ID',
   'admin.transfers.column.card': 'Card',
   'admin.transfers.column.sender': 'Sender',
+  'admin.transfers.column.destination': 'Destination',
   'admin.transfers.column.recipient': 'Recipient',
   'admin.transfers.column.amount-uzs': 'Amount UZS',
   'admin.transfers.column.amount-cny': 'Amount CNY',
@@ -365,9 +366,9 @@ const EN: Record<string, string> = {
   // ====================================================================
   // Transfer detail page
   // ====================================================================
-  'admin.transfer-detail.back-link.list': 'Transfers',
-  'admin.transfer-detail.back-link.user': "{name}'s transfers",
-  'admin.transfer-detail.back-link.aml': 'AML flag',
+  'admin.transfer-detail.back-link.list': 'Back to transfers',
+  'admin.transfer-detail.back-link.user': "Back to {name}'s transfers",
+  'admin.transfer-detail.back-link.aml': 'Back to AML flag',
   'admin.transfer-detail.pager.position': '{position} of {total}',
   'admin.transfer-detail.pager.prev': 'Previous transfer',
   'admin.transfer-detail.pager.next': 'Next transfer',
@@ -1351,6 +1352,146 @@ const EN: Record<string, string> = {
 
   // help overlay group
   'admin.users.shortcuts.group': 'Users',
+
+  // =========================================================================
+  // Cards (cross-user list + full-page detail)
+  // =========================================================================
+
+  // Page header
+  'admin.cards.title': 'Cards',
+  'admin.cards.subtitle.counts': '{active} active · {frozen} frozen · {expired} expired',
+  'admin.cards.search-placeholder': 'Search PAN, holder, bank, owner phone…',
+
+  // Filter labels
+  'admin.cards.filter.scheme': 'Scheme',
+  'admin.cards.filter.status': 'Status',
+  'admin.cards.filter.bank': 'Bank',
+  'admin.cards.filter.country': 'Country',
+  'admin.cards.filter.last-used': 'Last used',
+  'admin.cards.filter.last-used.clear': 'Clear last-used filter',
+  'admin.cards.filter.never-used': 'Never used',
+  'admin.cards.filter.default-only': 'Default only',
+  'admin.cards.filter.clear-all': 'Clear',
+  'admin.cards.filter.search-placeholder': 'Search…',
+  'admin.cards.filter.no-matches': 'No matches',
+
+  // Schemes
+  'admin.cards.scheme.uzcard': 'UzCard',
+  'admin.cards.scheme.humo': 'Humo',
+
+  // Statuses
+  'admin.cards.status.active': 'Active',
+  'admin.cards.status.frozen': 'Frozen',
+  'admin.cards.status.expired': 'Expired',
+  'admin.cards.status.removed': 'Removed',
+
+  // Last-used display label (for the table/mobile-stack when lastUsedAt === null)
+  'admin.cards.last-used.never': 'Never',
+
+  // Table columns
+  'admin.cards.column.card': 'Card',
+  'admin.cards.column.bank': 'Bank',
+  'admin.cards.column.holder': 'Holder',
+  'admin.cards.column.country': 'Country',
+  'admin.cards.column.owner': 'Owner',
+  'admin.cards.column.status': 'Status',
+  'admin.cards.column.default': 'Default',
+  'admin.cards.column.last-used': 'Last used',
+  'admin.cards.column.created': 'Created',
+
+  // Row + table empty / row actions
+  'admin.cards.row.actions': 'Card actions',
+  'admin.cards.row.open-owner': 'Open owner profile',
+  'admin.cards.row.open-transfers': 'View transfers on this card',
+  'admin.cards.row.copy-token': 'Copy acquirer token',
+  'admin.cards.unknown-owner': 'Unknown owner',
+  'admin.cards.empty.title': 'No cards match these filters',
+  'admin.cards.empty.body-no-data': 'There are no cards in the system yet.',
+  'admin.cards.empty.body-filtered': 'Try clearing filters or broadening your search.',
+  'admin.cards.result-count': '{shown} of {total} cards',
+
+  // Pagination
+  'admin.cards.pagination.page': 'Page {page} of {total}',
+  'admin.cards.pagination.prev': 'Previous',
+  'admin.cards.pagination.next': 'Next',
+
+  // Page-header actions
+  'admin.cards.action.export-csv': 'Export CSV',
+
+  // Detail page
+  'admin.cards.detail.back': 'Back to cards',
+  'admin.cards.detail.default-badge': 'Default',
+  'admin.cards.detail.section.card-details': 'Card details',
+  'admin.cards.detail.section.owner': 'Owner',
+  'admin.cards.detail.field.scheme': 'Scheme',
+  'admin.cards.detail.field.bank': 'Bank',
+  'admin.cards.detail.field.holder': 'Holder name',
+  'admin.cards.detail.field.country': 'Issuer country',
+  'admin.cards.detail.field.expiry': 'Expiry',
+  'admin.cards.detail.field.tokenized-at': 'Tokenized at',
+  'admin.cards.detail.field.last-used': 'Last used',
+  'admin.cards.detail.field.token': 'Acquirer token',
+  'admin.cards.detail.expiry-soon': 'Card expires within 60 days',
+  'admin.cards.detail.expiry-expired': 'Card expired',
+  'admin.cards.detail.expiry-soon-tag': 'Soon',
+  'admin.cards.detail.owner.pinfl': 'PINFL',
+  'admin.cards.detail.owner.pinfl-not-verified': 'PINFL not yet verified',
+  'admin.cards.detail.owner.unknown': "Owner record not available — the user may have been hard-deleted.",
+  'admin.cards.detail.owner.open-profile': 'Open user profile',
+  'admin.cards.detail.recent-activity': 'Recent activity',
+  'admin.cards.detail.recent-activity.count': '{count} transfers on this card',
+  'admin.cards.detail.recent-activity.count-with-more':
+    'Showing {shown} of {total} transfers on this card',
+  'admin.cards.detail.recent-activity.empty': 'No transfers have used this card yet.',
+  'admin.cards.detail.recent-activity.view-all-cta': 'View all {count} transfers',
+  'admin.cards.detail.not-found.title': 'Card not found',
+  'admin.cards.detail.not-found.body': "We couldn't find a card with id {id}. It may have been removed.",
+  'admin.cards.detail.not-found.cta': 'Back to cards',
+
+  // Privacy banner
+  'admin.cards.privacy-banner':
+    'Full PAN, CVV, and full holder identity are never displayed and cannot be retrieved by admin tools.',
+  'admin.cards.privacy-banner.unlink-policy':
+    'Card unlinking is user-initiated only — admins cannot remove a card on the user’s behalf.',
+
+  // Action bar
+  'admin.cards.action.freeze': 'Freeze',
+  'admin.cards.action.unfreeze': 'Unfreeze',
+  'admin.cards.action.copy-token': 'Copy token',
+  'admin.cards.action.open-transfer-flow': 'Open transfers on this card',
+  'admin.cards.action.reason-required': 'Reason (required)',
+
+  // Freeze dialog
+  'admin.cards.action.freeze.title': 'Freeze card',
+  'admin.cards.action.freeze.body': 'Freezing {pan} ({bank}) blocks new transfers immediately. The user will be notified.',
+  'admin.cards.action.freeze.severity-label': 'Severity',
+  'admin.cards.action.freeze.severity.suspicious_activity': 'Suspicious activity',
+  'admin.cards.action.freeze.severity.aml_flag': 'AML flag',
+  'admin.cards.action.freeze.severity.user_request': 'User request',
+  'admin.cards.action.freeze.severity.other': 'Other',
+  'admin.cards.action.freeze.reason-placeholder': 'Why is this card being frozen? (min 10 chars)',
+  'admin.cards.action.freeze.notify-note': 'The user will receive a push + in-app notification when the card is frozen.',
+
+  // Unfreeze dialog
+  'admin.cards.action.unfreeze.title': 'Unfreeze card',
+  'admin.cards.action.unfreeze.body': 'Restoring {pan} ({bank}) re-enables transfers immediately. The user will be notified.',
+  'admin.cards.action.unfreeze.previous-reason': 'Previously frozen for',
+  'admin.cards.action.unfreeze.reason-placeholder': 'Why is this card being unfrozen? (min 10 chars)',
+  'admin.cards.action.unfreeze.notify-note': 'The user will receive a push + in-app notification when the card is unfrozen.',
+
+  // Toasts
+  'admin.cards.toast.frozen': 'Card {pan} frozen',
+  'admin.cards.toast.unfrozen': 'Card {pan} unfrozen',
+  'admin.cards.toast.token-copied': 'Acquirer token copied to clipboard',
+  'admin.cards.toast.action-failed': 'Action failed — please retry',
+  'admin.cards.toast.exported': 'Cards CSV exported',
+  'admin.cards.toast.exported-body': '{count} cards written to CSV',
+
+  // Transfers card-context banner
+  'admin.transfers.context.card-prefix': 'Showing transfers on card',
+  'admin.transfers.context.open-card': 'Open card',
+  'admin.transfers.context.clear': 'Clear filter',
+  'admin.transfer-detail.back-link.card': 'Back to card transfers',
 };
 
 /**

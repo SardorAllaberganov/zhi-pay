@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, BookmarkPlus, ChevronDown, FileDown, Inbox, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { AlertTriangle, BookmarkPlus, ChevronDown, CreditCard, FileDown, Inbox, MoreVertical, Pencil, Trash2, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,7 +45,8 @@ import {
   TRANSFERS_FULL,
   getAmlFlagsForTransfer,
 } from '@/data/mockTransfers';
-import { cn, formatMoney } from '@/lib/utils';
+import { getCardById } from '@/data/mockCards';
+import { cn, formatMoney, maskPan } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { Transfer } from '@/types';
 
@@ -54,6 +55,14 @@ const TRANSFERS_BASE = '/operations/transfers';
 
 export function Transfers() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Card-scoped context: ?context=card&card_id=... pre-filters the list
+  // before the user's chip-filters / sort / pagination apply.
+  const cardContextId = searchParams.get('context') === 'card'
+    ? searchParams.get('card_id')
+    : null;
+  const cardContext = cardContextId ? getCardById(cardContextId) : null;
 
   // Hydrate from module cache so detail-page round-trips preserve list state.
   const cached = readTransfersState();
@@ -164,9 +173,16 @@ export function Transfers() {
     };
   }, []);
 
+  // Card-scoped pre-filter — applied before the user-controlled filter
+  // chips so reviewers can still narrow further within the card's history.
+  const sourceTransfers = useMemo(
+    () => (cardContextId ? TRANSFERS_FULL.filter((tx) => tx.cardId === cardContextId) : TRANSFERS_FULL),
+    [cardContextId],
+  );
+
   const filtered = useMemo(
-    () => applyFilters(TRANSFERS_FULL, filters, hasAmlByTransferId),
-    [filters, hasAmlByTransferId],
+    () => applyFilters(sourceTransfers, filters, hasAmlByTransferId),
+    [sourceTransfers, filters, hasAmlByTransferId],
   );
   const sorted = useMemo(() => sortTransfers(filtered, sort), [filtered, sort]);
   const paged = useMemo(
@@ -477,6 +493,47 @@ export function Transfers() {
           </DropdownMenu>
         </div>
       </header>
+
+      {/* Card-scoped context banner */}
+      {cardContext && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-brand-600/30 bg-brand-50/50 dark:bg-brand-950/20 px-3 py-2">
+          <div className="flex items-center gap-2 text-sm">
+            <CreditCard className="h-4 w-4 text-brand-700 dark:text-brand-400" aria-hidden="true" />
+            <span className="text-foreground/80">
+              {t('admin.transfers.context.card-prefix')}
+            </span>
+            <span className="font-mono tabular text-foreground">
+              {maskPan(cardContext.maskedPan)}
+            </span>
+            <span className="text-muted-foreground">
+              · {cardContext.bank}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/customers/cards/${cardContext.id}`)}
+            >
+              {t('admin.transfers.context.open-card')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const next = new URLSearchParams(searchParams);
+                next.delete('context');
+                next.delete('card_id');
+                setSearchParams(next);
+              }}
+              className="text-muted-foreground"
+            >
+              <X className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+              {t('admin.transfers.context.clear')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Error banner */}
       {!feedHealthy && (
