@@ -4,6 +4,67 @@
 
 ---
 
+### 2026-05-03 — Admin Commission Rules surface (Phase 10) — `/finance/commissions` + `/new`
+
+- **Summary**: Built the Commission Rules surface — versioned per account_type (Personal | Corporate), edits-as-new-version contract, audit-protected history, worked-example live recompute. List page at `/finance/commissions` with `<Tabs>` segmented control split between Personal (default) and Corporate; each tab stacks ActiveRuleCard → WorkedExampleCard → VersionHistoryTable on `lg+` / VersionHistoryMobileCardStack on `<lg`. Full-page New-version form at `/finance/commissions/new?account_type=...` (full pre-fill from active rule, sticky DiffPreview + WorkedExampleCard preview pane on `lg+`, mobile "Show diff & worked example" toggle). `mockCommissionRules.ts` is the single source of truth — `commission_rules` rows are NEVER edited in place per accountType; `addCommissionRule()` only inserts new versions and closes the previous active row's window by setting `effectiveTo = newRow.effectiveFrom`. Schema's `is_active` boolean is treated as a denormalized cache of the window check — derived in mock, the real backend may keep it materialized. `created_by` and `reason_note` are mock-only audit-trail surrogates (same precedent as `mockFxRates.ts`). The page never recomputes `transfer_fees.commission_uzs` for transfers already in `processing` / `completed` (this is enforced upstream).
+
+  **Decision deviations from the literal spec** (each flagged in the proposal and confirmed before implementation):
+  - **Phase 0 primitive lift** — `<StepperNumberInput>` + `<DateTimeInput>` moved from `components/fx-config/` to `components/zhipay/` because Patterns can't import from other Patterns per [`design-system-layers.md`](../.claude/rules/design-system-layers.md). FX Config import paths updated; no logic changes; i18n keys for the datetime primitive renamed from `admin.fx-config.datetime.*` to `common.datetime.*` to match the shared home.
+  - **`Currency` type extended to `UZS | CNY | USD`** — added `USD` so `volume_threshold_usd` (bigint cents) renders via the standard `formatMoney`/`<Money>` path. `formatMoney` only string-appends the currency code, so no consumer required code changes.
+  - **Tabs not sticky on mobile** — spec asked for sticky-horizontal tabs on mobile; we follow the locked Users-tabs convention (NOT sticky) for cross-surface consistency.
+  - **Active history-row uses bg-tint only** (matching FX Config) — spec asked for a brand-600 left border; FX Config established `bg-brand-50/60` only; we matched FX Config.
+  - **DiffPreview shows only changed rows** (per spec) — differs from FX Config's DiffPreview which shows all 6 rows. Empty state "No changes yet — edit a field to preview the diff" when the draft equals the active rule, with submit button disabled until at least one delta exists.
+
+  **Mock dataset (12 personal + 8 corporate · ~9 months)** — `dashboard/src/data/mockCommissionRules.ts`. Deterministic manual seed (no PRNG). NOW = 2026-04-29T10:30:00Z (matches `mockFxRates`). Personal walk: v1 (270d ago, 1.00–3.00% / 5,000 UZS) → v12 (30d ago, ACTIVE, 0.50–2.00% / 5,000 UZS). Corporate walk: v1 (270d ago, 0.80–2.00% / 20,000 USD threshold / 0.50% corporate_pct) → v8 (90d ago, ACTIVE, 0.40–1.50% / 10,000 USD / 0.30% corporate_pct — matches spec exactly). Each row carries `id` ('cr_p_NNN' / 'cr_c_NNN') / `accountType` / `version` / `minPct` / `maxPct` / `minFeeUzsTiyins` / `volumeThresholdUsdCents` (null for personal) / `corporatePct` (null for personal) / `effectiveFrom` / `effectiveTo` (null only for the trailing active row per accountType) / `createdBy` / `reasonNote`. Reason notes reference plausible CBU / regulator notices and pricing-committee reviews. Module-level audit-log store with one action type (`commission_rule_create`).
+
+  **Pattern layer** (`dashboard/src/components/commissions/`):
+  - `ActiveRuleCard.tsx` — top row title + `v{version}` brand-tinted chip + right-side primary "New version" CTA. 4-cell grid (personal: min% / max% / min fee / [empty 4th cell collapses]) / 3-cell + 3-cell on lg corporate (min% / max% / min fee on row 1; volume_threshold / corporate_pct in brand-700 on row 2). Meta strip below the grid: effective-from with `formatRelative` parenthesis + effective-to ("open-ended" italic when null) + created-by mono. Skeleton matches the layout exactly.
+  - `WorkedExampleCard.tsx` — header with title + (non-compact) subtitle. Sample-amount row → commission % line (with detail "Midpoint of the [min – max] band — illustrative typical charge") → commission UZS line → min-fee floor line (status detail flips between "Floor applies — total raised to min fee" and "Does not apply — commission > floor") → total fee line in brand-700 font-semibold. Corporate adds an "Above volume threshold" sub-card explaining the discount and showing the `corporate_pct` commission. `compact` prop hides the subtitle and tightens spacing for the form's right pane.
+  - `VersionHistoryTable.tsx` — desktop table with 9 columns (chevron / version / effective-from / effective-to / min % / max % / min fee / Active badge / kebab); active row gets `bg-brand-50/60 dark:bg-brand-950/30` and version cell text shifts to brand; rows are clickable to expand inline showing the full record (10 fields personal / 12 corporate, including reason note) + a Diff vs previous version table (read-only — keeps the user in list context); kebab actions are `View / Collapse record` + `Open audit log entry` (`/audit-log?entity=commission_rule&id=...`); Title Case headers + `text-sm font-medium text-muted-foreground` per LESSON 2026-05-02.
+  - `VersionHistoryMobileCardStack.tsx` — mirrors the table on `<lg`. Each card shows v{version} + effective-from + Active badge + a single line with `min – max` range + min fee; tapping expands the full record + a vertical diff for min_pct / max_pct / min_fee.
+  - `DiffPreview.tsx` — used in the Update form's right pane. **Only-changed rows** Current vs New table (per spec). Empty state with "No changes yet" copy when the draft equals the active rule; in that case the card body is hidden so the empty state stands alone in the header. Disabled-style "—" rendering when numeric inputs aren't yet parseable.
+  - `ActivateConfirmDialog.tsx` — AlertDialog with the spec'd "Activate new version now? Transfers created after [effective_from] will use the new rule. The old version remains read-only in history." copy, parameterized with the form's effective-from.
+
+  **Pages** — `CommissionRules.tsx` (orchestrates the tabs + per-tab content + 400ms initial-mount skeletons + `n` page-scoped hotkey opens new-version for the visible tab + `focus`/`popstate` listeners bump a `version` counter so the list re-derives state when the user returns from a successful new-version submission) + `CommissionRulesNew.tsx` (full form with all numeric inputs through `<StepperNumberInput>`, datetime through `<DateTimeInput>`, 4-rule client-side validation with inline errors, has-changes detection so submit is disabled when the draft equals the active rule, AlertDialog confirm flow, error-path stays on form with toast + preserved inputs per spec — server-side validation is a backend responsibility flagged in the prompt).
+
+  **Routing** — `/finance/commissions` + `/finance/commissions/new`. Back-compat redirects from `/commission-rules` + `/commission-rules/new`. Removed `/commission-rules` from `PLACEHOLDER_ROUTES`. Sidebar entry repointed; `g+m` global hotkey added (mnemonic for **m**oney / commissions); HelpOverlay groups added: "Commission Rules" + "New commission version".
+
+  **i18n** — ~100 new `admin.commissions.*` keys (covers nav / page title / tabs / active card cells + meta strip / worked-example labels + corporate above-threshold copy / version history table columns + row actions + mobile card meta + expanded record fields + diff column headers / form labels + helps + reason note + warning banner + 4 validation messages + confirm dialog + toasts) + 8 `common.datetime.*` keys lifted from the FX Config datetime block.
+
+  **Hotkeys** — list-page (page-scoped): `n` opens New-version page. New-version page (page-scoped): Cmd/Ctrl+Enter submits when the form is valid. Number inputs: ↑ / ↓ ± step (0.01 for percentages, 100 for UZS, 100 for USD), Shift+↑ / ↓ ± shiftStep (×10 of step). Global: `g+m` routes to `/finance/commissions`.
+
+- **Files created**:
+  - `dashboard/src/data/mockCommissionRules.ts`
+  - `dashboard/src/pages/{CommissionRules,CommissionRulesNew}.tsx`
+  - `dashboard/src/components/commissions/{ActiveRuleCard,WorkedExampleCard,VersionHistoryTable,VersionHistoryMobileCardStack,DiffPreview,ActivateConfirmDialog}.tsx`
+  - `dashboard/src/components/zhipay/{StepperNumberInput,DateTimeInput}.tsx` (lifted from `components/fx-config/`)
+
+- **Files modified**:
+  - `dashboard/src/types/index.ts` — `Currency` type extended to `UZS | CNY | USD`
+  - `dashboard/src/router.tsx` — `/finance/commissions` + `/:new` routes, redirects from `/commission-rules` + `/commission-rules/new`, dropped `/commission-rules` from `PLACEHOLDER_ROUTES`
+  - `dashboard/src/components/layout/Sidebar.tsx` — Commission Rules nav `to` updated to `/finance/commissions`
+  - `dashboard/src/hooks/useKeyboardShortcuts.ts` — `g+m` routes to `/finance/commissions`
+  - `dashboard/src/components/layout/HelpOverlay.tsx` — new "Commission Rules" + "New commission version" hotkey groups + `g+m` Navigation entry
+  - `dashboard/src/pages/FxConfigUpdate.tsx` — import paths for `StepperNumberInput` + `DateTimeInput` updated to `@/components/zhipay/...`
+  - `dashboard/src/lib/i18n.ts` — ~100 new `admin.commissions.*` keys + 8 `common.datetime.*` keys (renamed from `admin.fx-config.datetime.*` since the primitive is now shared)
+  - `ai_context/AI_CONTEXT.md` — current-phase rewrite (10 surfaces); Phase 10 entry; placeholder count 10 → 9; routes-decision row updated for `/finance/commissions`; 4 new "Decisions made" rows (Commission rules immutability + version contract, Commission worked-example contract, Currency type extension, primitive lift narrative on FX number stepping primitive row); file-map extended with `commissions/` tree + `mockCommissionRules.ts` + `zhipay/` lift annotation; ZhiPay primitives count 12 → 14; workstreams flipped Commission Rules to ☑
+  - `dashboard/src/components/fx-config/` — `StepperNumberInput.tsx` + `DateTimeInput.tsx` removed (lifted to `components/zhipay/`)
+  - `docs/product_states.md` — Commission Rules row flipped from ❌ Placeholder to ✅ Done; route updated `/commission-rules` → `/finance/commissions` (+ `/new`); last-updated bumped
+  - `ai_context/HISTORY.md` — this entry
+
+- **Docs updated**: `ai_context/AI_CONTEXT.md`, `ai_context/HISTORY.md`, `docs/product_states.md`. **No** schema / PRD / mermaid change — the existing `commission_rules` ER block in `docs/models.md` §6 already covered every spec'd field. `created_by` and `reason_note` are mock-only today (audit-trail surrogates that the real backend will record in a separate `commission_rules_audit` / `transfer_events`-style table).
+
+- **Open items**:
+  - **`commission_rules.created_by` + `commission_rules.reason_note`** — mock-only today. Backend will likely record these in an audit-log table rather than denormalize on the row. Decision pending.
+  - **`transfer_fees.rule_id` snapshot on `transfers`** — already in the schema (`docs/models.md` §6); the page assumes every `processing` transfer was priced against the active rule for that accountType, but adding deep-links from version history to "transfers priced at THIS version" would round-trip nicely.
+  - **Worked-example commission %** — currently the midpoint of [min_pct, max_pct]. Real product rule is some function of amount/destination/customer history. The midpoint is illustrative; final UI may surface multiple worked examples (low / mid / high amount) once the pricing function is decided.
+  - **`is_active` denormalized cache** — the schema carries `is_active boolean`. The mock derives it from the window check; the real backend may materialize it for query performance + a partial unique index. Decision pending with backend.
+  - **Visa / Mastercard relevance** — N/A. Commission Rules is rate-only with no card-scheme dimension. Re-introduction of V/MC card rails won't affect this surface.
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npx vite build` (exit 0, ~1.62 MB minified / ~412 KB gzip).
+
+---
+
 ### 2026-05-03 — FX Config mobile polish — Source dropdown Radix-rebuild · SourceChip fit · Chart segmented-control padding
 
 - **Summary**: Three small same-day fixes after mobile review of the FX Config surface.
