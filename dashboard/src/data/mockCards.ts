@@ -291,6 +291,11 @@ export function getCardAudit(cardId: string): CardAuditEntry[] {
   return cardAudit.filter((e) => e.cardId === cardId).slice().reverse();
 }
 
+/** Bridge for the central audit-log surface — full module store (newest first). */
+export function listCardAudit(): CardAuditEntry[] {
+  return cardAudit.slice().reverse();
+}
+
 // =====================================================================
 // Mutators
 // =====================================================================

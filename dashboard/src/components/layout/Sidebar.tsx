@@ -67,7 +67,7 @@ const SECTIONS: NavSection[] = [
   {
     titleKey: 'admin.nav.section.compliance',
     items: [
-      { to: '/audit-log', labelKey: 'admin.nav.audit-log', icon: ScrollText },
+      { to: '/compliance/audit-log', labelKey: 'admin.nav.audit-log', icon: ScrollText },
       { to: '/blacklist', labelKey: 'admin.nav.blacklist', icon: Ban },
       { to: '/kyc-tiers', labelKey: 'admin.nav.kyc-tiers', icon: Layers },
     ],

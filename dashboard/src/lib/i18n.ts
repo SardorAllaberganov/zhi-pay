@@ -1872,6 +1872,124 @@ const EN: Record<string, string> = {
   'admin.commissions.new.toast.error.title': 'Could not create version',
   'admin.commissions.new.toast.error.body':
     'The new rule could not be applied. Please retry — your inputs were preserved.',
+
+  // ── Audit Log ──────────────────────────────────────────────────────
+  'admin.audit-log.title': 'Audit Log',
+  'admin.audit-log.subtitle': 'Append-only record of all admin and system actions.',
+  'admin.audit-log.banner.append-only':
+    'Append-only. Records cannot be edited or deleted. Export for offline review.',
+
+  'admin.audit-log.action.export': 'Export CSV',
+
+  // Filter bar
+  'admin.audit-log.filter.date-range': 'Date',
+  'admin.audit-log.filter.actor-type': 'Actor type',
+  'admin.audit-log.filter.admin-actor': 'Admin actor',
+  'admin.audit-log.filter.entity-type': 'Entity type',
+  'admin.audit-log.filter.action': 'Action',
+  'admin.audit-log.filter.entity-ref': 'Entity reference',
+  'admin.audit-log.filter.entity-ref-placeholder': 'Paste a transfer-id, user-id, card-id…',
+  'admin.audit-log.filter.admin-search-placeholder': 'Search admin name or id',
+  'admin.audit-log.filter.admin-no-matches': 'No admin actor matches.',
+  'admin.audit-log.filter.clear-all': 'Clear all',
+  'admin.audit-log.filter.clear-search': 'Clear search',
+
+  // Actor type chips + filter labels
+  'admin.audit-log.actor-type.system': 'System',
+  'admin.audit-log.actor-type.user': 'User',
+  'admin.audit-log.actor-type.provider': 'Provider',
+  'admin.audit-log.actor-type.admin': 'Admin',
+
+  // Entity type labels
+  'admin.audit-log.entity-type.transfer': 'Transfer',
+  'admin.audit-log.entity-type.user': 'User',
+  'admin.audit-log.entity-type.card': 'Card',
+  'admin.audit-log.entity-type.kyc': 'KYC',
+  'admin.audit-log.entity-type.aml': 'AML',
+  'admin.audit-log.entity-type.blacklist': 'Blacklist',
+  'admin.audit-log.entity-type.fx': 'FX rate',
+  'admin.audit-log.entity-type.commission': 'Commission rule',
+  'admin.audit-log.entity-type.service': 'Service',
+  'admin.audit-log.entity-type.app_version': 'App version',
+  'admin.audit-log.entity-type.notification': 'Notification',
+
+  // Action labels (12 spec values)
+  'admin.audit-log.action.created': 'Created',
+  'admin.audit-log.action.updated': 'Updated',
+  'admin.audit-log.action.deleted': 'Deleted',
+  'admin.audit-log.action.status_changed': 'Status changed',
+  'admin.audit-log.action.approved': 'Approved',
+  'admin.audit-log.action.rejected': 'Rejected',
+  'admin.audit-log.action.cleared': 'Cleared',
+  'admin.audit-log.action.escalated': 'Escalated',
+  'admin.audit-log.action.frozen': 'Frozen',
+  'admin.audit-log.action.unfrozen': 'Unfrozen',
+  'admin.audit-log.action.reversed': 'Reversed',
+  'admin.audit-log.action.failed': 'Failed',
+
+  // Table column headers
+  'admin.audit-log.column.timestamp': 'Timestamp',
+  'admin.audit-log.column.actor-type': 'Actor type',
+  'admin.audit-log.column.actor': 'Actor',
+  'admin.audit-log.column.action': 'Action',
+  'admin.audit-log.column.entity-type': 'Entity',
+  'admin.audit-log.column.entity-ref': 'Reference',
+  'admin.audit-log.column.transition': 'From → To',
+  'admin.audit-log.column.context': 'Context',
+
+  // Expanded row
+  'admin.audit-log.expanded.timestamp': 'Timestamp',
+  'admin.audit-log.expanded.actor': 'Actor',
+  'admin.audit-log.expanded.actor-name': 'Name',
+  'admin.audit-log.expanded.actor-id': 'Id',
+  'admin.audit-log.expanded.actor-phone': 'Phone',
+  'admin.audit-log.expanded.actor-ip': 'IP',
+  'admin.audit-log.expanded.actor-device': 'Device',
+  'admin.audit-log.expanded.entity': 'Entity reference',
+  'admin.audit-log.expanded.copy-entity': 'Copy entity id',
+  'admin.audit-log.expanded.open-entity': 'Open entity',
+  'admin.audit-log.expanded.reason': 'Reason note',
+  'admin.audit-log.expanded.context': 'Context (JSON)',
+  'admin.audit-log.expanded.copy-context': 'Copy',
+  'admin.audit-log.expanded.copied': 'Copied',
+  'admin.audit-log.expanded.related': 'View {count} other events for this entity',
+
+  // Pagination
+  'admin.audit-log.pagination.showing': 'Showing {start}–{end} of {total}',
+  'admin.audit-log.pagination.prev': 'Previous',
+  'admin.audit-log.pagination.next': 'Next',
+
+  // Export dialog
+  'admin.audit-log.export.title': 'Export audit log',
+  'admin.audit-log.export.subtitle':
+    '{count} events match the active filter and will be included.',
+  'admin.audit-log.export.date-range': 'Date range (from filter)',
+  'admin.audit-log.export.date-range-help':
+    'Locked to the page filter. Adjust the filter and re-open this dialog to change.',
+  'admin.audit-log.export.format': 'Format',
+  'admin.audit-log.export.format-csv-hint': 'Spreadsheet-friendly, one row per event.',
+  'admin.audit-log.export.format-ndjson-hint': 'One JSON object per line; keeps full structure.',
+  'admin.audit-log.export.include-context': 'Include context jsonb',
+  'admin.audit-log.export.include-context-help':
+    'Off by default — context can grow large. Toggle on for forensic exports.',
+  'admin.audit-log.export.size-warning':
+    'Estimated payload ≥ {mb} MB with context — generate may take a moment.',
+  'admin.audit-log.export.cta': 'Generate export',
+  'admin.audit-log.export.cta-busy': 'Generating…',
+  'admin.audit-log.export.toast.success.title': 'Export ready',
+  'admin.audit-log.export.toast.success.body':
+    '{count} events exported as {format}. Check your downloads folder.',
+  'admin.audit-log.export.toast.error.title': 'Could not export',
+  'admin.audit-log.export.toast.error.body':
+    'The export could not be generated. Please retry.',
+
+  // Empty + error states
+  'admin.audit-log.empty.no-results.title': 'No events match these filters',
+  'admin.audit-log.empty.no-results.body':
+    'Try widening the date range or removing actor / entity / action filters.',
+  'admin.audit-log.empty.no-data.title': 'No audit events yet',
+  'admin.audit-log.empty.no-data.body':
+    'As admins and the system take actions, they appear here.',
 };
 
 /**

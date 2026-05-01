@@ -193,6 +193,11 @@ export function getFxAudit(fxRateId: string): FxAuditEntry[] {
   return fxAudit.filter((e) => e.fxRateId === fxRateId).slice().reverse();
 }
 
+/** Bridge for the central audit-log surface — full module store (newest first). */
+export function listFxAudit(): FxAuditEntry[] {
+  return fxAudit.slice().reverse();
+}
+
 // =====================================================================
 // Read helpers
 // =====================================================================

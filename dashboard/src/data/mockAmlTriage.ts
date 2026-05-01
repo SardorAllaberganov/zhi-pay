@@ -201,6 +201,11 @@ export function getAmlAuditForFlag(flagId: string): AmlAuditEntry[] {
   return auditEntries.filter((e) => e.flagId === flagId);
 }
 
+/** Bridge for the central audit-log surface — full module store (newest first). */
+export function listAmlAudit(): AmlAuditEntry[] {
+  return auditEntries.slice().reverse();
+}
+
 // =====================================================================
 // Reference time + helpers
 // =====================================================================

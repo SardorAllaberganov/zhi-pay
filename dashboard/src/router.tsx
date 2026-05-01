@@ -16,10 +16,10 @@ import { FxConfig } from '@/pages/FxConfig';
 import { FxConfigUpdate } from '@/pages/FxConfigUpdate';
 import { CommissionRules } from '@/pages/CommissionRules';
 import { CommissionRulesNew } from '@/pages/CommissionRulesNew';
+import { AuditLog } from '@/pages/AuditLog';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES = [
-  '/audit-log',
   '/blacklist',
   '/kyc-tiers',
   '/services',
@@ -69,6 +69,9 @@ export function Router() {
         <Route path="/finance/commissions" element={<CommissionRules />} />
         <Route path="/finance/commissions/new" element={<CommissionRulesNew />} />
 
+        {/* Compliance — Audit Log (nested) */}
+        <Route path="/compliance/audit-log" element={<AuditLog />} />
+
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
         <Route
@@ -87,6 +90,7 @@ export function Router() {
         <Route path="/fx-config/new" element={<Navigate to="/finance/fx-config/new" replace />} />
         <Route path="/commission-rules" element={<Navigate to="/finance/commissions" replace />} />
         <Route path="/commission-rules/new" element={<Navigate to="/finance/commissions/new" replace />} />
+        <Route path="/audit-log" element={<Navigate to="/compliance/audit-log" replace />} />
 
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />

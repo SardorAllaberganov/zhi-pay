@@ -385,6 +385,11 @@ export function getCommissionAudit(ruleId: string): CommissionAuditEntry[] {
   return commissionAudit.filter((e) => e.ruleId === ruleId).slice().reverse();
 }
 
+/** Bridge for the central audit-log surface — full module store (newest first). */
+export function listCommissionAudit(): CommissionAuditEntry[] {
+  return commissionAudit.slice().reverse();
+}
+
 // =====================================================================
 // Read helpers
 // =====================================================================

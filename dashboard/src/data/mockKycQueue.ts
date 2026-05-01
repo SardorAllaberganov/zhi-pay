@@ -161,6 +161,11 @@ export function getKycAuditForReview(reviewId: string): KycAuditEntry[] {
   return auditEntries.filter((e) => e.reviewId === reviewId);
 }
 
+/** Bridge for the central audit-log surface — full module store (newest first). */
+export function listKycAudit(): KycAuditEntry[] {
+  return auditEntries.slice().reverse();
+}
+
 // =====================================================================
 // Reference time + small helpers
 // =====================================================================

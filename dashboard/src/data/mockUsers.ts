@@ -265,6 +265,11 @@ export function getUserAuditForUser(userId: string): UserAuditEntry[] {
   return userAudit.filter((e) => e.userId === userId).slice().reverse();
 }
 
+/** Bridge for the central audit-log surface — full module store (newest first). */
+export function listUserAudit(): UserAuditEntry[] {
+  return userAudit.slice().reverse();
+}
+
 export const USER_ADMIN_POOL = ADMIN_POOL;
 export const CURRENT_USER_ADMIN = ADMIN_POOL[0];
 

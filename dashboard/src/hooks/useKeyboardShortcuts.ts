@@ -90,7 +90,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
         else if (e.key === 'f') navigate('/finance/fx-config');
         else if (e.key === 'm') navigate('/finance/commissions');
         else if (e.key === 's') navigate('/services');
-        else if (e.key === 'l') navigate('/audit-log');
+        else if (e.key === 'l') navigate('/compliance/audit-log');
         else if (e.key === 'b') navigate('/blacklist');
         else if (e.key === 'n') navigate('/notifications');
         lastKey.current = null;
