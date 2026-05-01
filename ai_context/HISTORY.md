@@ -4,6 +4,26 @@
 
 ---
 
+### 2026-05-01 — Add `docs/product_states.md` build-progress snapshot
+
+- **Summary**: Added a single-glance build-progress doc with two scopes (dashboard + mobile app), surface-level rows, and a 3-state legend (✅ Done / 🚧 In progress / ❌ Todo). Verified the dashboard placeholder list against [`router.tsx`](../dashboard/src/router.tsx) — it's **14** routes, not the "11" previously cited (`/stories`, `/news`, `/notifications` were missing from the count). Cross-referenced rules + state machines from each row so designers can jump from "what's left" → the canonical doc that constrains it.
+  - **Dashboard section** — Foundation table (9 ✅ rows: tokens, type scale, shadcn primitives, ZhiPay primitives, app shell, mock data, master-detail pattern, action-bar pattern, deploy pipeline). Surfaces table (5 ✅ — Overview / Transfers / Transfer Detail / KYC Queue / AML Triage; 14 ❌ placeholders grouped Customers / Compliance / Finance / System / Content). Cross-cutting open-items table (2 ❌ + 1 🚧 + 1 ❌: brand assets, Visa/MC re-introduction, senior-role escalate wiring, bulk-reject/bulk-clear).
+  - **Mobile section** — Foundation table (5 ❌ rows: tech-stack decision, mobile-first tokens, primitives/components/patterns, i18n seed, brand assets). Surfaces table (13 ❌ rows: onboarding, phone OTP, MyID, home, card linking, card management, send money, history, transfer detail, tier upgrade, notifications, settings, help). Each row links the constraining `.claude/rules/` file or `mermaid_schemas/` doc.
+  - **AI_CONTEXT.md updates** — fixed "11 placeholder routes" → "14" in two places (current-phase paragraph + workstreams checklist; latter expanded with the explicit route list); added `product_states.md` to the file-map under `docs/`; added it to Quick links.
+- **Files created**:
+  - `docs/product_states.md`
+- **Files modified**:
+  - `ai_context/AI_CONTEXT.md` — 11→14 placeholder count (×2 spots), file-map row, Quick-links row
+  - `ai_context/HISTORY.md` — this entry
+- **Docs updated**: `docs/product_states.md` (new), `ai_context/AI_CONTEXT.md`, `ai_context/HISTORY.md`. **No** schema / PRD / mermaid change.
+- **Key decisions**:
+  - **Build-progress snapshot lives in `docs/`**, not `ai_context/`, because it's product-facing reference material, not orientation. Updated whenever a phase ships.
+  - **Three-state legend** (✅ / 🚧 / ❌) — `🚧 In progress` reserved for partially-built items (e.g. senior-role escalate wiring is audit-log-only today). Strict ✅/❌ for fully-shipped vs not-started.
+  - **Rows are surface-level** for dashboard (matches the "5 done + 14 placeholder" reality) and surface-level for mobile (since nothing is built, surface-level reads as a forward-looking screen list). No per-feature decomposition — that lives in the PRD.
+- **Open items**: none.
+
+---
+
 ### 2026-05-01 — Admin AML Triage page (master-detail) + cross-surface mobile-layout fix-up
 
 - **Summary**: Built the AML Triage queue at `/operations/aml-triage` (+ `/:id` + `/new`) — Phase 5 of the dashboard. Master-detail (520px list + flex detail on `lg+`, single-pane stacked on mobile/tablet). Severity-driven prioritization with critical pinning. Flag-type-decorated detail (velocity / amount / pattern / sanctions / manual). Sanctions-only-escalate + critical-escalate-blocks-user compliance rules wired into UI and PRD §9.2. Manual-flag form is a separate full-page route, not a modal. **Also a cross-surface mobile-layout overhaul** that retroactively cleans up the KYC Queue too: action bar switched from `sticky bottom-0` (which stopped pinning under various wrapper-overflow strategies) to `position: fixed inset-x-0 bottom-0 md:left-16 lg:static`; detail body adds `pt-4 pb-28 lg:pb-4` to clear the fixed bar; row critical/selected indicator switched to inset box-shadow; JSON code viewers drop their internal scroll caps in favor of page scroll.
