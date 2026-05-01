@@ -4,6 +4,103 @@
 
 ---
 
+### 2026-05-03 — Audit Log polish — search-row layout · in-place copy feedback · non-sticky filter bar · DateRangePicker mobile + chip-label cleanup
+
+- **Summary**: Five same-day adjustments to the freshly-shipped Audit Log surface plus a mobile fix on the shared `<DateRangePicker>` primitive. All driven by user feedback on the prototype.
+  1. **Entity-ref search bar lifted to its own canonical full-width row** above the chip row in `AuditFilterBar.tsx`. Earlier draft had it as a `ml-auto md:w-72` element pinned to the right of the chip strip — visually cramped and out-of-step with the Users / Cards / Recipients convention. Now `h-10 bg-background shadow-sm` matching the other surfaces, with the lucide `Search` icon left and an inline X clear-button (8px right-padded ghost button) when the input is filled. New i18n key `admin.audit-log.filter.clear-search`.
+  2. **Filter bar de-stickied** at user request. Earlier draft applied `lg:sticky lg:top-0 lg:z-20` on the filter card (LESSON 2026-04-30's filter-bar-stickiness carve-out permitted it); user removed: "remove the sticky header". Filter bar now scrolls with the page. Other surfaces' filter-bar stickiness is unaffected — this is an opt-out for the audit-log page only.
+  3. **In-place copy feedback** replaces the earlier toast wiring. Three component files (`AuditTable.tsx`, `AuditMobileCardStack.tsx`, `AuditRowExpanded.tsx`) plus a small new hook (`components/audit-log/useCopyFeedback.ts`) — the hook returns `{ copied, copy(value) }` with a 1.5s timeout and a cleanup on unmount. Every copy site swaps `Copy → Check` icon with a `text-success-700 dark:text-success-600` color flip while `copied` is true; the mobile card stack also adds a `bg-success-50` tint behind the icon button for parity with the desktop visual. `aria-live="polite"` on each button so screen readers announce the change. Sonner imports dropped from all three files; toast i18n keys removed (`admin.audit-log.toast.copied.entity` and `admin.audit-log.toast.copied.context`); new key `admin.audit-log.expanded.copied` added for the context-button label that flips from "Copy" to "Copied". Toasts remain on the export modal — they communicate background work, not click confirmations.
+  4. **DateRangePicker mobile fix** at the **primitive** layer (`components/zhipay/DateRangePicker.tsx`). New media-query state listens to `matchMedia('(max-width: 767px)')`. Below the `md` breakpoint the calendar renders `numberOfMonths={1}` and the header drops the `Month A | Month B` divider so only the active month name renders. `<PopoverContent>` gained `collisionPadding={8}` so Radix shifts the popover off the viewport's right edge when the trigger sits near the border (user feedback: "it appears to right border in open"). Width clamp tightened from `calc(100vw - 2rem)` → `calc(100vw - 1rem)`. Desktop behavior (2-month view + 210px sidebar) unchanged. Every `<DateRangePicker>` consumer (Cards' last-used filter, Recipients' last-used filter, Audit Log's date-range chip, Overview's range filter) gets the mobile fix automatically.
+  5. **Date-range chip label cleanup**. Earlier draft was `Date · Today` (label prefix + separator + formatted range). Iterated through `[CalendarRange icon] Today` (added then removed at user request) → final form `Today` / `Last 7 days` / formatted custom range, plain text + chevron. `aria-label` keeps the explicit "Date: Today" form for screen readers. Chip text width raised to `max-w-[180px]`.
+
+- **Files modified**:
+  - `dashboard/src/components/audit-log/AuditFilterBar.tsx` — search row lifted to its own row · sticky removed · DateRangeChip label simplified · X clear button added
+  - `dashboard/src/components/audit-log/AuditTable.tsx` — `useCopyFeedback` wired in `EntityRefCell` · sonner import dropped
+  - `dashboard/src/components/audit-log/AuditMobileCardStack.tsx` — copy span lifted into a `<CopyEntityIdButton>` subcomponent so each row has its own hook state · sonner import dropped
+  - `dashboard/src/components/audit-log/AuditRowExpanded.tsx` — both copy buttons consume `useCopyFeedback` (entity-id icon button + context-text button) · sonner import dropped · context button label flips from "Copy" → "Copied"
+  - `dashboard/src/components/zhipay/DateRangePicker.tsx` — `isMobile` media-query state · responsive `numberOfMonths` · header divider hidden on mobile · `collisionPadding={8}` on popover · width clamp tightened
+  - `dashboard/src/lib/i18n.ts` — added `admin.audit-log.filter.clear-search` and `admin.audit-log.expanded.copied`; removed `admin.audit-log.toast.copied.entity` and `admin.audit-log.toast.copied.context`
+  - `ai_context/AI_CONTEXT.md` — Audit Log paragraph rewritten to reflect non-sticky filter bar, full-width search row, in-place copy feedback, plain date-chip label · file-map adds `useCopyFeedback.ts` · 2 new "Decisions made" rows (Copy-action feedback pattern, DateRangePicker mobile rendering) · sticky-thead-deviation row updated to note the audit-log filter bar opt-out
+  - `docs/product_states.md` — Audit log row updated: "non-sticky filter bar" + canonical search-row pattern + in-place copy feedback + DateRangePicker mobile note
+  - `ai_context/HISTORY.md` — this entry
+
+- **Files created**:
+  - `dashboard/src/components/audit-log/useCopyFeedback.ts`
+
+- **Docs updated**: `ai_context/AI_CONTEXT.md`, `ai_context/HISTORY.md`, `docs/product_states.md`. **No** schema / PRD / mermaid change — all five tweaks are presentation-layer.
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npx vite build` (exit 0).
+
+---
+
+### 2026-05-03 — Admin Audit Log surface (Phase 11) — `/compliance/audit-log`
+
+- **Summary**: Built the central audit-log surface — read-only union view that bridges every existing module-level audit store in the dashboard. List page at `/compliance/audit-log` with append-only banner (slate-100, non-dismissible), sticky filter bar on `lg+`, full-width sortable table with chevron + click-to-expand rows on desktop, and a card-stack mirror with the same expand-inline pattern on `<lg`. **`mockAuditLog.ts` is the single source of truth** — at read time it merges `TRANSFER_EVENTS_FULL` plus the 6 existing audit stores (`mockUsers` / `mockCards` / `mockKycQueue` / `mockAmlTriage` / `mockFxRates` / `mockCommissionRules` — each gained a small `listXxxAudit()` export) plus a 200-row 7-day deterministic seed. Granular per-store action verbs (e.g. `request_info`, `freeze_card`, `assign_to_me`, `auto_freeze_user_blocked`) are mapped into the spec's 12-value `AuditAction` enum (`created / updated / deleted / status_changed / approved / rejected / cleared / escalated / frozen / unfrozen / reversed / failed`); the original verb is preserved in `context.kind`. The page imports **zero mutators** — read-only is enforced by construction.
+
+  **Decision deviations from the literal spec** (each flagged in the proposal and confirmed before implementation):
+  - **Non-sticky table thead** — spec said "Table — sticky header"; LESSON 2026-04-30 firmly forbids sticky thead even when a spec asks. Filter-bar stickiness preserved (LESSON carve-out). Every other deviation in this list was confirmed in the proposal.
+  - **`/compliance/audit-log` route** — first `/compliance/*` segment in the codebase. Back-compat redirect from flat `/audit-log` so existing FX Config + Commission Rules kebab "Open audit log entry" deep-links keep resolving (`/audit-log?entity=fx_rate&id=fxr_010` → `/compliance/audit-log?entity=fx_rate&id=fxr_010` → filter applied + params stripped on first mount).
+  - **Bridge from existing 7 stores** instead of a fictional 200-row-only seed. The seed covers spread (system / provider / user activity that no current admin surface emits); the bridge ensures any admin action taken in the prototype shows up here on next page focus.
+  - **Action enum mapping** — the spec's 12-value action filter is honored exactly; granular per-store verbs are rolled up to the closest spec value (e.g. `kyc.request_info` → `updated`) and the original verb stays in `context.kind` for forensic detail in the JSON viewer.
+  - **Recipient hard-deletes are bridged via the user-audit store, not a separate `recipient` entity-type** — the spec's `entity_type` enum doesn't include `recipient`. `mockUsers.appendUserAudit` already records `hard_delete_recipient` rows, so they surface as `entity.type='user'` with `context.kind='hard_delete_recipient'`.
+
+  **Mock dataset (200 rows · 7 days)** — `dashboard/src/data/mockAuditLog.ts`. Deterministic manual seed (no PRNG). NOW = 2026-04-29T10:30:00Z (matches `mockTransfers` / `mockFxRates` / `mockCommissionRules`). Distribution: ~80 system rows (4 transfer-state-transition clusters of `created → processing → completed`, 1 cluster of `created → processing → failed`, 12 KYC auto-expire rows, 7 FX `healthy → drifting` flagging rows once per day, 30 standalone transfer state transitions, the rest "last login recorded"); ~50 provider rows (alternating Alipay / WeChat webhook completed/failed, ~5 failures using `RECIPIENT_INVALID` + `PROVIDER_UNAVAILABLE` failure codes); ~40 admin rows (10 KYC approves / 5 KYC rejects with realistic reasons / 6 card freezes with severity + reason / 2 card unfreezes / 6 AML clears with reason codes / 3 AML escalates incl. one critical-blocks-user / 4 FX rate creates incl. one historic 1.5% manual override / 2 commission rule new versions / 1 blacklist add / 1 service maintenance toggle); 30 user rows (login / kyc_start / transfer_submit / recipient_save with realistic IPs and phones). Each row carries `id`, `timestamp`, `actorType`, `actor` ({id, name, ip, device, phone} as applicable), `action`, `entity` ({type, id}), `fromStatus`, `toStatus`, optional `reason`, and a free-form `context` jsonb.
+
+  **Pattern layer** (`dashboard/src/components/audit-log/`):
+  - `types.ts` — filter shape + `applyAuditFilters` + `applyAuditSort` + `countActiveAuditFilters`. Default filter is `{ dateRange: { range: 'today' }, actorTypes: [], adminActorIds: [], entityTypes: [], actions: [], entityRef: '' }`. Date-range filter resolves through the canonical `<DateRangePicker>` `resolveDateRange()` helper with end-of-day-inclusive upper bound. Entity-ref text input matches `entity.id` case-insensitively (substring).
+  - `filterState.ts` — module-level cache keyed to filters / sort / page / focused-index / expanded-id.
+  - `AuditLogBanner.tsx` — append-only banner with `bg-slate-100 dark:bg-slate-800`, Info icon, non-dismissible (append-only is a contract, not a hint).
+  - `AuditFilterBar.tsx` — sticky-on-`lg+` filter bar inside a rounded `bg-card` container. DateRangeChip wraps `<DateRangePicker>` (today renders as inactive styling, anything else lights brand). 4 generic ChipMulti groups (actor type / entity type / action) + AdminActorChip (searchable multi-select populated from `getDistinctAdminActors()`). Free-text entity-ref `<Input>` aligned right via `ml-auto`. Clear-all chip appears whenever `countActiveAuditFilters > 0`.
+  - `ActorTypeChip.tsx` — system / user / provider / admin chip with palette (slate / brand / success / warning) + lucide icon (`Cpu` / `User` / `Webhook` / `ShieldCheck`).
+  - `ActionChip.tsx` — 12-action chip with tone mapping: `created → info`; `approved / cleared / unfrozen → success`; `escalated / frozen / reversed → warning`; `deleted / rejected / failed → danger`; `updated / status_changed → neutral`.
+  - `StatusTransitionPill.tsx` — `from → to` mono pill with `ArrowRight` separator. Renders `∅` when one side is null; renders nothing when both are null.
+  - `AuditTable.tsx` — desktop table. Non-sticky thead per LESSON 2026-04-30 (deviation note in code). 9 columns: chevron / Timestamp (sortable, ISO + `formatRelative` subline) / Actor type / Actor (admin avatar+name+id / user phone / provider name / "system" italic) / Action / Entity type / Entity ref (8-char prefix mono with copy-on-click that stops propagation) / from→to pill / 80-char Context summary. Click row → flips chevron + renders an inline `<TableRow colSpan={9}>` with `<AuditRowExpanded>`. Skeleton variant matches the layout exactly with 10 rows per spec.
+  - `AuditMobileCardStack.tsx` — mirrors the table on `<lg`. Each card: timestamp + relative + chevron / actor-type chip + action chip / entity type + 8-char ref + copy / optional transition pill / 80-char context summary. Tap card → expand inline (per spec — no Sheet, since the data is already small enough).
+  - `AuditRowExpanded.tsx` — 4-cell key/value grid (timestamp UTC, actor block (id / name / phone / ip / device), entity reference w/ Copy + "Open entity" Button when the type is one of transfer / user / card / kyc / aml / fx / commission and the id isn't a `tx_seed` / `bridge_` / `u_seed` / etc. seed id, reason note when present). Below the grid: a collapsible Context (JSON) `<pre>` viewer with `overflow-x-auto overflow-y-hidden` (matches the AML / KYC JSON-panel convention) + Copy button + BigInt-safe replacer. "View N other events for this entity →" Button at the bottom (visible when `countRelatedEvents > 0`) sets the entity-ref filter to the full id and scrolls the page back to the top.
+  - `ExportDialog.tsx` — Date-range row read-only (locked to the page filter, formatted via `formatDateRangeLabel`). Format radio (CSV / NDJSON, custom radio buttons with brand-tinted active state). Include-context checkbox (default off). When include-context is on, a cheap byte estimator (`JSON.stringify(context).length` per row + 200 bytes for non-context columns) drives a ≥2 MB warning banner. Generate-export button builds the file synchronously, triggers a Blob download with `application/x-ndjson` MIME for NDJSON and `text/csv` for CSV, and toasts success or failure (failure path: error toast with Retry CTA per spec).
+
+  **Page** — `AuditLog.tsx` orchestrates filters / sort / page / focus / expanded state; persists everything to the module cache on every change so a kebab round-trip restores the page. Initial-mount 400ms skeleton (`loading=true` → false). Re-derives the merged list via a `version` counter bumped on `focus` / `popstate` events so admin actions taken on other pages reflect on return. Deep-link consumption: `?entity=&id=` query params auto-apply on first mount (`fx_rate` / `commission_rule` aliases supported), broaden the date range to 30d so the matching rows actually show up, then `setParams(replace=true)` strips the params from the URL. 5 page-scoped hotkeys (j / k / Enter / e / f) with the standard typing-context guard.
+
+  **Routing** — `/compliance/audit-log` (first `/compliance/*` route in the codebase). Back-compat redirect from flat `/audit-log` → `/compliance/audit-log` preserves existing kebab deep-links. Removed `/audit-log` from `PLACEHOLDER_ROUTES`. Sidebar entry repointed; `g+l` global hotkey (already wired) now lands on the new path. HelpOverlay groups added: "Audit Log" (5 page-scoped hotkeys) + Navigation entry for `g+l`.
+
+  **i18n** — ~85 new `admin.audit-log.*` keys (covers nav / page title + subtitle / banner / Export action / 6 filter labels / 4 actor-type labels / 11 entity-type labels / 12 action labels / 8 column headers / 9 expanded-row labels / 3 pagination labels / 11 export-modal keys / 4 empty-state strings / 4 toast strings).
+
+  **Hotkeys** — list-page (page-scoped): `j` / `k` move focus; `Enter` toggles expand; `e` opens export dialog; `f` focuses the first filter chip. Global: `g+l` routes to `/compliance/audit-log`.
+
+- **Files created**:
+  - `dashboard/src/data/mockAuditLog.ts`
+  - `dashboard/src/pages/AuditLog.tsx`
+  - `dashboard/src/components/audit-log/{types,filterState}.ts`
+  - `dashboard/src/components/audit-log/{AuditLogBanner,AuditFilterBar,ActorTypeChip,ActionChip,StatusTransitionPill,AuditTable,AuditMobileCardStack,AuditRowExpanded,ExportDialog}.tsx`
+
+- **Files modified**:
+  - `dashboard/src/data/mockUsers.ts` — `listUserAudit()` export added (3 lines, full module store newest-first)
+  - `dashboard/src/data/mockCards.ts` — `listCardAudit()` export added
+  - `dashboard/src/data/mockKycQueue.ts` — `listKycAudit()` export added
+  - `dashboard/src/data/mockAmlTriage.ts` — `listAmlAudit()` export added
+  - `dashboard/src/data/mockFxRates.ts` — `listFxAudit()` export added
+  - `dashboard/src/data/mockCommissionRules.ts` — `listCommissionAudit()` export added
+  - `dashboard/src/router.tsx` — `<AuditLog>` import + `/compliance/audit-log` route + `Navigate` redirect from `/audit-log` + dropped `/audit-log` from `PLACEHOLDER_ROUTES`
+  - `dashboard/src/components/layout/Sidebar.tsx` — Audit Log nav `to` updated to `/compliance/audit-log`
+  - `dashboard/src/hooks/useKeyboardShortcuts.ts` — `g+l` routes to `/compliance/audit-log`
+  - `dashboard/src/components/layout/HelpOverlay.tsx` — `g+l` Navigation entry + new "Audit Log" hotkey group with 5 page-scoped shortcuts + appended to `groups` array
+  - `dashboard/src/lib/i18n.ts` — ~85 new `admin.audit-log.*` keys
+  - `ai_context/AI_CONTEXT.md` — current-phase rewrite (11 surfaces); Phase 11 entry; placeholder count 9 → 8; routes-decision row updated for `/compliance/audit-log`; 2 new "Decisions made" rows (Central audit-log strategy, Audit Log sticky thead deviation); file-map extended with `audit-log/` tree + `mockAuditLog.ts`; pages list extended with `AuditLog`; workstreams flipped Audit Log to ☑
+  - `docs/product_states.md` — Audit log row flipped from ❌ Placeholder to ✅ Done; route updated `/audit-log` → `/compliance/audit-log`; last-updated bumped
+  - `ai_context/HISTORY.md` — this entry
+
+- **Docs updated**: `ai_context/AI_CONTEXT.md`, `ai_context/HISTORY.md`, `docs/product_states.md`. **No** schema / PRD / mermaid change — central audit log is a derived UNION view, not a new entity. The real backend may store this as a single `audit_events` table or as a query that joins per-domain audit tables; the dashboard's mock simulates the union.
+
+- **Open items**:
+  - **Backend audit shape** — does the real backend keep one normalized `audit_events` table or per-domain audit tables joined via a view? The mock is agnostic — it just merges sources at read time.
+  - **Recipient as a first-class entity type** — folded under `entity.type='user'` with `context.kind='hard_delete_recipient'` for now, since the spec's enum doesn't include `recipient`. Re-evaluate if the real schema records it as a separate entity.
+  - **`reason_note` storage** — admin actions whose store carries a free-text reason (cards / KYC / AML / FX / commission / users) all expose it on the central row. The schema decision (denormalized on the entity row vs separate audit-only table) is still open across multiple surfaces (FX Config + Commission Rules already flagged this open).
+  - **Visa / Mastercard relevance** — N/A. Audit Log surfaces whatever lands in the bridged stores; if V/MC return, they appear automatically.
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npx vite build` (exit 0, ~1.68 MB minified / ~426 KB gzip).
+
+---
+
 ### 2026-05-03 — Admin Commission Rules surface (Phase 10) — `/finance/commissions` + `/new`
 
 - **Summary**: Built the Commission Rules surface — versioned per account_type (Personal | Corporate), edits-as-new-version contract, audit-protected history, worked-example live recompute. List page at `/finance/commissions` with `<Tabs>` segmented control split between Personal (default) and Corporate; each tab stacks ActiveRuleCard → WorkedExampleCard → VersionHistoryTable on `lg+` / VersionHistoryMobileCardStack on `<lg`. Full-page New-version form at `/finance/commissions/new?account_type=...` (full pre-fill from active rule, sticky DiffPreview + WorkedExampleCard preview pane on `lg+`, mobile "Show diff & worked example" toggle). `mockCommissionRules.ts` is the single source of truth — `commission_rules` rows are NEVER edited in place per accountType; `addCommissionRule()` only inserts new versions and closes the previous active row's window by setting `effectiveTo = newRow.effectiveFrom`. Schema's `is_active` boolean is treated as a denormalized cache of the window check — derived in mock, the real backend may keep it materialized. `created_by` and `reason_note` are mock-only audit-trail surrogates (same precedent as `mockFxRates.ts`). The page never recomputes `transfer_fees.commission_uzs` for transfers already in `processing` / `completed` (this is enforced upstream).
