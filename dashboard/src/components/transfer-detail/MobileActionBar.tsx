@@ -44,7 +44,12 @@ export function MobileActionBar({ transfer, events, stuckMs, onAction }: Props) 
     <>
       <div
         className={cn(
+          // <lg only — desktop uses the right-rail action panel. The bar
+          // is fixed-bottom; on md the left edge tracks AppShell's
+          // `--sidebar-width` var so the bar stays inside the main
+          // content area instead of overlapping the collapsed sidebar.
           'lg:hidden fixed bottom-0 left-0 right-0 z-30',
+          'md:left-[var(--sidebar-width,4rem)]',
           'bg-background border-t border-border',
           'pb-[env(safe-area-inset-bottom)]',
         )}

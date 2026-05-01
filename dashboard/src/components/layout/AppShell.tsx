@@ -42,13 +42,24 @@ export function AppShell({ children }: AppShellProps) {
     },
   });
 
+  // Expose the sidebar's current width as a CSS variable on the shell
+  // root so fixed-bottom action bars can offset their `left` precisely
+  // — `md:left-[var(--sidebar-width)]` — and stay inside the main
+  // content area whether the sidebar is collapsed (64px) or expanded
+  // (240px). On `<md` the sidebar is hidden behind a Sheet, so the var
+  // is never read (the bar uses `inset-x-0` for full viewport width).
+  const sidebarWidthPx = collapsed ? 64 : 240;
+
   return (
     <TooltipProvider delayDuration={200}>
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
 
-      <div className="flex h-dvh bg-background">
+      <div
+        className="flex h-dvh bg-background"
+        style={{ '--sidebar-width': `${sidebarWidthPx}px` } as React.CSSProperties}
+      >
         <div className="hidden md:flex">
           <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
         </div>

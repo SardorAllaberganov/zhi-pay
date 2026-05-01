@@ -42,10 +42,14 @@ export function ActionBar({
   return (
     <div
       className={cn(
-        // <lg: fixed bottom of viewport, full-width on mobile, offset by the
-        //      collapsed sidebar (64px) on md+. Escapes ancestor overflow.
+        // <lg: fixed bottom of viewport, full-width on mobile. On md+ the
+        //      left edge tracks the live sidebar width via AppShell's
+        //      `--sidebar-width` CSS var (64px collapsed / 240px expanded),
+        //      so the bar stays inside the main content area regardless of
+        //      sidebar state. Escapes ancestor overflow.
         // lg+: static, inline flex-wrap row inside the detail pane.
-        'fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-2 border-t border-border bg-card px-4 py-3 md:left-16',
+        'fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-2 border-t border-border bg-card px-4 py-3',
+        'md:left-[var(--sidebar-width,4rem)]',
         'lg:static lg:left-auto lg:right-auto lg:flex lg:flex-wrap lg:items-center',
         className,
       )}
