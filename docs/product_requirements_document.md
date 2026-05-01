@@ -298,6 +298,8 @@ The v1 feature surface, grouped by domain:
 - Every transfer creation is screened against `aml_flags` triggers (velocity, anomalous amount, pattern, sanctions list).
 - Critical flags auto-pause the transfer (status remains `processing` until cleared).
 - Blacklist (`blacklist`) screens phone, PINFL, device, IP, and card token at signup, login, card link, and transfer creation.
+- **Sanctions hits cannot be cleared** from the AML triage view — only escalated. Reviewer-facing UX hides the Clear action and auto-fills a compliance template into the Escalate reason field that the reviewer must edit before submitting; match details are never communicated to the user.
+- **Escalating a critical-severity flag auto-blocks the linked user** (`users.status = 'blocked'`). The user is unable to send or sign in until manually unblocked. Confirmation modal in the admin UI surfaces this side effect before submit. Lower severities (warning, info) escalate without blocking.
 
 ### 9.3 PCI
 - Card PAN is **never** stored in plaintext. Only `masked_pan` (first6+last4) and the acquirer-issued `token`.
