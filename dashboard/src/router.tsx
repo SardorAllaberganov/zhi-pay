@@ -10,10 +10,11 @@ import { Users } from '@/pages/Users';
 import { UserDetail } from '@/pages/UserDetail';
 import { Cards } from '@/pages/Cards';
 import { CardDetail } from '@/pages/CardDetail';
+import { Recipients } from '@/pages/Recipients';
+import { RecipientDetail } from '@/pages/RecipientDetail';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES = [
-  '/recipients',
   '/fx-config',
   '/commission-rules',
   '/audit-log',
@@ -54,6 +55,10 @@ export function Router() {
         <Route path="/customers/cards" element={<Cards />} />
         <Route path="/customers/cards/:id" element={<CardDetail />} />
 
+        {/* Customers — Recipients (nested) */}
+        <Route path="/customers/recipients" element={<Recipients />} />
+        <Route path="/customers/recipients/:id" element={<RecipientDetail />} />
+
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
         <Route
@@ -66,6 +71,8 @@ export function Router() {
         <Route path="/users/:id" element={<Navigate to="/customers/users" replace />} />
         <Route path="/cards" element={<Navigate to="/customers/cards" replace />} />
         <Route path="/cards/:id" element={<Navigate to="/customers/cards" replace />} />
+        <Route path="/recipients" element={<Navigate to="/customers/recipients" replace />} />
+        <Route path="/recipients/:id" element={<Navigate to="/customers/recipients" replace />} />
 
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />

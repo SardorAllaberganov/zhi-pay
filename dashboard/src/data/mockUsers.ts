@@ -25,6 +25,11 @@ import {
   type CardStatus,
   type FreezeSeverity,
 } from './mockCards';
+import {
+  getRecipientsByUserId as recipientsByUserId,
+  hardDeleteRecipient as recipientsHardDelete,
+  type RecipientEntry,
+} from './mockRecipients';
 import type { Transfer } from '@/types';
 
 // Re-export card types under the legacy `UserCard*` names so existing
@@ -34,6 +39,12 @@ export type UserCardScheme = CardScheme;
 export type UserCardStatus = CardStatus;
 export type UserCardEntry = CardEntry;
 export type { FreezeSeverity };
+
+// Recipient types are re-exported under the legacy `UserRecipient*` names
+// so existing callers (UserRecipientsTab, HardDeleteRecipientDialog) keep
+// compiling. mockRecipients is now the single source of truth for saved
+// recipient data — this file delegates reads + the hard-delete mutator.
+export type UserRecipientEntry = RecipientEntry;
 
 // Per-user transfer index — built once, drives every "lifetime" / monthly /
 // status-breakdown stat so the user-detail page stays consistent with the
@@ -175,20 +186,6 @@ export interface UserKycHistoryEntry {
   expiresAt?: Date;
   failureReason?: string;
   resultingTier?: UserTier;
-}
-
-export interface UserRecipientEntry {
-  id: string;
-  userId: string;
-  destination: 'alipay' | 'wechat';
-  identifier: string;
-  displayName: string;
-  nickname?: string;
-  isFavorite: boolean;
-  lastUsedAt: Date;
-  transferCount: number;
-  createdAt: Date;
-  isDeleted?: boolean;
 }
 
 export interface UserDeviceEntry {
@@ -677,59 +674,10 @@ export function getUserCards(userId: string): UserCardEntry[] {
   return getCardsByUserId(userId);
 }
 
-// ── Recipients ─────────────────────────────────────────────────────────
-
-const liveRecipients: UserRecipientEntry[] = [
-  {
-    id: 'r_u03_01',
-    userId: 'u_03',
-    destination: 'alipay',
-    identifier: '13800138000',
-    displayName: 'Wang Lei',
-    nickname: 'Brother',
-    isFavorite: true,
-    lastUsedAt: minsAgo(120),
-    transferCount: 31,
-    createdAt: daysAgo(380),
-  },
-  {
-    id: 'r_u03_02',
-    userId: 'u_03',
-    destination: 'alipay',
-    identifier: 'wang.fei@example.com',
-    displayName: 'Wang Fei',
-    nickname: 'Supplier',
-    isFavorite: false,
-    lastUsedAt: daysAgo(8),
-    transferCount: 16,
-    createdAt: daysAgo(120),
-  },
-  {
-    id: 'r_u01_01',
-    userId: 'u_01',
-    destination: 'alipay',
-    identifier: '13900139000',
-    displayName: 'Zhang Wei',
-    isFavorite: true,
-    lastUsedAt: minsAgo(180),
-    transferCount: 67,
-    createdAt: daysAgo(420),
-  },
-  {
-    id: 'r_u02_01',
-    userId: 'u_02',
-    destination: 'wechat',
-    identifier: 'liu_yang_88',
-    displayName: 'Liu Yang',
-    isFavorite: true,
-    lastUsedAt: daysAgo(2),
-    transferCount: 24,
-    createdAt: daysAgo(180),
-  },
-];
+// ── Recipients (delegated to mockRecipients — single source of truth) ─
 
 export function getUserRecipients(userId: string): UserRecipientEntry[] {
-  return liveRecipients.filter((r) => r.userId === userId && !r.isDeleted).slice();
+  return recipientsByUserId(userId);
 }
 
 // ── Devices ────────────────────────────────────────────────────────────
@@ -1085,24 +1033,32 @@ export function unfreezeCard(
   return card;
 }
 
+/**
+ * Wrapper around `mockRecipients.hardDeleteRecipient` that ALSO writes
+ * a user-audit entry so the user-detail Audit tab continues to surface
+ * recipient deletions. Same admin action, two audit logs.
+ */
 export function hardDeleteRecipient(
   userId: string,
   recipientId: string,
   reason: string,
   actor: ActorContext,
 ): UserRecipientEntry | undefined {
-  const r = liveRecipients.find((x) => x.id === recipientId);
-  if (!r) return undefined;
-  r.isDeleted = true;
+  const updated = recipientsHardDelete(recipientId, reason, actor);
+  if (!updated) return undefined;
   appendUserAudit({
     userId,
     action: 'hard_delete_recipient',
     actorId: actor.id,
     actorName: actor.name,
     reason,
-    context: { recipientId, destination: r.destination, identifier: r.identifier },
+    context: {
+      recipientId,
+      destination: updated.destination,
+      identifier: updated.identifier,
+    },
   });
-  return r;
+  return updated;
 }
 
 export function recordGenerateAuditReport(

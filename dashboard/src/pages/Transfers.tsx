@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, BookmarkPlus, ChevronDown, CreditCard, FileDown, Inbox, MoreVertical, Pencil, Trash2, X } from 'lucide-react';
+import { AlertTriangle, BookmarkPlus, ChevronDown, CreditCard, FileDown, Inbox, MoreVertical, Pencil, Trash2, UserCircle, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,6 +46,7 @@ import {
   getAmlFlagsForTransfer,
 } from '@/data/mockTransfers';
 import { getCardById } from '@/data/mockCards';
+import { getRecipientById } from '@/data/mockRecipients';
 import { cn, formatMoney, maskPan } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { Transfer } from '@/types';
@@ -63,6 +64,16 @@ export function Transfers() {
     ? searchParams.get('card_id')
     : null;
   const cardContext = cardContextId ? getCardById(cardContextId) : null;
+
+  // Recipient-scoped context: ?context=recipient&recipient_id=... — same
+  // pattern as card-context. Filters TRANSFERS_FULL by the canonical
+  // (userId, destination, identifier) tuple.
+  const recipientContextId = searchParams.get('context') === 'recipient'
+    ? searchParams.get('recipient_id')
+    : null;
+  const recipientContext = recipientContextId
+    ? getRecipientById(recipientContextId)
+    : null;
 
   // Hydrate from module cache so detail-page round-trips preserve list state.
   const cached = readTransfersState();
@@ -173,12 +184,25 @@ export function Transfers() {
     };
   }, []);
 
-  // Card-scoped pre-filter — applied before the user-controlled filter
-  // chips so reviewers can still narrow further within the card's history.
-  const sourceTransfers = useMemo(
-    () => (cardContextId ? TRANSFERS_FULL.filter((tx) => tx.cardId === cardContextId) : TRANSFERS_FULL),
-    [cardContextId],
-  );
+  // Card- or recipient-scoped pre-filter — applied before the user-
+  // controlled filter chips so reviewers can still narrow further within
+  // the scoped history. Card and recipient contexts are mutually
+  // exclusive (the URL only carries one context= param at a time).
+  const sourceTransfers = useMemo(() => {
+    if (cardContextId) {
+      return TRANSFERS_FULL.filter((tx) => tx.cardId === cardContextId);
+    }
+    if (recipientContext) {
+      const r = recipientContext;
+      return TRANSFERS_FULL.filter(
+        (tx) =>
+          tx.userId === r.userId &&
+          tx.destination === r.destination &&
+          tx.recipientIdentifier === r.identifier,
+      );
+    }
+    return TRANSFERS_FULL;
+  }, [cardContextId, recipientContext]);
 
   const filtered = useMemo(
     () => applyFilters(sourceTransfers, filters, hasAmlByTransferId),
@@ -524,6 +548,47 @@ export function Transfers() {
                 const next = new URLSearchParams(searchParams);
                 next.delete('context');
                 next.delete('card_id');
+                setSearchParams(next);
+              }}
+              className="text-muted-foreground"
+            >
+              <X className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+              {t('admin.transfers.context.clear')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Recipient-scoped context banner */}
+      {recipientContext && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-brand-600/30 bg-brand-50/50 dark:bg-brand-950/20 px-3 py-2">
+          <div className="flex items-center gap-2 text-sm flex-wrap">
+            <UserCircle className="h-4 w-4 text-brand-700 dark:text-brand-400" aria-hidden="true" />
+            <span className="text-foreground/80">
+              {t('admin.transfers.context.recipient-prefix')}
+            </span>
+            <span className="font-mono tabular text-foreground break-all">
+              {recipientContext.identifier}
+            </span>
+            <span className="text-muted-foreground">
+              · {recipientContext.displayName}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/customers/recipients/${recipientContext.id}`)}
+            >
+              {t('admin.transfers.context.open-recipient')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const next = new URLSearchParams(searchParams);
+                next.delete('context');
+                next.delete('recipient_id');
                 setSearchParams(next);
               }}
               className="text-muted-foreground"

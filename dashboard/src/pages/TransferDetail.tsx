@@ -65,6 +65,7 @@ import {
   getEventsForTransfer,
   getAmlFlagsForTransfer,
 } from '@/data/mockTransfers';
+import { getRecipientById } from '@/data/mockRecipients';
 import {
   computeNeighbors,
   getTransferDetail,
@@ -498,6 +499,15 @@ export function TransferDetail() {
               return;
             }
           }
+          // Recipient-context: return to the recipient detail page so the
+          // reviewer lands back on the same view they came from.
+          if (searchParams.get('context') === 'recipient') {
+            const recipientId = searchParams.get('recipient_id');
+            if (recipientId) {
+              navigate(`/customers/recipients/${recipientId}`);
+              return;
+            }
+          }
           navigate(TRANSFERS_BASE);
         }}
         backLabel={pagerBackLabel(searchParams)}
@@ -844,6 +854,21 @@ function usePager(currentId: string | undefined, search: URLSearchParams) {
         .map((t) => t.id);
       return computeNeighbors(currentId, ids);
     }
+    if (ctx === 'recipient') {
+      const recipientId = search.get('recipient_id');
+      if (!recipientId) return null;
+      const r = getRecipientById(recipientId);
+      if (!r) return null;
+      const ids = TRANSFERS_FULL.filter(
+        (t) =>
+          t.userId === r.userId &&
+          t.destination === r.destination &&
+          t.recipientIdentifier === r.identifier,
+      )
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .map((t) => t.id);
+      return computeNeighbors(currentId, ids);
+    }
     // Default: read transfers-list cache
     const cache = readTransfersState();
     if (!cache) return null;
@@ -867,6 +892,7 @@ function pagerBackLabel(search: URLSearchParams): string {
     if (userName) return t('admin.transfer-detail.back-link.user', { name: userName });
   }
   if (ctx === 'card') return t('admin.transfer-detail.back-link.card');
+  if (ctx === 'recipient') return t('admin.transfer-detail.back-link.recipient');
   return t('admin.transfer-detail.back-link.list');
 }
 

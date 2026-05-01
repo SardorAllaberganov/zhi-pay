@@ -20,6 +20,7 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['g', 'a'], label: 'Go to AML Triage', group: 'Navigation' },
   { keys: ['g', 'u'], label: 'Go to Users', group: 'Navigation' },
   { keys: ['g', 'c'], label: 'Go to Cards', group: 'Navigation' },
+  { keys: ['g', 'r'], label: 'Go to Recipients', group: 'Navigation' },
   { keys: ['g', 'f'], label: 'Go to FX Config', group: 'Navigation' },
   { keys: ['g', 's'], label: 'Go to Services', group: 'Navigation' },
   { keys: ['j'], label: 'Move down in lists', group: 'Lists' },
@@ -82,6 +83,15 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['f'], label: 'Freeze (only when active)', group: 'Card detail' },
   { keys: ['u'], label: 'Unfreeze (only when frozen)', group: 'Card detail' },
   { keys: ['c'], label: 'Copy acquirer token', group: 'Card detail' },
+  // Recipients page (page-scoped)
+  { keys: ['j'], label: 'Move down in list', group: 'Recipients' },
+  { keys: ['k'], label: 'Move up in list', group: 'Recipients' },
+  { keys: ['Enter'], label: 'Open focused recipient', group: 'Recipients' },
+  { keys: ['/'], label: 'Focus search', group: 'Recipients' },
+  // Recipient detail page (page-scoped)
+  { keys: ['b'], label: 'Back to list', group: 'Recipient detail' },
+  { keys: ['Backspace'], label: 'Back to list', group: 'Recipient detail' },
+  { keys: ['Delete'], label: 'Open hard-delete confirm', group: 'Recipient detail' },
 ];
 
 interface HelpOverlayProps {
@@ -90,7 +100,7 @@ interface HelpOverlayProps {
 }
 
 export function HelpOverlay({ open, onOpenChange }: HelpOverlayProps) {
-  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users', 'Cards', 'Card detail'];
+  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users', 'Cards', 'Card detail', 'Recipients', 'Recipient detail'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -1492,6 +1492,102 @@ const EN: Record<string, string> = {
   'admin.transfers.context.open-card': 'Open card',
   'admin.transfers.context.clear': 'Clear filter',
   'admin.transfer-detail.back-link.card': 'Back to card transfers',
+
+  // Transfers recipient-context banner
+  'admin.transfers.context.recipient-prefix': 'Showing transfers to recipient',
+  'admin.transfers.context.open-recipient': 'Open recipient',
+  'admin.transfer-detail.back-link.recipient': 'Back to recipient',
+
+  // ── Recipients (cross-user list + detail) ────────────────────────────
+  'admin.recipients.title': 'Recipients',
+  'admin.recipients.subtitle.counts': '{total} saved across {owners} users',
+  'admin.recipients.search-placeholder': 'Search by identifier, name, or owner phone',
+  'admin.recipients.action.export-csv': 'Export CSV',
+  'admin.recipients.result-count': 'Showing {shown} of {total}',
+  'admin.recipients.pagination.page': 'Page {page} of {total}',
+  'admin.recipients.pagination.prev': 'Previous',
+  'admin.recipients.pagination.next': 'Next',
+
+  // Filters
+  'admin.recipients.filter.destination': 'Destination',
+  'admin.recipients.filter.favorites-only': 'Favorites only',
+  'admin.recipients.filter.last-used': 'Last used',
+  'admin.recipients.filter.last-used.clear': 'Clear last-used filter',
+  'admin.recipients.filter.clear-all': 'Clear all',
+
+  // Table columns
+  'admin.recipients.column.destination': 'Destination',
+  'admin.recipients.column.identifier': 'Identifier',
+  'admin.recipients.column.display-name': 'Display name',
+  'admin.recipients.column.nickname': 'Nickname',
+  'admin.recipients.column.owner': 'Owner',
+  'admin.recipients.column.favorite': 'Favorite',
+  'admin.recipients.column.transfer-count': 'Transfers',
+  'admin.recipients.column.last-used': 'Last used',
+  'admin.recipients.column.created': 'Created',
+
+  // Row / mobile-card meta
+  'admin.recipients.favorite': 'Favorite',
+  'admin.recipients.unknown-owner': 'Unknown owner',
+  'admin.recipients.nickname-prefix': 'Nickname: {value}',
+  'admin.recipients.row.actions': 'Recipient actions',
+  'admin.recipients.row.open-owner': 'Open owner',
+  'admin.recipients.row.open-transfers': 'Open transfers to this recipient',
+  'admin.recipients.row.delete': 'Delete recipient',
+  'admin.recipients.row.transfer-count': '{count} transfers',
+  'admin.recipients.row.last-used': 'Last used {value}',
+  'admin.recipients.row.added': 'Added {value}',
+  'admin.recipients.row.owner-prefix': 'Owner: {value}',
+
+  // Empty states
+  'admin.recipients.empty.title': 'No recipients match these filters',
+  'admin.recipients.empty.body-no-data': 'No saved recipients yet.',
+  'admin.recipients.empty.body-filtered': 'Try clearing filters or broadening your search.',
+
+  // Detail page
+  'admin.recipients.detail.back': 'Back to recipients',
+  'admin.recipients.detail.display-info': 'Display info',
+  'admin.recipients.detail.nickname.empty': 'No nickname',
+  'admin.recipients.detail.owner': 'Owner',
+  'admin.recipients.detail.owner.unknown': 'Owner not found — the user may have been deleted.',
+  'admin.recipients.detail.owner.pinfl': 'PINFL',
+  'admin.recipients.detail.owner.pinfl-not-verified': 'PINFL not yet verified',
+  'admin.recipients.detail.owner.open-profile': 'Open user profile',
+  'admin.recipients.detail.usage': 'Usage',
+  'admin.recipients.detail.view-all-cta': 'View all {count} transfers',
+  'admin.recipients.detail.kpi.transfer-count': 'Total transfers',
+  'admin.recipients.detail.kpi.total-volume': 'Total volume',
+  'admin.recipients.detail.kpi.first-used': 'First used',
+  'admin.recipients.detail.kpi.last-used': 'Last used',
+  'admin.recipients.detail.last-transfers': 'Last 5 transfers',
+  'admin.recipients.detail.last-transfers.empty': 'No transfer history available for this recipient.',
+  'admin.recipients.detail.last-transfers.count-with-more': 'Showing {shown} of {total} transfers to this recipient',
+  'admin.recipients.detail.chip.created': 'Created {value}',
+  'admin.recipients.detail.chip.last-used': 'Last used {value}',
+  'admin.recipients.detail.chip.nickname': 'Nickname: {value}',
+  'admin.recipients.detail.not-found.title': 'Recipient not found',
+  'admin.recipients.detail.not-found.body': "We couldn't find a recipient with id {id}. It may have been hard-deleted.",
+  'admin.recipients.detail.not-found.cta': 'Back to recipients',
+
+  // Hard-delete action / dialog
+  'admin.recipients.action.hard-delete': 'Hard-delete recipient',
+  'admin.recipients.action.hard-delete.title': 'Hard-delete saved recipient',
+  'admin.recipients.action.hard-delete.body': 'Removes the saved {destination} recipient {identifier}. Past transfers are unaffected.',
+  'admin.recipients.action.hard-delete.warning': 'Hard-delete is permanent. This row will be removed from the database. Past transfers to this recipient remain intact (the identifier is denormalized on the transfer row). Reason note (min 20 chars) required.',
+  'admin.recipients.action.hard-delete.cta': 'Hard-delete',
+  'admin.recipients.action.hard-delete.confirm-title': 'Confirm hard-delete',
+  'admin.recipients.action.hard-delete.confirm-body': '{destination} recipient {identifier} will be permanently removed.',
+  'admin.recipients.action.hard-delete.confirm-cta': 'Yes, hard-delete',
+  'admin.recipients.action.reason-label': 'Reason note',
+  'admin.recipients.action.reason-placeholder': 'Why is this recipient being hard-deleted? Be specific — this is auditable.',
+  'admin.recipients.action.reason-required': 'Reason (required, min 20 chars)',
+  'admin.recipients.action.reason-count': '{current} / {min} chars minimum',
+
+  // Toasts
+  'admin.recipients.toast.exported': 'Recipients CSV exported',
+  'admin.recipients.toast.exported-body': '{count} recipients written to CSV',
+  'admin.recipients.toast.deleted': 'Recipient deleted',
+  'admin.recipients.toast.delete-failed': 'Delete failed — please retry',
 };
 
 /**
