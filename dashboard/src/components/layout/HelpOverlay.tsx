@@ -49,6 +49,14 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['i'], label: 'Request more info', group: 'KYC Queue' },
   { keys: ['e'], label: 'Escalate to senior review', group: 'KYC Queue' },
   { keys: ['m'], label: 'Toggle "Assigned to me" filter', group: 'KYC Queue' },
+  // AML Triage page (page-scoped)
+  { keys: ['j'], label: 'Move down in list', group: 'AML Triage' },
+  { keys: ['k'], label: 'Move up in list', group: 'AML Triage' },
+  { keys: ['Enter'], label: 'Open focused flag', group: 'AML Triage' },
+  { keys: ['c'], label: 'Clear (disabled for sanctions)', group: 'AML Triage' },
+  { keys: ['e'], label: 'Escalate (auto-blocks user on critical)', group: 'AML Triage' },
+  { keys: ['m'], label: 'Assign to me', group: 'AML Triage' },
+  { keys: ['a'], label: 'Reassign', group: 'AML Triage' },
 ];
 
 interface HelpOverlayProps {
@@ -57,7 +65,7 @@ interface HelpOverlayProps {
 }
 
 export function HelpOverlay({ open, onOpenChange }: HelpOverlayProps) {
-  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue'];
+  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

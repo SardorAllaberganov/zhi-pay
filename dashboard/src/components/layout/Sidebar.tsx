@@ -46,7 +46,7 @@ const SECTIONS: NavSection[] = [
       { to: '/', labelKey: 'admin.nav.overview', icon: LayoutDashboard },
       { to: '/operations/transfers', labelKey: 'admin.nav.transfers', icon: ArrowLeftRight },
       { to: '/operations/kyc-queue', labelKey: 'admin.nav.kyc-queue', icon: ShieldCheck },
-      { to: '/aml-triage', labelKey: 'admin.nav.aml-triage', icon: AlertTriangle },
+      { to: '/operations/aml-triage', labelKey: 'admin.nav.aml-triage', icon: AlertTriangle },
     ],
   },
   {

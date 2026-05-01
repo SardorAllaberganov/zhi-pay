@@ -4,10 +4,11 @@ import { Overview } from '@/pages/Overview';
 import { Transfers } from '@/pages/Transfers';
 import { TransferDetail } from '@/pages/TransferDetail';
 import { KycQueue } from '@/pages/KycQueue';
+import { AmlTriage } from '@/pages/AmlTriage';
+import { AmlTriageNew } from '@/pages/AmlTriageNew';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES = [
-  '/aml-triage',
   '/users',
   '/cards',
   '/recipients',
@@ -38,6 +39,11 @@ export function Router() {
         <Route path="/operations/kyc-queue" element={<KycQueue />} />
         <Route path="/operations/kyc-queue/:id" element={<KycQueue />} />
 
+        {/* Operations — AML Triage (nested) */}
+        <Route path="/operations/aml-triage" element={<AmlTriage />} />
+        <Route path="/operations/aml-triage/new" element={<AmlTriageNew />} />
+        <Route path="/operations/aml-triage/:id" element={<AmlTriage />} />
+
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
         <Route
@@ -45,6 +51,7 @@ export function Router() {
           element={<Navigate to="/operations/transfers" replace />}
         />
         <Route path="/kyc-queue" element={<Navigate to="/operations/kyc-queue" replace />} />
+        <Route path="/aml-triage" element={<Navigate to="/operations/aml-triage" replace />} />
 
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />

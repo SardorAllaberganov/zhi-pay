@@ -775,6 +775,243 @@ const EN: Record<string, string> = {
 
   // Help overlay group
   'admin.kyc-queue.shortcuts.group': 'KYC Queue',
+
+  // ====================================================================
+  // AML Triage
+  // ====================================================================
+  'admin.aml-triage.title': 'AML Triage',
+  'admin.aml-triage.subtitle.counts':
+    '{critical} critical · {warning} warning · {info} info open · {reviewing} reviewing',
+  'admin.aml-triage.refresh': 'Refresh',
+  'admin.aml-triage.new-manual-flag': 'New manual flag',
+
+  // page-top critical banner
+  'admin.aml-triage.banner.critical-unassigned':
+    '{count} critical flags open and unassigned',
+  'admin.aml-triage.banner.assign-first-to-me': 'Assign first to me',
+
+  // assignee quick-toggle
+  'admin.aml-triage.assignee.all': 'All',
+  'admin.aml-triage.assignee.me': 'Assigned to me',
+
+  // filters
+  'admin.aml-triage.filter.severity': 'Severity',
+  'admin.aml-triage.filter.severity.info': 'Info',
+  'admin.aml-triage.filter.severity.warning': 'Warning',
+  'admin.aml-triage.filter.severity.critical': 'Critical',
+  'admin.aml-triage.filter.type': 'Type',
+  'admin.aml-triage.filter.type.velocity': 'Velocity',
+  'admin.aml-triage.filter.type.amount': 'Amount',
+  'admin.aml-triage.filter.type.pattern': 'Pattern',
+  'admin.aml-triage.filter.type.sanctions': 'Sanctions',
+  'admin.aml-triage.filter.type.manual': 'Manual',
+  'admin.aml-triage.filter.status': 'Status',
+  'admin.aml-triage.filter.status.open': 'Open',
+  'admin.aml-triage.filter.status.reviewing': 'Reviewing',
+  'admin.aml-triage.filter.status.cleared': 'Cleared',
+  'admin.aml-triage.filter.status.escalated': 'Escalated',
+  'admin.aml-triage.filter.assigned': 'Assigned',
+  'admin.aml-triage.filter.assigned.anyone': 'Anyone',
+  'admin.aml-triage.filter.assigned.me': 'Me',
+  'admin.aml-triage.filter.assigned.unassigned': 'Unassigned',
+  'admin.aml-triage.filter.has-transfer': 'Has linked transfer',
+  'admin.aml-triage.filter.clear-all': 'Clear all',
+
+  'admin.aml-triage.sort.severity-age': 'Most urgent first',
+  'admin.aml-triage.sort.newest': 'Newest first',
+  'admin.aml-triage.sort.oldest': 'Oldest first',
+  'admin.aml-triage.sort.label': 'Sort',
+
+  // row
+  'admin.aml-triage.row.linked-transfer': 'Tx {prefix}',
+  'admin.aml-triage.row.assigned-prefix': 'Reviewing: {name}',
+  'admin.aml-triage.row.unassigned': 'Unassigned',
+
+  // bulk
+  'admin.aml-triage.bulk.selected': '{count} selected',
+  'admin.aml-triage.bulk.assign-me': 'Assign to me',
+  'admin.aml-triage.bulk.clear': 'Clear selection',
+
+  // empty / error / loading
+  'admin.aml-triage.empty.cleared': 'No open flags right now',
+  'admin.aml-triage.empty.cleared.body':
+    'New flags appear here as soon as the engine raises them.',
+  'admin.aml-triage.empty.no-results.title': 'No flags match',
+  'admin.aml-triage.empty.no-results.body': 'Try adjusting or clearing filters.',
+  'admin.aml-triage.empty.no-selection.title': 'Select a flag to triage',
+  'admin.aml-triage.empty.no-selection.body':
+    'Pick a row on the left, or press {key} on the focused row.',
+  'admin.aml-triage.error.list.title': "Couldn't load flags",
+  'admin.aml-triage.error.list.body': 'The realtime feed is unavailable.',
+  'admin.aml-triage.error.list.retry': 'Retry',
+
+  // detail — top bar
+  'admin.aml-triage.detail.flag-id': 'Flag ID',
+  'admin.aml-triage.detail.copy-id': 'Copy flag ID',
+  'admin.aml-triage.detail.id-copied': 'Flag ID copied',
+
+  // detail — sanctions banner
+  'admin.aml-triage.detail.sanctions-banner.title':
+    'Sanctions match — escalate only',
+  'admin.aml-triage.detail.sanctions-banner.body':
+    'Clearing is disabled. Do not communicate match details to the user. Document source-of-funds before any further action.',
+
+  // detail — user card
+  'admin.aml-triage.detail.user-card': 'User',
+  'admin.aml-triage.detail.user-card.phone': 'Phone',
+  'admin.aml-triage.detail.user-card.pinfl': 'PINFL',
+  'admin.aml-triage.detail.user-card.tier': 'Tier',
+  'admin.aml-triage.detail.user-card.account-status': 'Account status',
+  'admin.aml-triage.detail.user-card.lifetime': 'Lifetime',
+  'admin.aml-triage.detail.user-card.lifetime-value':
+    '{count} transfers · {volume}',
+  'admin.aml-triage.detail.user-card.joined': 'Joined',
+  'admin.aml-triage.detail.user-card.open-profile': 'Open user profile',
+  'admin.aml-triage.detail.user-card.account-blocked': 'BLOCKED',
+
+  // detail — linked transfer card
+  'admin.aml-triage.detail.linked-transfer': 'Linked transfer',
+  'admin.aml-triage.detail.linked-transfer.amount': 'Amount',
+  'admin.aml-triage.detail.linked-transfer.recipient': 'Recipient',
+  'admin.aml-triage.detail.linked-transfer.scheme': 'Card',
+  'admin.aml-triage.detail.linked-transfer.open': 'Open transfer',
+  'admin.aml-triage.detail.linked-transfer.none': 'No linked transfer (user-level flag).',
+
+  // detail — flag context (typed)
+  'admin.aml-triage.detail.context': 'Flag context',
+  'admin.aml-triage.detail.context.velocity':
+    '{count} transfers in last {minutes} minutes',
+  'admin.aml-triage.detail.context.velocity.threshold': 'Threshold: {threshold}',
+  'admin.aml-triage.detail.context.amount':
+    '{amount} — {sigma}σ above this user’s average',
+  'admin.aml-triage.detail.context.amount.user-avg': "User’s avg: {amount}",
+  'admin.aml-triage.detail.context.amount.multiplier': '{multiplier}× user avg',
+  'admin.aml-triage.detail.context.pattern': 'Pattern: {rule}',
+  'admin.aml-triage.detail.context.pattern.signal': 'Matched signal',
+  'admin.aml-triage.detail.context.pattern.description': 'Why this matters',
+  'admin.aml-triage.detail.context.sanctions': 'Sanctions hit',
+  'admin.aml-triage.detail.context.sanctions.list': 'Watchlist',
+  'admin.aml-triage.detail.context.sanctions.matched-name': 'Matched name',
+  'admin.aml-triage.detail.context.sanctions.match-score': 'Match score',
+  'admin.aml-triage.detail.context.sanctions.recipient-handle': 'Recipient handle',
+  'admin.aml-triage.detail.context.manual': 'Manually filed',
+  'admin.aml-triage.detail.context.manual.filer': 'Filed by',
+  'admin.aml-triage.detail.context.manual.note': 'Filer note',
+  'admin.aml-triage.detail.context.json-toggle': 'Show raw context',
+  'admin.aml-triage.detail.context.json-copy': 'Copy JSON',
+  'admin.aml-triage.detail.context.json-copied': 'JSON copied',
+  'admin.aml-triage.detail.context.recent-transfers': 'Recent transfers',
+
+  // detail — resolution notes
+  'admin.aml-triage.detail.resolution-notes': 'Resolution notes',
+  'admin.aml-triage.detail.resolution-notes.placeholder':
+    'Optional context — captured at clear / escalate. Visible to the audit log.',
+  'admin.aml-triage.detail.resolution-notes.history-prefix':
+    '{actor} · {date}',
+
+  // action bar — labels
+  'admin.aml-triage.action.clear': 'Clear',
+  'admin.aml-triage.action.escalate': 'Escalate',
+  'admin.aml-triage.action.assign-me': 'Assign to me',
+  'admin.aml-triage.action.reassign': 'Reassign',
+
+  // disabled tooltips
+  'admin.aml-triage.action.clear.disabled.sanctions':
+    'Sanctions hits cannot be cleared from this view — escalate only.',
+  'admin.aml-triage.action.clear.disabled.terminal':
+    'Flag is already in a terminal state.',
+  'admin.aml-triage.action.escalate.disabled.terminal':
+    'Flag is already in a terminal state.',
+
+  // Clear modal
+  'admin.aml-triage.action.clear.title': 'Clear flag',
+  'admin.aml-triage.action.clear.body':
+    'Marks this flag as resolved with no action. The reviewer’s reason and notes are written to the audit trail.',
+  'admin.aml-triage.action.clear.reason-code': 'Reason',
+  'admin.aml-triage.action.clear.reason-code.false_positive': 'False positive',
+  'admin.aml-triage.action.clear.reason-code.verified_legitimate':
+    'Verified legitimate',
+  'admin.aml-triage.action.clear.reason-code.low_risk': 'Low risk',
+  'admin.aml-triage.action.clear.reason-code.other': 'Other',
+  'admin.aml-triage.action.clear.notes-label': 'Notes (visible to audit log)',
+  'admin.aml-triage.action.clear.notes-placeholder':
+    'Be specific. Min 20 characters.',
+  'admin.aml-triage.action.clear.submit': 'Clear flag',
+  'admin.aml-triage.action.clear.success': 'Flag cleared',
+  'admin.aml-triage.action.clear.confirm-title':
+    'Clear this flag?',
+  'admin.aml-triage.action.clear.confirm-body':
+    'Status moves to cleared. This is logged to audit and cannot be undone.',
+
+  // Escalate modal
+  'admin.aml-triage.action.escalate.title': 'Escalate flag',
+  'admin.aml-triage.action.escalate.body':
+    'Routes to senior compliance review. The reviewer’s reason is written to the audit trail.',
+  'admin.aml-triage.action.escalate.body.critical-block-warning':
+    'Critical-severity escalation also auto-blocks the user account ({phone}). The user will be unable to send or sign in until manually unblocked.',
+  'admin.aml-triage.action.escalate.body.sanctions-warning':
+    'Sanctions match — the auto-filled template below MUST be reviewed and edited before submitting. Do not include match details in any user-visible message.',
+  'admin.aml-triage.action.escalate.notes-label': 'Reason for escalation',
+  'admin.aml-triage.action.escalate.notes-placeholder':
+    'Explain why this needs senior review. Min 20 characters.',
+  'admin.aml-triage.action.escalate.submit': 'Escalate',
+  'admin.aml-triage.action.escalate.success': 'Flag escalated',
+  'admin.aml-triage.action.escalate.success-blocked':
+    'Flag escalated · user blocked',
+  'admin.aml-triage.action.escalate.confirm-title':
+    'Escalate this flag?',
+  'admin.aml-triage.action.escalate.confirm-body':
+    'Status moves to escalated. {extra}',
+  'admin.aml-triage.action.escalate.confirm-body.block-user':
+    'User account ({phone}) will be blocked.',
+  'admin.aml-triage.action.escalate.notes-too-similar':
+    'Edit the auto-filled template — add at least 30 characters of reviewer context.',
+
+  // Reassign modal
+  'admin.aml-triage.action.reassign.title': 'Reassign flag',
+  'admin.aml-triage.action.reassign.body':
+    'Pick the reviewer to take over. Choosing "Unassigned" returns the flag to the open queue.',
+  'admin.aml-triage.action.reassign.assignee': 'Assignee',
+  'admin.aml-triage.action.reassign.unassigned': 'Unassigned',
+  'admin.aml-triage.action.reassign.submit': 'Reassign',
+  'admin.aml-triage.action.reassign.success': 'Flag reassigned',
+
+  // assign-to-me toast
+  'admin.aml-triage.action.assign-me.success': 'Flag claimed',
+
+  // sanctions warning chip + global
+  'admin.aml-triage.warning.sanctions-no-clear':
+    'Clearing disabled — sanctions hits must be escalated.',
+
+  // mobile detail
+  'admin.aml-triage.mobile.back': 'Back to triage',
+  'admin.aml-triage.mobile.more': 'More',
+
+  // Manual flag form
+  'admin.aml-triage.new.title': 'New manual flag',
+  'admin.aml-triage.new.subtitle':
+    'Manually file an AML flag against a user (and optionally a specific transfer).',
+  'admin.aml-triage.new.user': 'User',
+  'admin.aml-triage.new.user.placeholder': 'Search by phone…',
+  'admin.aml-triage.new.transfer': 'Linked transfer (optional)',
+  'admin.aml-triage.new.transfer.placeholder':
+    'Search by transfer id prefix…',
+  'admin.aml-triage.new.transfer.none': 'No linked transfer',
+  'admin.aml-triage.new.severity': 'Severity',
+  'admin.aml-triage.new.type': 'Flag type',
+  'admin.aml-triage.new.context': 'Context (JSON)',
+  'admin.aml-triage.new.context.placeholder':
+    '{"description": "What you observed"}',
+  'admin.aml-triage.new.context.invalid-json': 'Context must be valid JSON.',
+  'admin.aml-triage.new.note': 'Filer note',
+  'admin.aml-triage.new.note.placeholder':
+    'Why are you filing this manually? Visible to the next reviewer. Min 20 chars.',
+  'admin.aml-triage.new.submit': 'File flag',
+  'admin.aml-triage.new.cancel': 'Cancel',
+  'admin.aml-triage.new.success': 'Manual flag filed',
+
+  // help overlay group
+  'admin.aml-triage.shortcuts.group': 'AML Triage',
 };
 
 /**

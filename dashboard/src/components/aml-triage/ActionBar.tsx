@@ -1,0 +1,123 @@
+import { Check, ArrowUpRight, UserPlus, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { t } from '@/lib/i18n';
+import type { AmlReview } from '@/data/mockAmlTriage';
+
+interface ActionBarProps {
+  review: AmlReview;
+  onClear: () => void;
+  onEscalate: () => void;
+  onAssignMe: () => void;
+  onReassign: () => void;
+  className?: string;
+}
+
+export function ActionBar({
+  review,
+  onClear,
+  onEscalate,
+  onAssignMe,
+  onReassign,
+  className,
+}: ActionBarProps) {
+  const isTerminal = review.status === 'cleared' || review.status === 'escalated';
+  const isSanctions = review.flagType === 'sanctions';
+
+  const clearDisabled = isTerminal || isSanctions;
+  const clearDisabledReason = isSanctions
+    ? t('admin.aml-triage.action.clear.disabled.sanctions')
+    : isTerminal
+      ? t('admin.aml-triage.action.clear.disabled.terminal')
+      : null;
+
+  const escalateDisabled = isTerminal;
+
+  return (
+    <div
+      className={cn(
+        // <lg: fixed bottom of viewport, full-width on mobile, offset by the
+        //      collapsed sidebar (64px) on md+. Escapes ancestor overflow.
+        // lg+: static, inline flex-wrap row inside the detail pane.
+        'fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-2 border-t border-border bg-card px-4 py-3 md:left-16',
+        'lg:static lg:left-auto lg:right-auto lg:flex lg:flex-wrap lg:items-center',
+        className,
+      )}
+      data-aml-action-bar
+    >
+      <ClearButton
+        disabled={clearDisabled}
+        disabledReason={clearDisabledReason}
+        onClick={onClear}
+      />
+
+      <Button
+        variant="destructive"
+        onClick={onEscalate}
+        disabled={escalateDisabled}
+        className="w-full lg:w-auto"
+      >
+        <ArrowUpRight className="h-4 w-4 mr-1.5" aria-hidden="true" />
+        {t('admin.aml-triage.action.escalate')}
+      </Button>
+
+      <Button
+        variant="outline"
+        onClick={onAssignMe}
+        disabled={isTerminal}
+        className="w-full lg:w-auto"
+      >
+        <UserPlus className="h-4 w-4 mr-1.5" aria-hidden="true" />
+        {t('admin.aml-triage.action.assign-me')}
+      </Button>
+
+      <Button
+        variant="outline"
+        onClick={onReassign}
+        disabled={isTerminal}
+        className="w-full lg:w-auto"
+      >
+        <Users className="h-4 w-4 mr-1.5" aria-hidden="true" />
+        {t('admin.aml-triage.action.reassign')}
+      </Button>
+    </div>
+  );
+}
+
+interface ClearButtonProps {
+  disabled: boolean;
+  disabledReason: string | null;
+  onClick: () => void;
+}
+
+function ClearButton({ disabled, disabledReason, onClick }: ClearButtonProps) {
+  const button = (
+    <Button onClick={onClick} disabled={disabled} className="w-full lg:w-auto">
+      <Check className="h-4 w-4 mr-1.5" aria-hidden="true" />
+      {t('admin.aml-triage.action.clear')}
+    </Button>
+  );
+
+  if (!disabled || !disabledReason) return button;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0} className="w-full lg:w-auto">
+            {button}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs">
+          {disabledReason}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
