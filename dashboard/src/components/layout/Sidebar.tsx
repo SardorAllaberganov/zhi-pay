@@ -52,7 +52,7 @@ const SECTIONS: NavSection[] = [
   {
     titleKey: 'admin.nav.section.customers',
     items: [
-      { to: '/users', labelKey: 'admin.nav.users', icon: Users },
+      { to: '/customers/users', labelKey: 'admin.nav.users', icon: Users },
       { to: '/cards', labelKey: 'admin.nav.cards', icon: CreditCard },
       { to: '/recipients', labelKey: 'admin.nav.recipients', icon: UserCircle },
     ],

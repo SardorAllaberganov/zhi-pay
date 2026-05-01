@@ -657,6 +657,8 @@ const EN: Record<string, string> = {
   'admin.kyc-queue.detail.identity.age': '{count} years old',
   'admin.kyc-queue.detail.identity.document-type': 'Document type',
   'admin.kyc-queue.detail.identity.document-number': 'Document number',
+  'admin.kyc-queue.detail.identity.doc-passport': 'Passport',
+  'admin.kyc-queue.detail.identity.doc-id-card': 'ID card',
   'admin.kyc-queue.detail.identity.pinfl': 'PINFL',
   'admin.kyc-queue.detail.identity.session-id': 'MyID session',
   'admin.kyc-queue.detail.identity.submitted-at': 'Submitted',
@@ -825,6 +827,7 @@ const EN: Record<string, string> = {
   // row
   'admin.aml-triage.row.linked-transfer': 'Tx {prefix}',
   'admin.aml-triage.row.assigned-prefix': 'Reviewing: {name}',
+  'admin.aml-triage.row.reviewing-by': 'Reviewing by {name}',
   'admin.aml-triage.row.unassigned': 'Unassigned',
 
   // bulk
@@ -1012,6 +1015,342 @@ const EN: Record<string, string> = {
 
   // help overlay group
   'admin.aml-triage.shortcuts.group': 'AML Triage',
+
+  // =====================================================================
+  // Users (/customers/users)
+  // =====================================================================
+  'admin.users.title': 'Users',
+  'admin.users.subtitle': '{count} total users',
+  'admin.users.search-placeholder': 'Search by phone, PINFL, name, or email',
+  'admin.users.never': 'Never',
+  'admin.users.pinfl-label': 'PINFL',
+  'admin.users.pinfl-not-verified': 'PINFL not yet verified',
+  'admin.users.aml-indicator': 'Has open AML flag',
+  'admin.users.result-count': '{shown} of {total} shown',
+
+  // filters
+  'admin.users.filter.tier': 'Tier',
+  'admin.users.filter.status': 'Status',
+  'admin.users.filter.kyc': 'KYC',
+  'admin.users.filter.language': 'Language',
+  'admin.users.filter.created': 'Created',
+  'admin.users.filter.has-aml': 'Has open AML flag',
+  'admin.users.filter.clear-all': 'Clear all',
+  'admin.users.filter.tier.tier_0': 'Tier 0 · Just signed up',
+  'admin.users.filter.tier.tier_1': 'Tier 1 · Phone OTP only',
+  'admin.users.filter.tier.tier_2': 'Tier 2 · MyID verified',
+  'admin.users.filter.status.active': 'Active',
+  'admin.users.filter.status.blocked': 'Blocked',
+  'admin.users.filter.status.pending': 'Pending',
+  'admin.users.filter.status.deleted': 'Deleted',
+  'admin.users.filter.kyc.pending': 'KYC pending',
+  'admin.users.filter.kyc.passed': 'KYC passed',
+  'admin.users.filter.kyc.failed': 'KYC failed',
+  'admin.users.filter.kyc.expired': 'KYC expired',
+  'admin.users.filter.kyc.never': 'No KYC',
+  'admin.users.filter.language.uz': 'Uzbek',
+  'admin.users.filter.language.ru': 'Russian',
+  'admin.users.filter.language.en': 'English',
+  'admin.users.filter.created.all': 'All time',
+  'admin.users.filter.created.today': 'Today',
+  'admin.users.filter.created.7d': 'Last 7 days',
+  'admin.users.filter.created.30d': 'Last 30 days',
+  'admin.users.filter.created.custom': 'Custom range',
+
+  // columns
+  'admin.users.column.name': 'User',
+  'admin.users.column.phone': 'Phone',
+  'admin.users.column.tier': 'Tier',
+  'admin.users.column.status': 'Status',
+  'admin.users.column.kyc': 'KYC',
+  'admin.users.column.cards': 'Cards',
+  'admin.users.column.lifetime-volume': 'Lifetime volume',
+  'admin.users.column.last-login': 'Last login',
+  'admin.users.column.created': 'Joined',
+
+  // empty
+  'admin.users.empty.title': 'No users yet',
+  'admin.users.empty.body-no-data': 'No users have been created in this environment.',
+  'admin.users.empty.body-filtered': 'No users match the current filters.',
+
+  // pagination
+  'admin.users.pagination.page': 'Page {page} of {total}',
+  'admin.users.pagination.prev': 'Previous',
+  'admin.users.pagination.next': 'Next',
+
+  // row kebab + page actions
+  'admin.users.row.actions': 'Row actions',
+  'admin.users.action.add-blacklist': 'Add to blacklist',
+  'admin.users.action.export-csv': 'Export CSV',
+  'admin.users.action.open-aml': 'Open AML flags',
+  'admin.users.action.open-audit': 'Open audit log',
+
+  // toast
+  'admin.users.toast.exported': 'CSV exported',
+  'admin.users.toast.exported-body': '{count} rows downloaded.',
+
+  // detail header / nav
+  'admin.users.detail.back': 'Back',
+  'admin.users.detail.back-to-list': 'Back to users',
+  'admin.users.detail.contact.telegram': 'Open in Telegram',
+  'admin.users.detail.contact.whatsapp': 'Open in WhatsApp',
+  'admin.users.detail.contact.telegram-label': 'Telegram',
+  'admin.users.detail.contact.whatsapp-label': 'WhatsApp',
+  'admin.users.detail.menu.aria': 'Admin actions',
+  'admin.users.detail.tabs.aria': 'User detail tabs',
+  'admin.users.detail.not-found.title': 'User not found',
+  'admin.users.detail.not-found.body': "We couldn't find a user with that ID.",
+
+  // chips
+  'admin.users.detail.chip.created': 'Joined {date}',
+  'admin.users.detail.chip.last-login': 'Last login {value}',
+  'admin.users.detail.chip.never-logged-in': 'Never logged in',
+  'admin.users.detail.chip.kyc-expired': 'KYC expired',
+  'admin.users.detail.chip.kyc-expires-in': 'KYC expires in {days} days',
+  'admin.users.detail.chip.kyc-expires-on': 'KYC expires {date}',
+
+  // tabs
+  'admin.users.detail.tab.overview': 'Overview',
+  'admin.users.detail.tab.kyc': 'KYC',
+  'admin.users.detail.tab.cards': 'Cards',
+  'admin.users.detail.tab.transfers': 'Transfers',
+  'admin.users.detail.tab.recipients': 'Recipients',
+  'admin.users.detail.tab.aml': 'AML Flags',
+  'admin.users.detail.tab.devices': 'Devices',
+  'admin.users.detail.tab.audit': 'Audit',
+
+  // KPI
+  'admin.users.detail.kpi.volume': 'Lifetime volume',
+  'admin.users.detail.kpi.count': 'Lifetime transfers',
+  'admin.users.detail.kpi.success-rate': 'Success rate',
+
+  // limits
+  'admin.users.detail.limits.title': 'Limits & headroom',
+  'admin.users.detail.limits.daily': 'Daily',
+  'admin.users.detail.limits.monthly': 'Monthly',
+  'admin.users.detail.limits.tier-zero-body': "User has just signed up — phone OTP and MyID verification both pending. Transfers cannot be initiated until MyID is complete.",
+  'admin.users.detail.limits.tier-one-body': "Phone verified but MyID not yet completed — partial registration. The user cannot send transfers until MyID identity verification passes.",
+
+  // charts
+  'admin.users.detail.chart.monthly-volume': 'Volume by month',
+  'admin.users.detail.chart.status-breakdown': 'Transfers by status',
+  'admin.users.detail.chart.volume-tooltip': 'Volume',
+  'admin.users.detail.chart.empty': 'No transfer history yet.',
+
+  // recent activity
+  'admin.users.detail.recent-activity.title': 'Recent activity',
+  'admin.users.detail.recent-activity.empty': 'No transfers yet for this user.',
+  'admin.users.detail.recent-activity.view-all': 'View all transfers',
+
+  // KYC tab
+  'admin.users.detail.kyc.current-tier': 'Current tier',
+  'admin.users.detail.kyc.attained-via': 'Attained via {method}',
+  'admin.users.detail.kyc.verified-at': 'Verified at',
+  'admin.users.detail.kyc.expires-at': 'Expires at',
+  'admin.users.detail.kyc.doc-number': 'Document',
+  'admin.users.detail.kyc.no-current-tier': 'No active KYC verification.',
+  'admin.users.detail.kyc.history-title': 'Verification history',
+  'admin.users.detail.kyc.history-empty': 'No verifications yet.',
+  'admin.users.detail.kyc.col.status': 'Status',
+  'admin.users.detail.kyc.col.doc-type': 'Document type',
+  'admin.users.detail.kyc.col.submitted': 'Submitted',
+  'admin.users.detail.kyc.col.verified': 'Verified',
+  'admin.users.detail.kyc.col.expires': 'Expires',
+  'admin.users.detail.kyc.col.failure': 'Failure reason',
+
+  // MyID profile card (renders for users who've passed MyID at least once)
+  'admin.users.detail.myid.title': 'MyID profile',
+  'admin.users.detail.myid.subtitle': 'Identity payload returned by MyID at the time of verification.',
+  'admin.users.detail.myid.match-score': 'Match',
+  'admin.users.detail.myid.section.identity': 'Identity',
+  'admin.users.detail.myid.section.document': 'Document',
+  'admin.users.detail.myid.section.contacts': 'Contacts',
+  'admin.users.detail.myid.section.address': 'Address & registration',
+  'admin.users.detail.myid.section.metadata': 'Verification metadata',
+  'admin.users.detail.myid.field.full-name-uz': 'Full name (UZ)',
+  'admin.users.detail.myid.field.full-name-en': 'Full name (EN)',
+  'admin.users.detail.myid.field.gender': 'Gender',
+  'admin.users.detail.myid.field.birth-date': 'Date of birth',
+  'admin.users.detail.myid.field.birth-place': 'Place of birth',
+  'admin.users.detail.myid.field.nationality': 'Nationality',
+  'admin.users.detail.myid.field.citizenship': 'Citizenship',
+  'admin.users.detail.myid.field.pinfl': 'PINFL',
+  'admin.users.detail.myid.field.doc-type': 'Document type',
+  'admin.users.detail.myid.field.doc-number': 'Document number',
+  'admin.users.detail.myid.field.issued-by': 'Issued by',
+  'admin.users.detail.myid.field.issued-date': 'Issued',
+  'admin.users.detail.myid.field.expiry-date': 'Expires',
+  'admin.users.detail.myid.field.phone': 'Phone',
+  'admin.users.detail.myid.field.email': 'Email',
+  'admin.users.detail.myid.field.permanent-address': 'Permanent address',
+  'admin.users.detail.myid.field.temporary-address': 'Temporary address',
+  'admin.users.detail.myid.field.region': 'Region',
+  'admin.users.detail.myid.field.district': 'District',
+  'admin.users.detail.myid.field.mfy': 'Mahalla (MFY)',
+  'admin.users.detail.myid.field.cadastre': 'Cadastre',
+  'admin.users.detail.myid.field.registration-date': 'Registered',
+  'admin.users.detail.myid.field.job-id': 'Job ID',
+  'admin.users.detail.myid.field.reuid': 'REUID',
+  'admin.users.detail.myid.field.reuid-expires': 'REUID expires',
+  'admin.users.detail.myid.field.sdk-hash': 'SDK hash',
+  'admin.users.detail.myid.field.last-update-pass': 'Doc data updated',
+  'admin.users.detail.myid.field.last-update-address': 'Address updated',
+  'admin.users.detail.myid.no-temporary': 'No temporary registration',
+  'admin.users.detail.myid.raw-title': 'Raw MyID response',
+  'admin.users.detail.myid.raw-note': 'Sensitive fields (PINFL, document number) are redacted at the data layer.',
+  'admin.users.detail.myid.raw-label': 'JSON payload',
+  'admin.users.detail.myid.copy': 'Copy',
+  'admin.users.detail.myid.copied': 'Copied',
+
+  // Cards tab
+  'admin.users.detail.cards.empty-title': 'No linked cards',
+  'admin.users.detail.cards.empty-body': "User hasn't linked any cards yet.",
+  'admin.users.detail.cards.usage': '{used} of {max} cards linked',
+  'admin.users.detail.cards.default': 'Default',
+  'admin.users.detail.cards.frozen': 'Frozen',
+  'admin.users.detail.cards.expires': 'Expires {month}/{year}',
+  'admin.users.detail.cards.added-on': 'Added {date}',
+
+  // Transfers tab
+  'admin.users.detail.transfers.empty-title': 'No transfers',
+  'admin.users.detail.transfers.empty-body': "User hasn't sent any transfers yet.",
+  'admin.users.detail.transfers.col.created': 'Created',
+  'admin.users.detail.transfers.col.recipient': 'Recipient',
+  'admin.users.detail.transfers.col.card': 'Card',
+  'admin.users.detail.transfers.col.uzs': 'UZS',
+  'admin.users.detail.transfers.col.cny': 'CNY',
+  'admin.users.detail.transfers.col.status': 'Status',
+
+  // Recipients tab
+  'admin.users.detail.recipients.empty-title': 'No saved recipients',
+  'admin.users.detail.recipients.empty-body': "User hasn't saved any Alipay or WeChat recipients yet.",
+  'admin.users.detail.recipients.favorite': 'Favorite',
+  'admin.users.detail.recipients.nickname': 'Nickname: {value}',
+  'admin.users.detail.recipients.transfer-count': '{count} transfers',
+  'admin.users.detail.recipients.last-used': 'Last used {value}',
+  'admin.users.detail.recipients.added': 'Added {value}',
+
+  // AML tab
+  'admin.users.detail.aml.empty-title': 'No AML flags',
+  'admin.users.detail.aml.empty-body': 'No flags raised against this user.',
+
+  // Devices tab
+  'admin.users.detail.devices.empty-title': 'No devices',
+  'admin.users.detail.devices.empty-body': 'User has no recorded devices yet.',
+  'admin.users.detail.devices.trusted': 'Trusted',
+  'admin.users.detail.devices.untrusted': 'Step-up required',
+  'admin.users.detail.devices.device-id': 'Device …{id}',
+  'admin.users.detail.devices.last-seen': 'Last seen {value}',
+  'admin.users.detail.devices.added': 'Added {value}',
+
+  // Audit tab
+  'admin.users.detail.audit.empty-title': 'No admin actions yet',
+  'admin.users.detail.audit.empty-body': 'No admin actions have been recorded for this user.',
+  'admin.users.detail.audit.by': 'by {actor}',
+  'admin.users.audit.action.block': 'Blocked user',
+  'admin.users.audit.action.unblock': 'Unblocked user',
+  'admin.users.audit.action.soft_delete': 'Soft-deleted user',
+  'admin.users.audit.action.reverify_kyc': 'Re-verify KYC requested',
+  'admin.users.audit.action.blacklist_phone': 'Phone added to blacklist',
+  'admin.users.audit.action.reset_devices': 'Device trust reset',
+  'admin.users.audit.action.untrust_device': 'Device untrusted',
+  'admin.users.audit.action.generate_audit_report': 'Audit report generated',
+  'admin.users.audit.action.freeze_card': 'Card frozen',
+  'admin.users.audit.action.unfreeze_card': 'Card unfrozen',
+  'admin.users.audit.action.hard_delete_recipient': 'Recipient hard-deleted',
+
+  // Common modal copy
+  'admin.users.action.reason-label': 'Reason note',
+  'admin.users.action.reason-placeholder': 'Why is this action being taken? Be specific — this is auditable.',
+  'admin.users.action.confirm-reason-required': 'min 20 chars',
+
+  // Admin menu items
+  'admin.users.action.block': 'Block',
+  'admin.users.action.unblock': 'Unblock',
+  'admin.users.action.soft-delete': 'Soft-delete',
+  'admin.users.action.reverify-kyc': 'Re-verify KYC',
+  'admin.users.action.blacklist-phone': 'Add phone to blacklist',
+  'admin.users.action.reset-devices': 'Reset device trust',
+  'admin.users.action.generate-report': 'Generate audit report',
+
+  // Block dialog
+  'admin.users.action.block.title': 'Block {name}',
+  'admin.users.action.block.body': 'Blocking will prevent the user from logging in. Active transfers continue but no new ones can be initiated.',
+  'admin.users.action.block.cta': 'Block user',
+  'admin.users.action.block.warning': 'All linked active cards will be auto-frozen. Cards stay frozen on unblock — you must unfreeze each individually.',
+  'admin.users.action.block.success': '{name} blocked',
+  'admin.users.action.block.success-cards': '{count} card(s) auto-frozen.',
+
+  // Unblock dialog
+  'admin.users.action.unblock.title': 'Unblock {name}',
+  'admin.users.action.unblock.body': 'Restores user status to active. Note: linked cards stay frozen — you must unfreeze each one in the Cards tab.',
+  'admin.users.action.unblock.cta': 'Unblock user',
+  'admin.users.action.unblock.warning': '',
+  'admin.users.action.unblock.success': '{name} unblocked',
+
+  // Soft-delete dialog
+  'admin.users.action.soft-delete.title': 'Soft-delete {name}',
+  'admin.users.action.soft-delete.body': 'Marks the user as deleted, redacts PII display fields, and prevents login. Data is retained for compliance.',
+  'admin.users.action.soft-delete.cta': 'Soft-delete user',
+  'admin.users.action.soft-delete.warning': "This cannot be undone via the dashboard. Reversal requires a DBA escalation. Confirm you've reviewed the audit trail and any pending transfers.",
+  'admin.users.action.soft-delete.confirm-title': 'Confirm soft-delete',
+  'admin.users.action.soft-delete.confirm-body': "{name}'s profile will be redacted and they will no longer be able to log in. This cannot be undone via the dashboard.",
+  'admin.users.action.soft-delete.confirm-cta': 'Yes, soft-delete',
+  'admin.users.action.soft-delete.success': '{name} soft-deleted',
+
+  // Re-verify KYC
+  'admin.users.action.reverify-kyc.title': 'Re-verify KYC',
+  'admin.users.action.reverify-kyc.body': 'Sends the user a notification with a fresh MyID link. The current verification stays until they complete the new one.',
+  'admin.users.action.reverify-kyc.cta': 'Send re-verification link',
+  'admin.users.action.reverify-kyc.warning': '',
+  'admin.users.action.reverify-kyc.success': '{name} will receive a re-verification link',
+
+  // Reset device trust
+  'admin.users.action.reset-devices.title': 'Reset device trust',
+  'admin.users.action.reset-devices.body': 'Marks every device as untrusted. The user will see step-up authentication on the next login.',
+  'admin.users.action.reset-devices.cta': 'Reset device trust',
+  'admin.users.action.reset-devices.warning': '',
+  'admin.users.action.reset-devices.success': 'Device trust reset',
+  'admin.users.action.reset-devices.success-body': '{count} device(s) marked untrusted.',
+
+  // Generate audit report
+  'admin.users.action.generate-report.title': 'Generate audit report',
+  'admin.users.action.generate-report.body': 'Compile a downloadable PDF of {name}\'s activity for the selected range.',
+  'admin.users.action.generate-report.cta': 'Generate report',
+  'admin.users.action.generate-report.from': 'From',
+  'admin.users.action.generate-report.to': 'To',
+  'admin.users.action.generate-report.toast-loading': 'Generating audit report…',
+  'admin.users.action.generate-report.toast-ready': 'Audit report ready',
+  'admin.users.action.generate-report.toast-ready-body': 'Download link expires in 24 hours.',
+
+  // Untrust device
+  'admin.users.action.untrust-device.title': 'Untrust device',
+  'admin.users.action.untrust-device.body': 'The {platform} device …{deviceId} will require step-up authentication on its next session.',
+  'admin.users.action.untrust-device.cta': 'Untrust',
+  'admin.users.action.untrust-device.success': 'Device untrusted',
+
+  // Freeze / unfreeze card
+  'admin.users.action.freeze-card.title': 'Freeze card',
+  'admin.users.action.freeze-card.body': 'Freezing {pan} ({bank}) blocks all new transactions until unfrozen. Existing in-flight transfers continue.',
+  'admin.users.action.freeze-card.cta': 'Freeze card',
+  'admin.users.action.freeze-card.success': 'Card {pan} frozen',
+  'admin.users.action.unfreeze-card.title': 'Unfreeze card',
+  'admin.users.action.unfreeze-card.body': 'Restores {pan} ({bank}) to active. The user can use the card immediately on the next login.',
+  'admin.users.action.unfreeze-card.cta': 'Unfreeze card',
+  'admin.users.action.unfreeze-card.success': 'Card {pan} unfrozen',
+
+  // Hard-delete recipient
+  'admin.users.action.delete-recipient.title': 'Delete saved recipient',
+  'admin.users.action.delete-recipient.body': 'Removes the saved {destination} recipient {identifier}. Past transfers are unaffected.',
+  'admin.users.action.delete-recipient.cta': 'Delete',
+  'admin.users.action.delete-recipient.warning': "Recipients are hard-deleted — there is no audit value in retaining them. The user can re-save the same handle later.",
+  'admin.users.action.delete-recipient.confirm-title': 'Confirm delete',
+  'admin.users.action.delete-recipient.confirm-body': '{destination} recipient {identifier} will be permanently removed.',
+  'admin.users.action.delete-recipient.confirm-cta': 'Yes, delete',
+  'admin.users.action.delete-recipient.success': 'Recipient deleted',
+
+  // help overlay group
+  'admin.users.shortcuts.group': 'Users',
 };
 
 /**

@@ -57,6 +57,20 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['e'], label: 'Escalate (auto-blocks user on critical)', group: 'AML Triage' },
   { keys: ['m'], label: 'Assign to me', group: 'AML Triage' },
   { keys: ['a'], label: 'Reassign', group: 'AML Triage' },
+  // Users page (page-scoped)
+  { keys: ['j'], label: 'Move down in list', group: 'Users' },
+  { keys: ['k'], label: 'Move up in list', group: 'Users' },
+  { keys: ['Enter'], label: 'Open focused user', group: 'Users' },
+  { keys: ['1'], label: 'Jump to Overview tab', group: 'Users' },
+  { keys: ['2'], label: 'Jump to KYC tab', group: 'Users' },
+  { keys: ['3'], label: 'Jump to Cards tab', group: 'Users' },
+  { keys: ['4'], label: 'Jump to Transfers tab', group: 'Users' },
+  { keys: ['5'], label: 'Jump to Recipients tab', group: 'Users' },
+  { keys: ['6'], label: 'Jump to AML tab', group: 'Users' },
+  { keys: ['7'], label: 'Jump to Devices tab', group: 'Users' },
+  { keys: ['8'], label: 'Jump to Audit tab', group: 'Users' },
+  { keys: ['b'], label: 'Block (opens confirm)', group: 'Users' },
+  { keys: ['e'], label: 'Open Audit tab', group: 'Users' },
 ];
 
 interface HelpOverlayProps {
@@ -65,7 +79,7 @@ interface HelpOverlayProps {
 }
 
 export function HelpOverlay({ open, onOpenChange }: HelpOverlayProps) {
-  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage'];
+  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

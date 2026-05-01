@@ -42,9 +42,9 @@ const SENDERS: Array<{
 }> = [
   { id: 'u_01', name: 'Olim Karimov',    phone: '+998 90 123 45 67', pinflLast4: '1234', tier: 'tier_2' },
   { id: 'u_02', name: 'Madina Yusupova', phone: '+998 91 234 56 78', pinflLast4: '7890', tier: 'tier_2' },
-  { id: 'u_03', name: 'Sardor Tursunov', phone: '+998 93 345 67 89', pinflLast4: '2456', tier: 'tier_1' },
+  { id: 'u_03', name: 'Sardor Tursunov', phone: '+998 93 345 67 89', pinflLast4: '2456', tier: 'tier_2' },
   { id: 'u_04', name: 'Aziza Rahimova',  phone: '+998 94 456 78 90', pinflLast4: '9012', tier: 'tier_2' },
-  { id: 'u_05', name: 'Bekzod Nurmatov', phone: '+998 95 567 89 01', pinflLast4: '3456', tier: 'tier_1' },
+  { id: 'u_05', name: 'Bekzod Nurmatov', phone: '+998 95 567 89 01', pinflLast4: '3456', tier: 'tier_2' },
 ];
 
 interface MockCard {

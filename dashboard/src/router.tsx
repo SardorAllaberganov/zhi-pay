@@ -6,10 +6,11 @@ import { TransferDetail } from '@/pages/TransferDetail';
 import { KycQueue } from '@/pages/KycQueue';
 import { AmlTriage } from '@/pages/AmlTriage';
 import { AmlTriageNew } from '@/pages/AmlTriageNew';
+import { Users } from '@/pages/Users';
+import { UserDetail } from '@/pages/UserDetail';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES = [
-  '/users',
   '/cards',
   '/recipients',
   '/fx-config',
@@ -44,6 +45,10 @@ export function Router() {
         <Route path="/operations/aml-triage/new" element={<AmlTriageNew />} />
         <Route path="/operations/aml-triage/:id" element={<AmlTriage />} />
 
+        {/* Customers — Users (nested) */}
+        <Route path="/customers/users" element={<Users />} />
+        <Route path="/customers/users/:id" element={<UserDetail />} />
+
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
         <Route
@@ -52,6 +57,8 @@ export function Router() {
         />
         <Route path="/kyc-queue" element={<Navigate to="/operations/kyc-queue" replace />} />
         <Route path="/aml-triage" element={<Navigate to="/operations/aml-triage" replace />} />
+        <Route path="/users" element={<Navigate to="/customers/users" replace />} />
+        <Route path="/users/:id" element={<Navigate to="/customers/users" replace />} />
 
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />
