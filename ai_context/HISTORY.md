@@ -4,6 +4,102 @@
 
 ---
 
+### 2026-05-03 — Blacklist polish — segmented-control pill restored · "Add entry" CTA tone correction
+
+- **Summary**: Two same-day fixes to the freshly-shipped Blacklist surface, both driven by user feedback on the prototype.
+  1. **BlacklistTabs segmented-control pill restored.** Initial draft passed `flex flex-wrap items-center gap-1 overflow-x-auto` to `<TabsList>`, which clobbered the shadcn primitive's default `inline-flex h-9 bg-muted p-1 rounded-md` and made the segment block stretch full-width and wrap to a second line on narrow viewports. User feedback: "segment block is wrong". Fixed by wrapping the TabsList in a `<div className="-mx-1 overflow-x-auto pb-1 md:mx-0 md:overflow-visible md:pb-0">` so mobile horizontal scroll lives on the outer wrapper while the inner TabsList keeps its native `inline-flex` pill shape. Triggers gained `gap-1.5 data-[state=active]:[&_[data-tab-count]]:bg-foreground/10` so the count badge lifts contrast when its tab is active (`bg-background/80` inactive → `bg-foreground/10` active inside the white-bg active trigger). Count chip is now `min-w-5 h-5 rounded-full text-xs font-medium tabular`.
+  2. **Page-header "Add entry" button toned down.** Spec said "destructive variant"; the user pushed back ("is that add entry should be a red bg ?") — and they were right. The page-header CTA is constructive (it just navigates to the Add form); the actual destructive moments are the form's "Add to blacklist" submit, the AlertDialog confirm, and the detail "Remove" button. Flattening all four to red collapses the visual hierarchy — Remove no longer reads as the most dangerous. Switched to `variant="default"` (primary brand) on the page-header CTA only; form submit + AlertDialog confirm + detail Remove stay destructive red.
+
+- **Files modified**:
+  - `dashboard/src/components/blacklist/BlacklistTabs.tsx` — outer `<div>` wrapper for mobile horizontal scroll · TabsList kept at default pill shape (only `h-auto` to fit the count badge) · count badge active-state contrast via `data-tab-count` selector · `text-xs font-medium tabular`
+  - `dashboard/src/pages/Blacklist.tsx` — page-header `<Button variant="destructive">` → default (brand)
+  - `ai_context/AI_CONTEXT.md` — Blacklist paragraph + workstreams entry both updated to reflect the corrected button tone and the segmented-control fix
+  - `ai_context/HISTORY.md` — this entry
+
+- **Docs updated**: `ai_context/AI_CONTEXT.md`, `ai_context/HISTORY.md`. **No** schema / PRD / mermaid / product-states change — both fixes are presentation-layer.
+
+- **Verified**: `npx tsc --noEmit` (exit 0). Build not re-run for this presentation-only diff.
+
+---
+
+### 2026-05-03 — Admin Blacklist surface (Phase 12) — `/compliance/blacklist` + `/new` + `/:id`
+
+- **Summary**: Built the Blacklist surface — five-type unified entry shape (`phone` / `pinfl` / `device_id` / `ip` / `card_token`), versionless rows with append-only audit history. List page at `/compliance/blacklist` with a 5-tab segmented control (Tabs primitive) over a single mock pool, full-page Add form at `/new` with a live pre-add check panel + duplicate detection, and full-page detail at `/:id` with three persistent actions (Edit reason / Extend expiry / Remove) on the canonical fixed-bottom action bar. **`mockBlacklist.ts` is the single source of truth** — 45 deterministic seed rows (8 phone · 4 pinfl · 12 device · 15 ip · 6 card-token, severity mix per spec) — and exposes `addBlacklistEntry` / `editBlacklistReason` / `extendBlacklistExpiry` / `removeBlacklistEntry` mutators that all emit a single granular audit-log row with snapshot fields. The page imports zero "edit-the-row" mutators outside those four; the row never silently rewrites except via `editBlacklistReason()` (which preserves the previous text in the audit-log entry's `context.previous_reason`).
+
+  **Decision deviations from the literal spec** (each flagged in the proposal and confirmed before implementation):
+  - **Detail mobile "sticky bottom action bar"** → applied LESSON 2026-05-02 canonical overlay (`fixed inset-x-0 bottom-0 md:left-[var(--sidebar-width,4rem)]`) on **mobile and desktop** — one bar pattern at every breakpoint.
+  - **"Currently affecting" derivation** — phone / pinfl / card_token cross-store via `mockUsers` / `mockCards`; **device_id / ip seed `affectedCount` per row** since no canonical session/device store exists yet in the prototype. Real backend will derive from sessions / device-trust tables.
+  - **"Has prevented N login attempts in the last 30 days"** — gated "if available" in spec — surfaced as an optional `loginAttemptsBlocked30d` per seed row. Synthetic; the impact card hides the line when undefined.
+  - **Pre-add check coverage** — phone / pinfl / card_token match the existing mock stores; device_id / ip render a calm "No live device / session match — evaluated at request time" panel rather than fabricating a match.
+  - **Routing migration** — first existing-flat-route migration to `/compliance/*`. `/blacklist` redirects to `/compliance/blacklist`; `/blacklist/new` uses a `RedirectPreservingQuery` wrapper that preserves `?type=&identifier=` query params so the existing Users-detail "Add phone to blacklist" deep-link keeps resolving. Removed `/blacklist` from `PLACEHOLDER_ROUTES`.
+  - **Visa / Mastercard rails** — N/A. Card-token entries are plain card-id strings; no scheme dimension surfaces on this page.
+  - **Sticky table thead** — non-sticky per LESSON 2026-04-30 (the spec's "Default sort: created_at DESC" is honored; sticky header is not).
+  - **Filter bar stickiness** — `lg:sticky lg:top-0 lg:z-20` kept (matches Transfers / KYC / AML; Audit Log opted out at user request).
+
+  **Schema update** — `docs/models.md` §2.5 — added a `severity` enum (`suspected` | `confirmed`) to the `BLACKLIST` ER block and authored a full field-reference table (id / identifier / type / severity / reason / added_by / expires_at / created_at) with constraint notes and the active-vs-expired derivation rule. KYC state-machine section renumbered §2.5 → §2.6; updated cross-references in `docs/product_requirements_document.md` §13 and `docs/mermaid_schemas/kyc_state_machine.md`.
+
+  **Mock dataset (45 rows · 7+ day spread)** — `dashboard/src/data/mockBlacklist.ts`. Deterministic manual seed (no PRNG). NOW = 2026-04-29T10:30:00Z (matches every other store). Distribution per spec: 8 phone (5 confirmed + 3 suspected — 2 of the confirmed phones intentionally match `mockUsers` `u_07` / `u_18` already-blocked accounts so the "currently affecting" count derives non-zero; the remaining 6 phones are out-of-pool); 4 pinfl (all confirmed; one matches `u_07`); 12 device (mix of confirmed bot/emulator/jailbreak patterns + a few suspected watch-blocks); 15 ip (3 with expiry — DDoS bursts; 12 indefinite — Tor exits, abusive ASNs, scraping bots, OTP-bombing sources, IPv6 source); 6 card token (5 confirmed fraud — one matches `c_ol_02` so the affected-card link works; 1 suspected). Each row carries `id` (`bl_NNNN`), `type`, `identifier`, `severity`, ≥30-char `reason` (chargeback case numbers, sanctions screening, AML escalations, IOC bundles), `addedBy` (alternates between `admin_super_01 = Yulduz Otaboeva` and `admin_finance_02 = Adel Ortiqova` to match the existing `ADMIN_PROFILES` pool from `mockAuditLog`), `expiresAt` (3 IP entries with future expiry; some device/phone entries with watch-window expiry; everything else null), `createdAt`. `affectedCount` (device/ip only) and `loginAttemptsBlocked30d` are denormalized seed-only embellishments.
+
+  **Pattern layer** (`dashboard/src/components/blacklist/`):
+  - `types.ts` — filter shape (`search` / `status` / `addedBy[]` / `createdRange`) + `applyFilters` + `applySort` (createdAt / expiresAt) + `countActiveBlacklistFilters` + `maskIdentifier(type, raw)` (per-type masking — phone full / pinfl `••••••••••<last4>` / device `••••••<last6>` / ip full / card_token `••••<last8>`). `createdRange` typed as `DateRangeValue | null` so the canonical `<DateRangePicker>` primitive plugs in cleanly; `null` = no filter.
+  - `filterState.ts` — module-level cache keyed per `BlacklistType` so each tab keeps its own filter / sort / focus / visible-id list across switches.
+  - `IdentityCell.tsx` / `ExpiryCell.tsx` / `AddedByCell.tsx` — type-aware cell helpers. `ExpiryCell` flips between "Never" / "In N days" countdown / warning-tinted "<3 days" countdown / danger-tinted "Expired" depending on `expiresAt`.
+  - `SeverityChip.tsx` (suspected = warning + ShieldQuestion icon · confirmed = danger + ShieldAlert icon) and `StatusChip.tsx` (active = success · expired = slate · expiring-soon when <72h = warning + Clock icon).
+  - `BlacklistTabs.tsx` — TabsList wrapper with count badges that show a Skeleton during initial load.
+  - `BlacklistFilterBar.tsx` — sticky-on-`lg+` bar (canonical full-width search input on top, chip row beneath: status single-chip · added-by multi-chip · created date-range chip wrapping `<DateRangePicker>` with an inline X-clear button glued to the chip's right edge so the user can opt out of the range without opening the popover). Inline X clear on the search input matches Users / Cards / Recipients / Audit Log.
+  - `BlacklistTable.tsx` — non-sticky thead (LESSON 2026-04-30) · 7 columns (Identifier / Reason 80-char-truncated / Added by avatar+name / Created sortable / Expires sortable / Currently affecting right-aligned tabular / kebab) · row click → detail · kebab actions (Open entry / Remove) · 8-row Skeleton variant during initial load · empty-state copy "No entries of this type. Add one to start blocking."
+  - `BlacklistMobileCardStack.tsx` — `<lg` mirror with each card carrying identifier / severity + status chip pair / 80-char reason / created + expiry meta line, full-card tap target, ChevronRight affordance.
+  - Detail-page cards: `EntryCard.tsx` (7-row dt/dd grid with type / identifier / severity / reason / added-by / created / expires) + `ImpactCard.tsx` (large affected-count tile + optional 30-day blocked-attempts line + linked-entity card with deep-link to `/customers/users/:id` or `/customers/cards/:id`).
+  - `ActionBar.tsx` — canonical fixed-bottom overlay; mobile = 2-row grid (Edit + Extend share row 1, Remove on row 2 spanning); desktop = single flex row with destructive Remove on the right.
+  - `PreAddCheckPanel.tsx` — 4 states (idle / duplicate-blocking-error / user-or-card-warning-match / no-store calm note / no-match success). Used as the right-pane companion in the Add form.
+  - Modals (`modals/`): `EditReasonDialog` (small Dialog: new reason ≥30 chars + change-note ≥20 chars), `ExtendExpiryDialog` (small Dialog: single `<DateTimeInput>` with `allowEmpty`), `RemoveEntryDialog` (AlertDialog: ≥30-char reason note before hard-delete confirm), `ConfirmAddDialog` (AlertDialog: 2nd-step confirm before insert from the Add page).
+
+  **Pages** — `Blacklist.tsx` orchestrates tabs / filters / sort / focus / version-bump on `focus` / `popstate` for cross-page-mutation refresh + 5 page-scoped hotkeys (n / j / k / Enter / `/`); `BlacklistNew.tsx` renders a 2-pane form (form left 60% / sticky pre-add check panel right 40% on `lg+`; mobile stacks the panel below the identifier field) with per-type identifier validation, ≥30-char reason note, severity radio (custom-styled radio cards instead of bare radios for clarity), `<DateTimeInput>` for the optional expiry, and Cmd/Ctrl+Enter submit; `BlacklistDetail.tsx` renders the inline back-link / type chip + identifier / severity + status header, 2-card body (EntryCard + ImpactCard), the canonical fixed-bottom action bar, and the three modals — plus 3 page-scoped hotkeys (b / Backspace = back, Del = remove confirm).
+
+  **Routing** — `/compliance/blacklist` + `/new` + `/:id`. Back-compat redirects: `/blacklist` → `/compliance/blacklist` (plain `<Navigate>`); `/blacklist/new` → `/compliance/blacklist/new` (custom `RedirectPreservingQuery` wrapper that captures `useLocation().search` and threads it through, preserving the existing `?type=phone&identifier=...` deep-link from User Detail). Removed `/blacklist` from `PLACEHOLDER_ROUTES`. Sidebar entry repointed; `g+b` global hotkey now lands on `/compliance/blacklist`.
+
+  **i18n** — ~115 new `admin.blacklist.*` keys (covers tabs / type labels / severity / status / filter labels + per-type search placeholders / column headers / row actions / expiry copy / empty state / Add page labels + section headings + per-type placeholders + 6 validation messages + ICU placeholders for user-match warning + duplicate / pre-add check 5 states / detail labels + cards + 4 noun forms for impact / 3 action labels / 3 modal copy bundles / 4 toast bundles).
+
+  **Hotkeys** — list-page: `n` (Add) · `j` / `k` (focus row) · `Enter` (open detail) · `/` (focus search). New-version page: Cmd/Ctrl+Enter (submit when valid). Detail page: `b` / `Backspace` (back) · `Del` (remove confirm). Global: `g+b` (route here).
+
+- **Files created**:
+  - `dashboard/src/data/mockBlacklist.ts`
+  - `dashboard/src/pages/{Blacklist,BlacklistNew,BlacklistDetail}.tsx`
+  - `dashboard/src/components/blacklist/{types,filterState}.ts`
+  - `dashboard/src/components/blacklist/{IdentityCell,ExpiryCell,AddedByCell,SeverityChip,StatusChip,BlacklistTabs,BlacklistFilterBar,BlacklistTable,BlacklistMobileCardStack,EntryCard,ImpactCard,ActionBar,PreAddCheckPanel}.tsx`
+  - `dashboard/src/components/blacklist/modals/{EditReasonDialog,ExtendExpiryDialog,RemoveEntryDialog,ConfirmAddDialog}.tsx`
+
+- **Files modified**:
+  - `dashboard/src/types/index.ts` — `BlacklistType` + `BlacklistSeverity` exports
+  - `dashboard/src/data/mockAuditLog.ts` — `bridgeBlacklistAudit` + `BLACKLIST_ACTION_MAP` + `listBlacklistAudit` import; merged into `listAuditEvents()`
+  - `dashboard/src/router.tsx` — `<Blacklist>` / `<BlacklistNew>` / `<BlacklistDetail>` imports + 3 `/compliance/blacklist*` routes + 2 redirects from flat paths + `RedirectPreservingQuery` helper + dropped `/blacklist` from `PLACEHOLDER_ROUTES`
+  - `dashboard/src/components/layout/Sidebar.tsx` — Blacklist nav `to` updated to `/compliance/blacklist`
+  - `dashboard/src/components/layout/TopBar.tsx` — breadcrumb `ROUTE_TITLES` key migrated `/blacklist` → `/compliance/blacklist`
+  - `dashboard/src/hooks/useKeyboardShortcuts.ts` — `g+b` routes to `/compliance/blacklist`
+  - `dashboard/src/components/layout/HelpOverlay.tsx` — `g+b` Navigation entry + 3 new hotkey groups (Blacklist · New blacklist entry · Blacklist detail)
+  - `dashboard/src/pages/UserDetail.tsx` — `blacklist_phone` admin action navigates to `/compliance/blacklist/new?…` (was `/blacklist/new?…`)
+  - `dashboard/src/pages/Users.tsx` — page-header "Add to blacklist" navigates to `/compliance/blacklist/new?type=phone`
+  - `dashboard/src/lib/i18n.ts` — ~115 new `admin.blacklist.*` keys
+  - `docs/models.md` — `BLACKLIST` ER block adds `severity` enum; new §2.5 field-reference table for `blacklist`; KYC state-machine section renumbered §2.5 → §2.6
+  - `docs/product_requirements_document.md` — §13 cross-ref updated `models.md §2.5` → `§2.6`
+  - `docs/mermaid_schemas/kyc_state_machine.md` — back-link updated `models.md §2.5` → `§2.6`
+  - `docs/product_states.md` — Blacklist row flipped from ❌ Placeholder to ✅ Done; route updated `/blacklist` → `/compliance/blacklist` (+ `/new` + `/:id`); last-updated bumped
+  - `ai_context/AI_CONTEXT.md` — current-phase rewrite (12 surfaces); Phase 12 entry; placeholder count 8 → 7; routes-decision row updated; 4 new "Decisions made" rows (Blacklist immutability + audit contract, Blacklist routing migration, Pre-add check coverage, Currently-affecting derivation strategy); file-map extended with `blacklist/` tree + `mockBlacklist.ts` + `pages/Blacklist*.tsx`; workstreams flipped Blacklist to ☑
+  - `ai_context/HISTORY.md` — this entry
+
+- **Docs updated**: `docs/models.md`, `docs/product_requirements_document.md`, `docs/mermaid_schemas/kyc_state_machine.md`, `docs/product_states.md`, `ai_context/AI_CONTEXT.md`, `ai_context/HISTORY.md`. Schema gained a `severity` field for `blacklist`; `is_active` is derived from `expires_at` per the field-reference note (no separate column).
+
+- **Open items**:
+  - **`severity` enum default** — set to `suspected` in mock; backend may want `confirmed` as a stricter default for system-emitted entries. Decision pending.
+  - **Cross-store derivation for device_id / ip** — once a canonical sessions / device-trust store exists, replace the seeded `affectedCount` with a live derivation (same pattern as `mockUsers.lifetimeUzs` → derived from `TRANSFERS_FULL`).
+  - **`loginAttemptsBlocked30d`** — synthetic in mock. Real backend will compute from auth logs (likely a separate metrics table — out of scope for this surface).
+  - **Audit-log surface integration** — bridged via `bridgeBlacklistAudit` so Blacklist actions appear on `/compliance/audit-log` with `entity.type='blacklist'` and `context.kind=<granular verb>`. Remove-entry rows preserve the original snapshot in `context.snapshot.{type,identifier,severity}` so the audit row is meaningful even after the live row is gone.
+  - **Visa / Mastercard relevance** — N/A. Re-introduction of V/MC will not affect this surface; card_token entries treat all schemes uniformly.
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npx vite build` (exit 0, ~1.76 MB minified / ~442 KB gzip).
+
+---
+
 ### 2026-05-03 — Audit Log polish — search-row layout · in-place copy feedback · non-sticky filter bar · DateRangePicker mobile + chip-label cleanup
 
 - **Summary**: Five same-day adjustments to the freshly-shipped Audit Log surface plus a mobile fix on the shared `<DateRangePicker>` primitive. All driven by user feedback on the prototype.
