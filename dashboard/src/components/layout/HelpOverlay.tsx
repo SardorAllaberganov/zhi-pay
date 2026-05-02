@@ -24,6 +24,7 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['g', 'f'], label: 'Go to FX Config', group: 'Navigation' },
   { keys: ['g', 'm'], label: 'Go to Commission Rules', group: 'Navigation' },
   { keys: ['g', 'l'], label: 'Go to Audit Log', group: 'Navigation' },
+  { keys: ['g', 'b'], label: 'Go to Blacklist', group: 'Navigation' },
   { keys: ['g', 's'], label: 'Go to Services', group: 'Navigation' },
   { keys: ['j'], label: 'Move down in lists', group: 'Lists' },
   { keys: ['k'], label: 'Move up in lists', group: 'Lists' },
@@ -112,6 +113,18 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['Enter'], label: 'Expand focused row', group: 'Audit Log' },
   { keys: ['e'], label: 'Open export dialog', group: 'Audit Log' },
   { keys: ['f'], label: 'Focus filters', group: 'Audit Log' },
+  // Blacklist list page (page-scoped)
+  { keys: ['n'], label: 'Open Add entry page', group: 'Blacklist' },
+  { keys: ['j'], label: 'Move down in list', group: 'Blacklist' },
+  { keys: ['k'], label: 'Move up in list', group: 'Blacklist' },
+  { keys: ['Enter'], label: 'Open focused entry', group: 'Blacklist' },
+  { keys: ['/'], label: 'Focus search', group: 'Blacklist' },
+  // Add blacklist entry page (page-scoped)
+  { keys: ['⌘', 'Enter'], label: 'Submit (when valid)', group: 'New blacklist entry' },
+  // Blacklist detail page (page-scoped)
+  { keys: ['b'], label: 'Back to list', group: 'Blacklist detail' },
+  { keys: ['Backspace'], label: 'Back to list', group: 'Blacklist detail' },
+  { keys: ['Del'], label: 'Open remove confirm', group: 'Blacklist detail' },
 ];
 
 interface HelpOverlayProps {
@@ -120,7 +133,7 @@ interface HelpOverlayProps {
 }
 
 export function HelpOverlay({ open, onOpenChange }: HelpOverlayProps) {
-  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users', 'Cards', 'Card detail', 'Recipients', 'Recipient detail', 'FX Config', 'Update FX rate', 'Commission Rules', 'New commission version', 'Audit Log'];
+  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users', 'Cards', 'Card detail', 'Recipients', 'Recipient detail', 'FX Config', 'Update FX rate', 'Commission Rules', 'New commission version', 'Audit Log', 'Blacklist', 'New blacklist entry', 'Blacklist detail'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -202,7 +202,7 @@ export function Users() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/blacklist/new?type=phone')}
+            onClick={() => navigate('/compliance/blacklist/new?type=phone')}
             className="flex-1 md:flex-none"
           >
             <ShieldOff className="h-4 w-4 mr-1.5" aria-hidden="true" />

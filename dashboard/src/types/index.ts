@@ -35,6 +35,9 @@ export type Tone =
   | 'muted'
   | 'brand';
 
+export type BlacklistType = 'phone' | 'pinfl' | 'device_id' | 'ip' | 'card_token';
+export type BlacklistSeverity = 'suspected' | 'confirmed';
+
 export type ServiceName =
   | 'alipay'
   | 'wechat'

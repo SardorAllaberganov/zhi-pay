@@ -1990,6 +1990,229 @@ const EN: Record<string, string> = {
   'admin.audit-log.empty.no-data.title': 'No audit events yet',
   'admin.audit-log.empty.no-data.body':
     'As admins and the system take actions, they appear here.',
+
+  // ===================================================================
+  // Blacklist surface (Phase 12) — /compliance/blacklist + /new + /:id
+  // ===================================================================
+  'admin.blacklist.title': 'Blacklist',
+  'admin.blacklist.subtitle':
+    'Block identifiers across signup, login, card linking, and transfers.',
+  'admin.blacklist.action.add': 'Add entry',
+
+  // Tabs
+  'admin.blacklist.tab.phone': 'Phone',
+  'admin.blacklist.tab.pinfl': 'PINFL',
+  'admin.blacklist.tab.device': 'Device',
+  'admin.blacklist.tab.ip': 'IP',
+  'admin.blacklist.tab.card-token': 'Card token',
+
+  // Type labels (capitalized — used in detail header chip + selects)
+  'admin.blacklist.type.phone': 'Phone',
+  'admin.blacklist.type.pinfl': 'PINFL',
+  'admin.blacklist.type.device': 'Device',
+  'admin.blacklist.type.ip': 'IP',
+  'admin.blacklist.type.card-token': 'Card token',
+
+  // Severity
+  'admin.blacklist.severity.suspected': 'Suspected',
+  'admin.blacklist.severity.confirmed': 'Confirmed',
+
+  // Status chip
+  'admin.blacklist.status.active': 'Active',
+  'admin.blacklist.status.expired': 'Expired',
+  'admin.blacklist.status.expiring-soon': 'Expiring soon',
+
+  // Filter bar
+  'admin.blacklist.filter.search': 'Search',
+  'admin.blacklist.filter.clear-search': 'Clear search',
+  'admin.blacklist.filter.clear-all': 'Clear filters',
+  'admin.blacklist.filter.clear-created': 'Clear created date filter',
+  'admin.blacklist.filter.status': 'Status',
+  'admin.blacklist.filter.added-by': 'Added by',
+  'admin.blacklist.filter.created': 'Added in',
+  'admin.blacklist.filter.search-placeholder.phone':
+    'Search by phone or reason',
+  'admin.blacklist.filter.search-placeholder.pinfl':
+    'Search by PINFL or reason',
+  'admin.blacklist.filter.search-placeholder.device':
+    'Search by device fingerprint or reason',
+  'admin.blacklist.filter.search-placeholder.ip':
+    'Search by IP address or reason',
+  'admin.blacklist.filter.search-placeholder.card-token':
+    'Search by card token or reason',
+
+  // Table column headers
+  'admin.blacklist.column.identifier': 'Identifier',
+  'admin.blacklist.column.reason': 'Reason',
+  'admin.blacklist.column.added-by': 'Added by',
+  'admin.blacklist.column.created': 'Created',
+  'admin.blacklist.column.expires': 'Expires',
+  'admin.blacklist.column.affecting': 'Currently affecting',
+
+  // Row kebab actions
+  'admin.blacklist.row.actions': 'Row actions',
+  'admin.blacklist.row.open': 'Open entry',
+  'admin.blacklist.row.affecting-n': '{count} affecting',
+
+  // Expiry cell
+  'admin.blacklist.expires.never': 'Never',
+  'admin.blacklist.expires.expired': 'Expired',
+  'admin.blacklist.expires.in-days': 'In {count} days',
+  'admin.blacklist.expires.in-hours': 'In {count}h',
+
+  // Empty state
+  'admin.blacklist.empty.body':
+    'No entries of this type. Add one to start blocking.',
+
+  // Add entry page
+  'admin.blacklist.add.back': 'Back to blacklist',
+  'admin.blacklist.add.title': 'Add blacklist entry',
+  'admin.blacklist.add.subtitle':
+    'Block an identifier from signup, login, card linking, or transfers. Takes effect immediately on save.',
+  'admin.blacklist.add.section.identity': 'Identity',
+  'admin.blacklist.add.section.identity-desc':
+    'Pick the identifier type and the value to block.',
+  'admin.blacklist.add.section.justification': 'Justification',
+  'admin.blacklist.add.section.justification-desc':
+    'Explain why this entry is being added — this is recorded in the audit log.',
+  'admin.blacklist.add.type': 'Type',
+  'admin.blacklist.add.identifier': 'Identifier',
+  'admin.blacklist.add.reason': 'Reason',
+  'admin.blacklist.add.severity': 'Severity',
+  'admin.blacklist.add.expires-at': 'Expires at',
+  'admin.blacklist.add.submit': 'Add to blacklist',
+
+  'admin.blacklist.add.placeholder.phone': '+998 XX XXX XX XX',
+  'admin.blacklist.add.placeholder.pinfl': '14 digits',
+  'admin.blacklist.add.placeholder.device': 'Hex device fingerprint',
+  'admin.blacklist.add.placeholder.ip': '192.0.2.10 or 2001:db8::1',
+  'admin.blacklist.add.placeholder.card-token': 'tok_…',
+
+  'admin.blacklist.add.severity.suspected-desc':
+    'Watching — may turn into a confirmed block after investigation.',
+  'admin.blacklist.add.severity.confirmed-desc':
+    'Hard block — confirmed fraud / sanctions / abuse.',
+
+  'admin.blacklist.add.help.reason':
+    '{count} / {min} characters minimum.',
+  'admin.blacklist.add.help.expires-at':
+    'Leave empty for an indefinite block.',
+
+  'admin.blacklist.add.validation.identifier-required':
+    'Identifier is required.',
+  'admin.blacklist.add.validation.phone-format':
+    'Enter an E.164 phone number (must start with +).',
+  'admin.blacklist.add.validation.pinfl-format':
+    'PINFL must be exactly 14 digits.',
+  'admin.blacklist.add.validation.device-format':
+    'Device fingerprint must be a hex string of at least 8 characters.',
+  'admin.blacklist.add.validation.ip-format':
+    'Enter a valid IPv4 or IPv6 address.',
+  'admin.blacklist.add.validation.card-format':
+    'Card token must be at least 8 characters.',
+
+  'admin.blacklist.add.warning.user-match':
+    'Match found: {name} ({phone}), {tier}, last login {lastLogin}. Adding this entry will prevent them from signing in.',
+  'admin.blacklist.add.warning.card-match':
+    'Match found: {maskedPan} on {bank}. Adding this entry will block this card from being used.',
+  'admin.blacklist.add.warning.duplicate':
+    'This identifier is already blacklisted.',
+
+  'admin.blacklist.add.confirm.title': 'Add this blacklist entry now?',
+  'admin.blacklist.add.confirm.body':
+    'This action takes effect immediately. Affected users / cards will be blocked at the next interaction.',
+  'admin.blacklist.add.confirm.cta': 'Add to blacklist',
+
+  // Pre-add check panel
+  'admin.blacklist.pre-add.title': 'Pre-add check',
+  'admin.blacklist.pre-add.idle':
+    'Start typing an identifier to see whether it matches a current user, card, or existing blacklist entry.',
+  'admin.blacklist.pre-add.duplicate-body':
+    'Open the existing entry to extend or edit it instead of adding a duplicate.',
+  'admin.blacklist.pre-add.no-match.title': 'No active match',
+  'admin.blacklist.pre-add.no-match.body':
+    'No current user or card matches this identifier. Block will only catch future activity.',
+  'admin.blacklist.pre-add.no-store.title': 'No live device / session match',
+  'admin.blacklist.pre-add.no-store.body':
+    'Device and IP matches are evaluated at request time — there is no canonical user/device store to query here.',
+  'admin.blacklist.pre-add.last-login.never': 'never',
+  'admin.blacklist.pre-add.open-user': 'Open user profile',
+  'admin.blacklist.pre-add.open-card': 'Open card detail',
+
+  // Detail page
+  'admin.blacklist.detail.back': 'Back to blacklist',
+  'admin.blacklist.detail.entry': 'Entry',
+  'admin.blacklist.detail.impact': 'Impact',
+  'admin.blacklist.detail.type': 'Type',
+  'admin.blacklist.detail.identifier': 'Identifier',
+  'admin.blacklist.detail.severity': 'Severity',
+  'admin.blacklist.detail.reason': 'Reason',
+  'admin.blacklist.detail.added-by': 'Added by',
+  'admin.blacklist.detail.created': 'Created at',
+  'admin.blacklist.detail.expires': 'Expires at',
+  'admin.blacklist.detail.not-found':
+    'Blacklist entry not found. It may have been removed.',
+
+  'admin.blacklist.impact.currently-blocking':
+    'Currently blocked by this entry.',
+  'admin.blacklist.impact.no-current-effect':
+    'No matching user or card in current data — the block will catch new activity.',
+  'admin.blacklist.impact.attempts-30d':
+    '{count} blocked sign-in attempts in the last 30 days.',
+  'admin.blacklist.impact.affected-user': 'Affected user',
+  'admin.blacklist.impact.affected-card': 'Affected card',
+  'admin.blacklist.impact.noun.users': 'user',
+  'admin.blacklist.impact.noun.devices': 'device',
+  'admin.blacklist.impact.noun.sessions': 'session',
+  'admin.blacklist.impact.noun.cards': 'card',
+
+  // Detail action labels
+  'admin.blacklist.action.edit-reason': 'Edit reason',
+  'admin.blacklist.action.extend': 'Extend expiry',
+  'admin.blacklist.action.remove': 'Remove',
+
+  // Edit reason dialog
+  'admin.blacklist.edit-reason.title': 'Edit blacklist entry reason',
+  'admin.blacklist.edit-reason.body':
+    'Update the justification for this entry. The previous reason is preserved in the audit log.',
+  'admin.blacklist.edit-reason.field.reason': 'New reason',
+  'admin.blacklist.edit-reason.field.change-note':
+    'Why are you updating this reason?',
+  'admin.blacklist.edit-reason.help.reason':
+    'Reason must be at least 30 characters.',
+  'admin.blacklist.edit-reason.help.change-note':
+    '{count} / {min} characters — explain the change.',
+  'admin.blacklist.edit-reason.confirm': 'Save new reason',
+
+  // Extend expiry dialog
+  'admin.blacklist.extend.title': 'Extend or change expiry',
+  'admin.blacklist.extend.body':
+    'Pick a new expiry date and time. Leave empty for an indefinite block.',
+  'admin.blacklist.extend.field.expires-at': 'New expiry',
+  'admin.blacklist.extend.help':
+    'Set in the future, or clear to make this entry indefinite.',
+  'admin.blacklist.extend.confirm': 'Save expiry',
+
+  // Remove dialog
+  'admin.blacklist.remove.title': 'Remove this blacklist entry?',
+  'admin.blacklist.remove.body':
+    'This is a hard delete. The entry is gone from the live blacklist, but the action is recorded in the audit log. This cannot be undone.',
+  'admin.blacklist.remove.field.reason': 'Why is this entry being removed?',
+  'admin.blacklist.remove.help':
+    '{count} / {min} characters minimum.',
+  'admin.blacklist.remove.confirm': 'Remove entry',
+
+  // Toasts
+  'admin.blacklist.toast.added.title': 'Entry added.',
+  'admin.blacklist.toast.added.error.title': 'Could not add entry.',
+  'admin.blacklist.toast.added.error.body':
+    'Something went wrong saving this entry. Try again.',
+  'admin.blacklist.toast.removed.title': 'Entry removed.',
+  'admin.blacklist.toast.removed.error': 'Entry could not be removed.',
+  'admin.blacklist.toast.edit-reason.title': 'Reason updated.',
+  'admin.blacklist.toast.edit-reason.error': 'Reason could not be updated.',
+  'admin.blacklist.toast.extend.title': 'Expiry updated.',
+  'admin.blacklist.toast.extend.error': 'Expiry could not be updated.',
 };
 
 /**

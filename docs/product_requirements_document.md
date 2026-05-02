@@ -356,6 +356,6 @@ The v1 feature surface, grouped by domain:
 ## 13. Cross-references
 
 - Data model: see [models.md](./models.md)
-- Status state machines: [models.md §4.2](./models.md#42-transfer-status-machine), [models.md §2.5](./models.md#25-kyc-state-machine)
+- Status state machines: [models.md §4.2](./models.md#42-transfer-status-machine), [models.md §2.6](./models.md#26-kyc-state-machine)
 - Money & ledger rules: [models.md §3.3](./models.md#33-wallet-ledger-semantics), [models.md §9.3](./models.md#93-money-handling-rules)
 - Error codes: [models.md §7.1](./models.md#71-error-code-examples)

@@ -123,9 +123,9 @@ export function UserDetail() {
   function handleAdminAction(action: UserAdminAction) {
     if (!user) return;
     if (action === 'blacklist_phone') {
-      // Pre-fill blacklist form (placeholder route — will read query params when built)
+      // Pre-fill blacklist form — Blacklist Add page reads `type` + `identifier`.
       navigate(
-        `/blacklist/new?type=phone&identifier=${encodeURIComponent(user.phone)}&user_id=${user.id}`,
+        `/compliance/blacklist/new?type=phone&identifier=${encodeURIComponent(user.phone)}&user_id=${user.id}`,
       );
       recordBlacklistPhone(user.id, 'Admin opened blacklist form from user detail', CURRENT_USER_ADMIN);
       return;

@@ -39,7 +39,7 @@ const ROUTE_TITLES: Record<string, { title: string; section?: string }> = {
     section: t('admin.nav.section.finance'),
   },
   '/audit-log': { title: t('admin.nav.audit-log'), section: t('admin.nav.section.compliance') },
-  '/blacklist': { title: t('admin.nav.blacklist'), section: t('admin.nav.section.compliance') },
+  '/compliance/blacklist': { title: t('admin.nav.blacklist'), section: t('admin.nav.section.compliance') },
   '/kyc-tiers': { title: t('admin.nav.kyc-tiers'), section: t('admin.nav.section.compliance') },
   '/services': { title: t('admin.nav.services'), section: t('admin.nav.section.system') },
   '/app-versions': { title: t('admin.nav.app-versions'), section: t('admin.nav.section.system') },

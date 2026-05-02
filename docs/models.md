@@ -131,6 +131,7 @@ erDiagram
     uuid id PK
     string identifier
     enum type "phone|pinfl|device_id|ip|card_token"
+    enum severity "suspected|confirmed"
     string reason
     string added_by "admin user id or system"
     timestamp expires_at
@@ -186,7 +187,22 @@ erDiagram
 | `expires_at`           | timestamptz | nullable                     | MyID re-verification window (e.g. 1 year)                    |
 | `created_at`           | timestamptz | not null                     |                                                             |
 
-### 2.5 KYC state machine
+### 2.5 Field reference — `blacklist`
+
+| field         | type        | constraints                                  | notes                                                                                              |
+|---------------|-------------|----------------------------------------------|----------------------------------------------------------------------------------------------------|
+| `id`          | uuid        | PK                                           | uuid v7                                                                                            |
+| `identifier`  | string      | not null                                     | full value, masked at the UI layer per `type`                                                      |
+| `type`        | enum        | not null                                     | `phone` / `pinfl` / `device_id` / `ip` / `card_token`                                              |
+| `severity`    | enum        | not null, default `suspected`                | `suspected` (warning UI) / `confirmed` (danger UI)                                                  |
+| `reason`      | string      | not null, ≥ 30 chars at insert               | required justification — surfaced verbatim on the detail page; old reasons preserved in audit-log  |
+| `added_by`    | string      | not null                                     | admin user id, or literal `'system'` for automated additions                                       |
+| `expires_at`  | timestamptz | nullable                                     | `null` = indefinite; UI renders "Never" / countdown / "Expired"                                    |
+| `created_at`  | timestamptz | not null, default now()                      |                                                                                                    |
+
+> Edits and removals are recorded in a separate audit-log table (or `transfer_events`-style sink) — the row itself is never silently rewritten. Hard-deletes leave an audit-log entry. Active vs expired is derived from `(expires_at IS NULL OR expires_at > now())`.
+
+### 2.6 KYC state machine
 
 ```mermaid
 stateDiagram-v2

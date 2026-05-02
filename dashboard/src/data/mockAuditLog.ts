@@ -70,6 +70,11 @@ import {
   listCommissionAudit,
   type CommissionAuditEntry,
 } from './mockCommissionRules';
+import {
+  listBlacklistAudit,
+  type BlacklistAuditAction,
+  type BlacklistAuditEntry,
+} from './mockBlacklist';
 
 // =====================================================================
 // Public types
@@ -893,6 +898,28 @@ function bridgeCommissionAudit(e: CommissionAuditEntry): AuditEvent {
   };
 }
 
+const BLACKLIST_ACTION_MAP: Record<BlacklistAuditAction, AuditAction> = {
+  add:            'created',
+  edit_reason:    'updated',
+  extend_expiry:  'updated',
+  hard_delete:    'deleted',
+};
+
+function bridgeBlacklistAudit(e: BlacklistAuditEntry): AuditEvent {
+  return {
+    id: `bridge_blacklist_${e.id}`,
+    timestamp: e.createdAt,
+    actorType: 'admin',
+    actor: adminFromName(e.actorName, e.actorId),
+    action: BLACKLIST_ACTION_MAP[e.action],
+    entity: { type: 'blacklist', id: e.entryId },
+    fromStatus: null,
+    toStatus: null,
+    reason: e.reason || undefined,
+    context: { kind: e.action, ...(e.snapshot ?? {}), ...(e.context ?? {}) },
+  };
+}
+
 // Bridge the canonical TRANSFER_EVENTS_FULL set — these are the
 // state-machine rows for transfers (system / provider / user-driven).
 function bridgeTransferEvents(): AuditEvent[] {
@@ -948,6 +975,7 @@ export function listAuditEvents(): AuditEvent[] {
     ...listAmlAudit().map(bridgeAmlAudit),
     ...listFxAudit().map(bridgeFxAudit),
     ...listCommissionAudit().map(bridgeCommissionAudit),
+    ...listBlacklistAudit().map(bridgeBlacklistAudit),
   ];
   merged.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   return merged;

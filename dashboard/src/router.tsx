@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { Overview } from '@/pages/Overview';
 import { Transfers } from '@/pages/Transfers';
@@ -17,10 +17,12 @@ import { FxConfigUpdate } from '@/pages/FxConfigUpdate';
 import { CommissionRules } from '@/pages/CommissionRules';
 import { CommissionRulesNew } from '@/pages/CommissionRulesNew';
 import { AuditLog } from '@/pages/AuditLog';
+import { Blacklist } from '@/pages/Blacklist';
+import { BlacklistNew } from '@/pages/BlacklistNew';
+import { BlacklistDetail } from '@/pages/BlacklistDetail';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES = [
-  '/blacklist',
   '/kyc-tiers',
   '/services',
   '/app-versions',
@@ -29,6 +31,11 @@ const PLACEHOLDER_ROUTES = [
   '/news',
   '/notifications',
 ];
+
+function RedirectPreservingQuery({ to }: { to: string }) {
+  const { search } = useLocation();
+  return <Navigate to={`${to}${search}`} replace />;
+}
 
 export function Router() {
   return (
@@ -72,6 +79,11 @@ export function Router() {
         {/* Compliance — Audit Log (nested) */}
         <Route path="/compliance/audit-log" element={<AuditLog />} />
 
+        {/* Compliance — Blacklist (nested) */}
+        <Route path="/compliance/blacklist" element={<Blacklist />} />
+        <Route path="/compliance/blacklist/new" element={<BlacklistNew />} />
+        <Route path="/compliance/blacklist/:id" element={<BlacklistDetail />} />
+
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
         <Route
@@ -91,6 +103,8 @@ export function Router() {
         <Route path="/commission-rules" element={<Navigate to="/finance/commissions" replace />} />
         <Route path="/commission-rules/new" element={<Navigate to="/finance/commissions/new" replace />} />
         <Route path="/audit-log" element={<Navigate to="/compliance/audit-log" replace />} />
+        <Route path="/blacklist" element={<Navigate to="/compliance/blacklist" replace />} />
+        <Route path="/blacklist/new" element={<RedirectPreservingQuery to="/compliance/blacklist/new" />} />
 
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />
