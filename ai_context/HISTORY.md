@@ -4,6 +4,179 @@
 
 ---
 
+### 2026-05-04 — `/doc_sync` checkpoint — primitive-count drift fixed (shadcn 21→25, ZhiPay 12→19) + foundation row extended
+
+- **Summary**: Post-Phase-22b `/doc_sync` discovered the shadcn and ZhiPay primitive counts in `docs/product_states.md` + `ai_context/AI_CONTEXT.md` had been drifting since around Phase 10 — never updated as later phases added Switch / Select / OTP / scroll-area / qr-placeholder shadcn primitives, and as several pattern-layer components (LocaleFlag · LocaleTabInputs · LocaleTabTextarea · PhoneMockup) were lifted to `components/zhipay/` to satisfy the 3rd-consumer rule. Updated both docs to reflect current state: shadcn primitives (25) · ZhiPay domain primitives (19, ending with WriteButton from Phase 22b).
+- **Verified**: `ls dashboard/src/components/ui/ | wc -l` = 25 · `ls dashboard/src/components/zhipay/ | wc -l` = 19. No code change.
+- **Files modified**:
+  - `docs/product_states.md` — Foundation table primitive-count rows updated; ZhiPay primitive list extended with the lifted primitives + WriteButton
+  - `ai_context/AI_CONTEXT.md` — File-tree comment block updated (counts + lift sequence + new `components/system/*` line); workstreams entry "ZhiPay primitives" line refreshed
+
+- **Other docs verified clean (no cascade needed)**:
+  - `docs/models.md` — no schema changes (Phase 22+22b are mock-only operational layers; D1=a kept the system-event enum out of the central audit-log table)
+  - `docs/product_requirements_document.md` — no PRD/persona/feature changes (error/maintenance/offline states are operational UX, not product features)
+  - `docs/mermaid_schemas/*` — no flow / state-machine changes (no new entity transitions)
+
+---
+
+### 2026-05-04 — Phase 22b — gap-fill on Error & System States · outside-shell 404 organic flow · `<WriteButton>` offline-aware primitive applied across 7 action bars · `lib/offlineActionQueue` (queue + replay on reconnect) · `useDraftPreservation` hook with maintenance-flip toast · 3 deviation fixes (mobile icon 96, autofocus primary CTA, overlay max-h 80vh)
+
+- **Summary**: Audited Phase 22 against the spec, identified 4 unbuilt items + 3 minor deviations, then built all of them. Six new files + selective sweep across 7 existing surfaces. Build remains clean. **No schema cascade** — operational states are mock-only.
+
+  **(1) Outside-shell 404 organic flow** — new `<PathAwareAuthGuard>` in `router.tsx` wraps the catch-all `*` route. When a request is signed-out AND the pathname doesn't match any known top-level prefix, it renders the full-bleed `<NotFoundState />` directly instead of redirecting to `/sign-in?next=...` first. The spec's intent is that a malformed deep-link is communicated up-front, not after the user authenticates. Known-prefixes list (`/operations/`, `/customers/`, `/finance/`, `/compliance/`, `/system/`, `/content/`, `/settings`, plus the Phase 11+ back-compat flat routes for `/transfers`, `/users`, `/cards`, etc.) is maintained alongside the route registrations in the same file. Signed-in users always fall through to `<AuthGuard>` — the in-shell `<NotFound>` inside `AppRoutes` handles unknown paths for them.
+
+  **(2) Offline write gating** — new `<WriteButton>` primitive in `components/zhipay/` (drop-in replacement for `<Button>` that gates on `useNetworkState()`). When offline, renders disabled + surfaces an `admin.system.offline.action.disabled-tooltip` Tooltip ("Reconnect to perform this action."). Tooltip wrapping pattern uses a `<span tabIndex={0}>` around the disabled button so Radix's TooltipTrigger still receives hover/focus events (a `disabled` button doesn't fire mouseenter, blocking the tooltip otherwise). Forwards `ref` + the standard Button prop surface. Swept across 7 sticky-bottom action bars: KYC Queue (Reject / Request info / Escalate + Approve when not domain-disabled) · AML Triage (Escalate / Assign-me / Reassign + Clear when not domain-disabled) · Cards Detail (Freeze / Unfreeze) · Recipients Detail (Hard-delete) · Blacklist Detail (Edit reason / Extend / Remove) · Notifications Compose (Send/Schedule) · Notifications Cancel-Scheduled (Cancel button). Domain-disabled buttons (KYC Approve gated by under-18 / sanctions; AML Clear gated by sanctions / terminal) keep their existing reason-tooltip wrap; offline gating layers in only when the button isn't already domain-disabled. Read-only actions (Copy token, Open transfers, Open audit log) and ghost cancel buttons stay as plain `<Button>` — they don't mutate state.
+
+  **(3) Offline action queue + replay-on-reconnect** — new `lib/offlineActionQueue.ts` exposes `tryWriteOrQueue({label, executor})`. When online, runs the executor synchronously and returns `'executed'`. When offline, queues for replay and returns `'queued'`. Module-level `window.addEventListener('online', …)` drains the queue on reconnect (synchronously, in order) and fires a single `toast.success(t('admin.system.offline.toast.synced').replace('{n}', N))`. Replay errors caught + logged to console; one failure doesn't block the rest. Wired as a demo to AML Triage's `handleAssignMe` (the `m` keyboard chord bypasses the WriteButton UI gate, so the queue catches it). New `admin.system.offline.toast.queued` info-toast surfaces on queue ("You're offline. Action queued — we'll sync it when you reconnect."). Demo-scope only — other mutators across the dashboard can adopt the same pattern as needed; the primitive is documented and ready.
+
+  **(4) Maintenance draft preservation** — new `hooks/useDraftPreservation.ts` exposes `useDraftPreservation({key, value, setValue, serialize, deserialize, enabled})` returning `{clearDraft}`. Auto-saves `value` to localStorage debounced 500ms; on mount, deserializes any saved draft and calls `setValue` to restore. Watches `useMaintenanceState().active` — when it transitions false→true, surfaces a `toast.info(t('admin.system.maintenance.draft-saved'))` confirming the draft is preserved. Default (de)serializer is plain JSON; consumers pass custom ones to handle Date / Map / etc. Applied as a demo to Notifications Compose (`ComposePane.tsx`) — the heaviest-state form in the dashboard (3-locale title + body + audience criteria + schedule + deep-link). Custom (de)serializer rehydrates `scheduledFor: Date` per LESSON 2026-05-03 (storage round-trips lose Date semantics that the type system can't see). `clearDraft()` called after successful submit so the next mount starts fresh.
+
+  **Quick deviation fixes** (3 minor):
+  - **Mobile icon size** — `<SystemStateLayout>` icon was `h-20 w-20 sm:h-24 sm:w-24` (80→96px). Spec says 96×96 on mobile. Bumped to flat `h-24 w-24` (96×96) across breakpoints.
+  - **Autofocus primary CTA on 404/500/403** — spec's keyboard contract says "Enter triggers primary CTA" on these states. `<SystemStateLayout>`'s primary `<ActionButton>` now receives `autoFocus` so on mount it gets focus and Enter naturally activates it.
+  - **Shortcuts overlay max-height** — was 85vh (existing project convention), spec says 80vh. Updated `HelpOverlay`'s DialogContent to `max-h-[80vh]`.
+
+- **Files added**:
+  - `dashboard/src/components/zhipay/WriteButton.tsx`
+  - `dashboard/src/lib/offlineActionQueue.ts`
+  - `dashboard/src/hooks/useDraftPreservation.ts`
+
+- **Files modified**:
+  - `dashboard/src/router.tsx` — `<PathAwareAuthGuard>` + `KNOWN_PATH_PREFIXES` list + `isKnownPath()` helper
+  - `dashboard/src/components/system/SystemStateLayout.tsx` — icon bumped to flat `h-24 w-24`; `<ActionButton>` now accepts `autoFocus` prop; primary action receives `autoFocus`
+  - `dashboard/src/components/layout/HelpOverlay.tsx` — DialogContent max-h 85vh → 80vh
+  - `dashboard/src/components/kyc-queue/ActionBar.tsx` — `<Button>` → `<WriteButton>` for Reject / Request info / Escalate; `ApproveButton` refactored: WriteButton when not domain-disabled, existing Tooltip wrap when domain-disabled
+  - `dashboard/src/components/aml-triage/ActionBar.tsx` — same shape as KYC: `<Button>` → `<WriteButton>` for Escalate / Assign-me / Reassign; `ClearButton` refactored same way
+  - `dashboard/src/components/cards/CardActionBar.tsx` — Freeze / Unfreeze → `<WriteButton>`
+  - `dashboard/src/components/recipients/RecipientActionBar.tsx` — Hard-delete → `<WriteButton>`
+  - `dashboard/src/components/blacklist/ActionBar.tsx` — Edit reason / Extend / Remove → `<WriteButton>`
+  - `dashboard/src/components/notifications/compose/ComposeActionBar.tsx` — Send/Schedule primary → `<WriteButton>`
+  - `dashboard/src/components/notifications/detail/CancelScheduledActionBar.tsx` — Cancel button → `<WriteButton>`
+  - `dashboard/src/components/notifications/compose/ComposePane.tsx` — `useDraftPreservation` hook wired with custom Date-aware (de)serializer; `clearDraft()` called after successful submit
+  - `dashboard/src/pages/AmlTriage.tsx` — `handleAssignMe` wrapped through `tryWriteOrQueue` (demo wiring)
+  - `dashboard/src/lib/i18n.ts` — added `admin.system.offline.toast.queued` key
+  - `docs/product_states.md` — foundation row + surface row extended with Phase 22b notes; last-updated bumped
+  - `ai_context/AI_CONTEXT.md` — workstreams entry rewritten to cover Phase 22 + 22b
+  - `ai_context/HISTORY.md` — this entry
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npx vite build` (exit 0; 4.37s). HMR clean during sweep. Lessons-compliance grep sweep: sub-13px / `← ` prefix in back-link i18n / text-xs in buttons / sticky tab-strip in tablists — all 0 hits.
+
+- **Browser-eyeball checks** (dev server still up at `http://127.0.0.1:5175/`):
+  - Sign out, then visit `/#/operations/transferss` (typo) → full-bleed 404 with logo + "Sign in" CTA, NOT redirected to sign-in first.
+  - Toggle offline (DevTools → Network → Offline) on any surface → action bar primary buttons show as disabled with "Reconnect to perform this action" tooltip on hover. The OfflineBanner shows above the content area.
+  - On AML Triage detail (`/operations/aml-triage/aml_01`), with offline toggled: press `m` (Assign-me chord). Info toast: "You're offline. Action queued — we'll sync it when you reconnect." Re-enable network → success toast: "Synced 1 actions."
+  - Open Notifications Compose (`/content/notifications/new`), type a title in any locale, then visit `/#/?maintenance=on` to flip maintenance: full-page maintenance state replaces the shell. Visit `/#/?maintenance=off` to clear. Return to Notifications Compose → previously-typed title is restored from localStorage.
+
+- **Adoption-pending** (deferred — primitives ready, the 21-surface sweep is its own follow-up): WriteButton across the remaining ~30 dialog confirmation buttons (Transfer Detail's 6 modals, KYC's 4, AML's 3, Cards' 2, Settings password / profile reason dialogs, FX Update form's submit, Commission new-version submit, Blacklist Add submit, Stories editor publish, News editor publish, App Versions add/edit, Services status-change confirms). Same drop-in pattern; same primitive.
+
+---
+
+### 2026-05-03 — Admin Error & System States (Phase 22) — cross-cutting layer wrapping every route · `<SystemErrorBoundary>` + `<MaintenanceGate>` + `<OfflineBanner>` + 4 state components + 7-route preview index + print-friendly shortcuts view · NEW `mockSystemEvents` forensic store (NOT bridged to central audit log per Phase 20 precedent) · HelpOverlay i18n keys migrated `admin.help.*` → `admin.shortcuts.*`
+
+- **Summary**: Built the Phase 22 error & system states layer — minimal, calm, brand-consistent. Cross-cutting layer that wraps every other route in the dashboard. **No PRD / models / mermaid cascade** — these are operational states surfaced via mock-only stores; they don't add new entity types or state machines.
+
+  **Locked decisions** (D1–D4 from the plan):
+  - **D1** = audit landing for 500 / 403 events — new `mockSystemEvents` forensic store, NOT bridged to central `mockAuditLog`. Mirrors Phase 20's precedent of separating auth events (`mockAdminLoginAudit`) from compliance entity-state-change events. Page errors and permission denials are operational signals; mixing them into the central audit log would dilute the surface compliance reviewers scan.
+  - **D2** = session-lost redirect param — keep the established `?next=` (Phase 20 wording), add `&reason=session-lost` as the discriminator. Reuses the existing `<SessionExpiredBanner>` — copy matches the spec verbatim ("Session expired. Sign in again to continue.").
+  - **D3** = maintenance trigger surface — `lib/maintenanceState.ts` with `?maintenance=on|off` URL param + localStorage persistence. Lets QA flip the state without going through a UI control; the param strips itself after application so subsequent navigation doesn't keep re-applying.
+  - **D4** = shortcuts overlay vs new ShortcutsOverlay component — extend HelpOverlay in place. Renamed i18n keys `admin.help.*` → `admin.shortcuts.*` (2 keys retired); SHORTCUTS catalogue lifted to shared `components/layout/shortcuts.ts` so HelpOverlay + the new print-friendly route share one source.
+
+  **Foundation layer (5 modules)**:
+  - `dashboard/src/lib/referenceId.ts` — generates `[a-f0-9]{4}-[a-f0-9]{4}` ids (32 bits, fine for mock-side correlation; real backend would mint a longer trace id and the UI would shorten).
+  - `dashboard/src/data/mockSystemEvents.ts` — forensic-only append-only store w/ `recordSystemEvent()` mutator + `listSystemEvents()` reader. Two event types: `page_error` (carries reference id + optional message + componentStack) · `permission_denied` (carries optional requiredRole). No UI surface today — intentional minimal shape.
+  - `dashboard/src/lib/systemEvents.ts` — surface-facing API: `logPageError({route, error, componentStack})` returns the reference id (for the boundary to display); `logPermissionDenied({route, requiredRole?})` is fire-and-forget. Both swallow errors so telemetry never crashes the already-broken page.
+  - `dashboard/src/hooks/useNetworkState.ts` — `useSyncExternalStore`-backed online/offline state per LESSON 2026-05-03. Module-level cached `isOnline`, reference-stable `getSnapshot`, `online` / `offline` event listeners on `window`. `setOfflinePreview(force)` override for `/system/preview/offline` so designers can render the banner without disconnecting their network. Preview override wins until cleared (won't snap back to `navigator.onLine` on `online` event while forced).
+  - `dashboard/src/lib/maintenanceState.ts` — `useSyncExternalStore` per LESSON 2026-05-03. Persistence in localStorage. `bootMaintenanceFromUrl()` reads `?maintenance=on|off` from the URL on first load + strips the param. `enterMaintenance({estimatedEndAt})` / `exitMaintenance()` programmatic API. `?maintenance=on` defaults to a 30-minute window so the timeline reads realistically out of the box.
+
+  **Components (`dashboard/src/components/system/`)**:
+  - `SystemStateLayout.tsx` — shared centered-card frame. Lucide icon (h-20→24 w-20→24 stroke-1.5 in tone-mapped color: slate / danger-600 / warning-600), text-2xl semibold title, text-sm muted body, primary CTA brand-default + optional ghost secondary, optional footer slot. Two variants: `in-shell` (centered inside `<main>`'s `<flex min-h-[60vh] items-center justify-center>`) and `full-bleed` (wraps with `<AuthLayout>` for the gradient bg + logo + ThemeToggle + footer chip + TooltipProvider per LESSON 2026-05-03). Card padding owned here w/ raw elements — does NOT consume `<CardHeader>` / `<CardContent>` per LESSON 2026-05-03 padding-contract rule. CTAs stack mobile (flex-col-reverse so primary stays on top) → side-by-side `sm+`.
+  - `NotFoundState.tsx` — 404 (compass-off icon, slate tone). In-shell: "Back to Overview" primary + "Open command palette (⌘K)" secondary (wired via `useAppShell()` from the new context). Full-bleed: "Sign in" primary, no secondary. Footer renders requested path mono ("requested: /operations/transferss").
+  - `ServerErrorState.tsx` — 500/503 (alert-triangle icon, danger tone). "Try again" primary (calls `onRetry` from boundary; falls back to `window.location.reload()`) + "Back to Overview" secondary. Footer renders mono reference id w/ in-place copy feedback (Copy→Check icon swap, success-700 flip for 1.5s; matches `useCopyFeedback` pattern from audit-log + services).
+  - `ForbiddenState.tsx` — 403 (shield-x icon, warning tone). "Back to Overview" primary, no secondary, no reference id (permission outcome, not a system error). Logs `permission_denied` to `mockSystemEvents` on mount; skipped in preview mode.
+  - `MaintenanceState.tsx` — full-bleed only (uses `<AuthLayout>` chrome). Wrench icon, warning tone. Body interpolates estimated-end time via `format(date, 'p')`; falls back to "we'll be back as soon as we can" when `estimatedEndAt` is null. Mini timeline footer: "Started at" + "Estimated end" w/ `formatDistanceToNow` relative-time. Refresh-status secondary CTA bumps `notify()` so relative-time strings re-render. No primary CTA — admin can only wait. Override props (`startedAtOverride` / `estimatedEndAtOverride`) used by the preview.
+  - `SystemErrorBoundary.tsx` — class component with `getDerivedStateFromError` + `componentDidCatch`. Catches render-time crashes anywhere in `<AppRoutes>`, captures the reference id from `logPageError()` for display, exposes `reset()` for the Try-again CTA. Doesn't catch event-handler / async / effect errors (those need a global handler — out of scope for v1).
+  - `OfflineBanner.tsx` — slate-toned banner (`bg-slate-100` / `dark:bg-slate-800` w/ `border-b`). WifiOff icon left + "You're offline" + "Showing cached data from {time}" + Retry button (outline, sm). Renders inside `<AppShell>` between TopBar and `<main>` when `useNetworkState()` returns false. `cachedFrom` captured in `useMemo([cachedFromOverride, visible])` so the time label stays stable for the duration of the offline window (a fresh `Date.now()` per render would tick the label every paint).
+
+  **Pages**:
+  - `pages/NotFound.tsx` — catch-all `<Route path="*">` inside `AppRoutes`. Renders the in-shell variant + wires `onOpenCommandPalette` from `useAppShell()`.
+  - `pages/Forbidden.tsx` — defensive 403 mounted at `/system/403`; not in sidebar.
+  - `pages/Maintenance.tsx` — full-page replacement when `<MaintenanceGate>` flips on.
+  - `pages/SystemPreview.tsx` — single file exporting 7 components (`SystemPreviewIndex` + 6 per-state previews). Index card uses raw `<div className="border-b border-border px-5 py-4">` + `<ul>` directly (NOT `<CardHeader>` / `<CardContent>`) per LESSON 2026-05-03 — half-overrides of the Card primitive's `p-5` rhythm are forbidden. Per-preview Cards use the primitives whole. Preview maintenance route renders `<MaintenanceState>` directly with `startedAtOverride` / `estimatedEndAtOverride` so the timeline reads "started 8 minutes ago, estimated end in 22 minutes" deterministically without flipping the live flag.
+  - `pages/ShortcutsPrint.tsx` — print-friendly 2-column layout (`md:grid-cols-2 print:grid-cols-2`); auto-fires `window.print()` 250ms after first paint via `useEffect`. Each section uses `break-inside-avoid` so groups don't split mid-page. Uses shared SHORTCUTS + SHORTCUT_GROUPS from `components/layout/shortcuts.ts`.
+
+  **Layout wiring**:
+  - `components/layout/AppShellContext.tsx` (new) — small context exposing `{openCommandPalette, openHelp}`. Default value is no-op (so consumers outside AppShell don't crash). Used today by `<NotFound>` and `/system/preview/shortcuts`.
+  - `components/layout/AppShell.tsx` — wraps children in `<AppShellContext.Provider>` w/ memoized actions; mounts `<OfflineBanner />` between `<TopBar>` and `<main>`.
+  - `components/layout/HelpOverlay.tsx` — replaced inline SHORTCUTS array with import from `./shortcuts`; renamed i18n keys `admin.help.{title,subtitle}` → `admin.shortcuts.{title,subtitle}`; updated subtitle copy to "Press ? anywhere to open this. Press Esc to close."; added Print-shortcuts footer link that opens `/#/system/shortcuts-print` in a new tab.
+  - `components/layout/shortcuts.ts` (new) — exports `SHORTCUTS` flat list (96 rows) + `SHORTCUT_GROUPS` order array. Single source for HelpOverlay + ShortcutsPrint. Keep in sync with the actual chord wiring in `useKeyboardShortcuts.ts` and per-page `useEffect` listeners.
+
+  **Auth wiring**:
+  - `lib/auth.ts` — added `triggerSessionLost(currentPath)` exported function. Calls `signOut({reason: 'session_expired'})` (existing audit verb — no schema cascade needed) + redirects via `window.location.assign('<base>#/sign-in?next=...&reason=session-lost')`. Today: enabling-only (no real backend in v1). When real backend lands and 401-mid-app needs distinct audit semantics, extend the enum + schema.
+  - `pages/SignIn.tsx` — reads `?reason=session-lost` (in addition to existing `?expired=1`); shows the existing `<SessionExpiredBanner>` for either trigger.
+
+  **Routing**:
+  - `router.tsx` — restructured top-level: `<Router>` now wraps `<Routes>` in a new `<MaintenanceGate>`; `<AppRoutes>` (inside `<AuthGuard><AppShell>`) now wraps its inner `<Routes>` in `<SystemErrorBoundary>`. Added 7 preview routes (`/system/preview` + 6 children — session-lost preview is just a link to `/sign-in?reason=session-lost&next=%2F`, no separate route). Added `/system/403` for the defensive RBAC fallback. Added `/system/shortcuts-print`. Catch-all `*` swapped from `<Placeholder />` to `<NotFound />` (Placeholder kept in tree for future single-route placeholders — `PLACEHOLDER_ROUTES` is empty).
+  - `App.tsx` — added `bootMaintenanceFromUrl()` call at module load alongside the existing `bootPreferences()` call.
+
+  **i18n**: ~37 new keys (EN-only matching project i18n stub):
+  - `admin.error.404.*` (6 keys: title · body · 3 actions [home, command-palette, sign-in] · requested label)
+  - `admin.error.500.*` (6 keys: title · body · 2 actions · reference-id label · reference-id-copy aria-label)
+  - `admin.error.403.*` (3 keys: title · body · home action)
+  - `admin.system.offline.*` (5 keys: banner title · cached-from · retry · disabled-tooltip · synced toast)
+  - `admin.system.maintenance.*` (8 keys: title · body · body-unknown · started-at · estimated-end · refresh action · draft-saved)
+  - `admin.system.session-lost.*` (1 key: banner)
+  - `admin.shortcuts.*` (10 keys: title · subtitle · 5 group labels · print action · print subtitle)
+  - `admin.system.preview.*` (1 key: back-to-index)
+  - **Retired**: `admin.help.title` and `admin.help.subtitle` removed (no remaining references after HelpOverlay namespace migration).
+
+- **Files added**:
+  - `dashboard/src/lib/referenceId.ts`
+  - `dashboard/src/lib/systemEvents.ts`
+  - `dashboard/src/lib/maintenanceState.ts`
+  - `dashboard/src/data/mockSystemEvents.ts`
+  - `dashboard/src/hooks/useNetworkState.ts`
+  - `dashboard/src/components/system/SystemStateLayout.tsx`
+  - `dashboard/src/components/system/NotFoundState.tsx`
+  - `dashboard/src/components/system/ServerErrorState.tsx`
+  - `dashboard/src/components/system/ForbiddenState.tsx`
+  - `dashboard/src/components/system/MaintenanceState.tsx`
+  - `dashboard/src/components/system/SystemErrorBoundary.tsx`
+  - `dashboard/src/components/system/OfflineBanner.tsx`
+  - `dashboard/src/components/layout/AppShellContext.tsx`
+  - `dashboard/src/components/layout/shortcuts.ts`
+  - `dashboard/src/pages/NotFound.tsx`
+  - `dashboard/src/pages/Forbidden.tsx`
+  - `dashboard/src/pages/Maintenance.tsx`
+  - `dashboard/src/pages/SystemPreview.tsx`
+  - `dashboard/src/pages/ShortcutsPrint.tsx`
+
+- **Files modified**:
+  - `dashboard/src/App.tsx` — added `bootMaintenanceFromUrl()` invocation
+  - `dashboard/src/router.tsx` — `<MaintenanceGate>` top-level wrap · `<SystemErrorBoundary>` wraps `AppRoutes`' inner Routes · 7 preview routes + `/system/403` + `/system/shortcuts-print` registered · catch-all swapped to `<NotFound>`
+  - `dashboard/src/components/layout/AppShell.tsx` — `<AppShellContext.Provider>` wrap + `<OfflineBanner>` mount + `useCallback`/`useMemo` for action stability
+  - `dashboard/src/components/layout/HelpOverlay.tsx` — SHORTCUTS import from shared module · i18n keys `admin.help.*` → `admin.shortcuts.*` · Print-shortcuts footer link
+  - `dashboard/src/lib/auth.ts` — `triggerSessionLost(currentPath)` exported
+  - `dashboard/src/pages/SignIn.tsx` — reads `?reason=session-lost` in addition to `?expired=1`
+  - `dashboard/src/lib/i18n.ts` — 37 new keys; 2 retired
+  - `docs/product_states.md` — new "System — Error & system states" surface row + new foundation row + last-updated bumped to Phase 22
+  - `ai_context/AI_CONTEXT.md` — current-phase paragraph + workstreams entry
+  - `ai_context/HISTORY.md` — this entry
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npx vite build` (exit 0; 4.54s). Dev server boots clean on `127.0.0.1:5175`. Lessons-compliance grep sweep: sub-13px / `← ` prefix in back-link i18n / text-xs in buttons / sticky-on-tab-strips / Card primitive padding half-overrides in Phase 22 files / removed `admin.help.*` references — all 0 hits.
+
+- **Browser-eyeball preview routes** (dev server up at `http://127.0.0.1:5175/`):
+  - `/#/system/preview` → preview index
+  - `/#/system/preview/404` → 404 in-shell w/ "requested: /operations/transfersss"
+  - `/#/system/preview/500` → 500 in-shell w/ "req-id: 8a7c-2f1e" + copy-on-click
+  - `/#/system/preview/403` → 403 (audit write skipped)
+  - `/#/system/preview/offline` → banner over a stale Overview-like view
+  - `/#/system/preview/maintenance` → full-page maintenance ("started 8m ago, est end in 22m")
+  - `/#/sign-in?reason=session-lost&next=%2F` → sign-in w/ session-lost banner
+  - `/#/system/preview/shortcuts` → opens HelpOverlay
+  - **Live trigger** (not just preview): `/#/?maintenance=on` flips the real flag; `/#/?maintenance=off` clears it.
+
+---
+
 ### 2026-05-03 — `/doc_sync` checkpoint — Phase 21 polish (sticky tab strip removed) + Sign-in history padding rebalanced + AI_CONTEXT bumped to Phase 21
 
 - **Summary**: Two follow-up fixes to the Phase 21 Settings surface landed during browser eyeballing, plus the AI_CONTEXT.md catch-up that was deferred until after the build verified.
