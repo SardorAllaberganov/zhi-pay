@@ -3081,6 +3081,313 @@ const EN: Record<string, string> = {
     'Required: { "id": "news_…" } to surface the specific article.',
   'admin.deep-link.params-hint.story':
     'Required: { "id": "story_…" } to open a specific story.',
+  'admin.deep-link.params-hint.card-detail':
+    'Required: { "card_id": "card_…" } to open a specific card.',
+  'admin.deep-link.params-hint.settings':
+    'No params — opens the Settings root.',
+  'admin.deep-link.screen.card-detail': 'Card detail',
+  'admin.deep-link.screen.settings': 'Settings',
+
+  // ============================================================
+  // Notifications — admin composer + sent history at /content/notifications
+  // ============================================================
+
+  // Page header
+  'admin.notifications.title': 'Notifications',
+  'admin.notifications.subtitle.counts':
+    '{sent} sent · {scheduled} scheduled · {cancelled} cancelled',
+  'admin.notifications.action.new': 'New notification',
+
+  // Compose page (dedicated route /content/notifications/new)
+  'admin.notifications.compose.back-to-list': 'Back to notifications',
+  'admin.notifications.compose.page-title': 'New notification',
+  'admin.notifications.compose.page-subtitle':
+    'Compose and dispatch a push notification — broadcast, segmented, or single-recipient.',
+
+  // Status enum labels
+  'admin.notifications.status.scheduled': 'Scheduled',
+  'admin.notifications.status.sending': 'Sending',
+  'admin.notifications.status.sent': 'Sent',
+  'admin.notifications.status.cancelled': 'Cancelled',
+  'admin.notifications.status.failed': 'Failed',
+
+  // Sort labels (sent tab)
+  'admin.notifications.sort.default': 'Default',
+  'admin.notifications.sort.sent-at': 'Sent date',
+  'admin.notifications.sort.created-at': 'Created date',
+
+  // Locale labels (used by LocaleTabInputs / preview locale strip)
+  'admin.notifications.compose.locale.uz': 'O‘zbek',
+  'admin.notifications.compose.locale.ru': 'Русский',
+  'admin.notifications.compose.locale.en': 'English',
+
+  // Compose — Audience section
+  'admin.notifications.compose.audience.title': 'Audience',
+  'admin.notifications.compose.audience.all': 'All users',
+  'admin.notifications.compose.audience.segment': 'Filtered segment',
+  'admin.notifications.compose.audience.single': 'Single user',
+  'admin.notifications.compose.audience.broadcast.description':
+    'Every active user receives this notification.',
+  'admin.notifications.compose.audience.segment.description':
+    'Filter by tier, language, behavior, and recency.',
+  'admin.notifications.compose.audience.single.description':
+    'One specific recipient — typically a transactional message.',
+  'admin.notifications.compose.audience.estimated': 'Estimated audience',
+  'admin.notifications.compose.audience.users': 'users',
+  'admin.notifications.compose.audience.segment.no-filters-hint':
+    'No filters — counts every active user',
+
+  // Compose — Segment criteria
+  'admin.notifications.compose.segment.tier': 'KYC tier',
+  'admin.notifications.compose.segment.tier.tier_0': 'Tier 0',
+  'admin.notifications.compose.segment.tier.tier_1': 'Tier 1',
+  'admin.notifications.compose.segment.tier.tier_2': 'Tier 2',
+  'admin.notifications.compose.segment.language': 'Preferred language',
+  'admin.notifications.compose.segment.has-card': 'Has linked card',
+  'admin.notifications.compose.segment.has-transfer': 'Has completed a transfer',
+  'admin.notifications.compose.segment.last-login': 'Last login',
+  'admin.notifications.compose.segment.last-login.lt7d': 'Within 7 days',
+  'admin.notifications.compose.segment.last-login.lt30d': 'Within 30 days',
+  'admin.notifications.compose.segment.last-login.gt30d': 'More than 30 days ago',
+  'admin.notifications.compose.segment.last-login.never': 'Never logged in',
+  'admin.notifications.compose.segment.any': 'Any',
+  'admin.notifications.compose.segment.yes': 'Yes',
+  'admin.notifications.compose.segment.no': 'No',
+  'admin.notifications.compose.segment.clear-all': 'Clear all criteria',
+
+  // Compose — Single user picker
+  'admin.notifications.compose.audience.single.search-label': 'Recipient',
+  'admin.notifications.compose.audience.single.search-placeholder':
+    'Search by name or phone',
+  'admin.notifications.compose.audience.single.clear-search': 'Clear search',
+  'admin.notifications.compose.audience.single.no-results': 'No matching users',
+  'admin.notifications.compose.audience.single.change': 'Change',
+
+  // Compose — Type
+  'admin.notifications.compose.type.title': 'Type',
+  'admin.notifications.compose.type.transfer': 'Transfer',
+  'admin.notifications.compose.type.promo': 'Promo',
+  'admin.notifications.compose.type.system': 'System',
+  'admin.notifications.compose.type.compliance': 'Compliance',
+  'admin.notifications.compose.type.tooltip.transfer':
+    'Transactional updates tied to a user’s transfer (sent, delivered, failed).',
+  'admin.notifications.compose.type.tooltip.promo':
+    'Marketing — rate sales, holiday promotions, awareness. Honors user preferences.',
+  'admin.notifications.compose.type.tooltip.system':
+    'App version available, scheduled maintenance, service status.',
+  'admin.notifications.compose.type.tooltip.compliance':
+    'KYC / AML matters. Bypasses user notification preferences — use sparingly.',
+
+  // Compose — Content
+  'admin.notifications.compose.content.title': 'Title',
+  'admin.notifications.compose.content.title.aria': 'Title locale tabs',
+  'admin.notifications.compose.content.title.placeholder.uz':
+    'Sarlavha (o‘zbek, push uchun)',
+  'admin.notifications.compose.content.title.placeholder.ru':
+    'Заголовок (для push)',
+  'admin.notifications.compose.content.title.placeholder.en':
+    'Title (for push)',
+  'admin.notifications.compose.content.body': 'Body',
+  'admin.notifications.compose.content.body.aria': 'Body locale tabs',
+  'admin.notifications.compose.content.body.placeholder.uz':
+    'Push xabar matni…',
+  'admin.notifications.compose.content.body.placeholder.ru':
+    'Текст push-уведомления…',
+  'admin.notifications.compose.content.body.placeholder.en':
+    'Push notification body…',
+  'admin.notifications.compose.content.body.hint':
+    'Plain text only. Linebreaks are preserved.',
+  'admin.notifications.compose.content.body.char-count': '{count} / 180 characters',
+
+  // Compose — Deep link
+  'admin.notifications.compose.deep-link.toggle': 'Include deep link',
+  'admin.notifications.compose.deep-link.screen': 'Screen',
+  'admin.notifications.compose.deep-link.params': 'Params',
+  'admin.notifications.compose.deep-link.params-aria': 'Deep-link params JSON',
+  'admin.notifications.compose.deep-link.params-error-shape':
+    'Params must be a JSON object: { "key": "value" }.',
+  'admin.notifications.compose.deep-link.params-error-invalid':
+    'Invalid JSON. Check syntax.',
+  'admin.notifications.compose.deep-link.params-missing-required':
+    'Missing required keys: {keys}',
+  'admin.notifications.compose.deep-link.preview-label': 'Preview',
+
+  // Compose — Schedule
+  'admin.notifications.compose.schedule.title': 'When to send',
+  'admin.notifications.compose.schedule.now': 'Send now',
+  'admin.notifications.compose.schedule.now.description':
+    'Dispatches immediately after confirmation.',
+  'admin.notifications.compose.schedule.later': 'Schedule for later',
+  'admin.notifications.compose.schedule.later.description':
+    'Pick a date and time — fires automatically.',
+  'admin.notifications.compose.schedule.datetime-label': 'Send at',
+  'admin.notifications.compose.schedule.datetime-aria':
+    'Scheduled send date and time',
+
+  // Compose — Preview
+  'admin.notifications.compose.preview.title': 'Live preview',
+  'admin.notifications.compose.preview.mode': 'Preview mode',
+  'admin.notifications.compose.preview.lock-screen': 'Lock screen',
+  'admin.notifications.compose.preview.in-app': 'In-app',
+  'admin.notifications.compose.preview.locale': 'Preview locale',
+  'admin.notifications.compose.preview.open-mobile': 'Preview',
+
+  // Lock-screen / in-app preview labels
+  'admin.notifications.preview.lock-screen.app-name': 'ZhiPay',
+  'admin.notifications.preview.lock-screen.weekday.uz': 'Dushanba, 29-aprel',
+  'admin.notifications.preview.lock-screen.weekday.ru': 'Понедельник, 29 апреля',
+  'admin.notifications.preview.lock-screen.weekday.en': 'Monday, April 29',
+  'admin.notifications.preview.now': 'now',
+  'admin.notifications.preview.tap-to-open': 'Tap to open {screen}',
+  'admin.notifications.preview.empty-title': 'Notification title preview',
+  'admin.notifications.preview.empty-body':
+    'Type the body of your notification — it will appear here.',
+  'admin.notifications.preview.in-app.section-title': 'Notifications',
+  'admin.notifications.preview.in-app.ghost-row.title': 'Transfer delivered',
+  'admin.notifications.preview.in-app.ghost-row.body':
+    'Olim received 3,562 CNY on Alipay.',
+
+  // Compose — Action bar + actions
+  'admin.notifications.compose.action-bar.cancel': 'Cancel',
+  'admin.notifications.compose.action-bar.audience.broadcast':
+    'All users · {count}',
+  'admin.notifications.compose.action-bar.audience.segment':
+    'Segment · {count}',
+  'admin.notifications.compose.action-bar.audience.single': 'Single user',
+  'admin.notifications.compose.action-bar.schedule.now': 'Now',
+  'admin.notifications.compose.action-bar.schedule.later':
+    'Scheduled for {time}',
+  'admin.notifications.compose.action.send': 'Send notification',
+  'admin.notifications.compose.action.send.confirm': 'Send',
+  'admin.notifications.compose.action.schedule': 'Schedule',
+
+  // Send confirmation dialog (4 variants)
+  'admin.notifications.compose.confirm.broadcast.title':
+    'Send notification to {count} users?',
+  'admin.notifications.compose.confirm.segment.title':
+    'Send to filtered segment of {count} users?',
+  'admin.notifications.compose.confirm.single.title':
+    'Send notification to {name}?',
+  'admin.notifications.compose.confirm.schedule.title':
+    'Schedule for {time}?',
+  'admin.notifications.compose.confirm.audience-summary': '{count} recipients',
+  'admin.notifications.compose.confirm.large-audience':
+    'Large broadcast — consider testing with a small segment first.',
+  'admin.notifications.compose.confirm.compliance.warning':
+    'Compliance notifications bypass user notification preferences. Confirm this is necessary.',
+  'admin.notifications.compose.confirm.compliance.input':
+    'Type {confirmText} to proceed',
+  'admin.notifications.compose.confirm.compliance.text': 'I confirm',
+
+  // Compose — Toasts
+  'admin.notifications.compose.toast.sent': 'Notification sent.',
+  'admin.notifications.compose.toast.scheduled': 'Notification scheduled.',
+
+  // Validation
+  'admin.notifications.validation.titles-required':
+    'Title is required (in this locale).',
+  'admin.notifications.validation.bodies-required':
+    'Body is required (in this locale).',
+  'admin.notifications.validation.user-required':
+    'Pick a recipient before sending.',
+  'admin.notifications.validation.audience-empty':
+    'Segment matches 0 users — adjust criteria.',
+  'admin.notifications.validation.schedule-required':
+    'Pick a future date and time.',
+  'admin.notifications.validation.deep-link-invalid':
+    'Deep-link params have a JSON error — fix before sending.',
+  'admin.notifications.validation.summary.titles':
+    'Title missing for {locales}',
+  'admin.notifications.validation.summary.bodies':
+    'Body missing for {locales}',
+
+  // Sent tab — filter bar
+  'admin.notifications.filter.search-placeholder':
+    'Search title across UZ / RU / EN',
+  'admin.notifications.filter.type': 'Type',
+  'admin.notifications.filter.audience': 'Audience',
+  'admin.notifications.filter.date-range': 'Date range',
+  'admin.notifications.filter.clear-all': 'Clear all',
+
+  // Sent tab — table columns
+  'admin.notifications.sent.column.sent-at': 'Sent at',
+  'admin.notifications.sent.column.type': 'Type',
+  'admin.notifications.sent.column.audience': 'Audience',
+  'admin.notifications.sent.column.title': 'Title',
+  'admin.notifications.sent.column.read-rate': 'Read rate',
+  'admin.notifications.sent.column.sent-by': 'Sent by',
+  'admin.notifications.sent.column.status': 'Status',
+  'admin.notifications.sent.scheduled-for': 'Scheduled · {time}',
+  'admin.notifications.sent.audience.broadcast': 'All users',
+  'admin.notifications.sent.audience.segment': 'Segment',
+  'admin.notifications.sent.audience.single.unknown': 'Unknown user',
+  'admin.notifications.sent.count': 'Showing {filtered} of {total}',
+
+  // Sent tab — empty states
+  'admin.notifications.sent.empty.no-records.title': 'No notifications yet',
+  'admin.notifications.sent.empty.no-records.body':
+    'When you compose and send a notification, it appears here.',
+  'admin.notifications.sent.empty.no-records.cta': 'Compose first notification',
+  'admin.notifications.sent.empty.no-matches.title': 'No notifications match',
+  'admin.notifications.sent.empty.no-matches.body':
+    'Adjust your filters or clear all to see the full list.',
+  'admin.notifications.sent.empty.no-matches.cta': 'Clear all filters',
+
+  // Sent detail page
+  'admin.notifications.detail.back-to-list': 'Back to notifications',
+  'admin.notifications.detail.not-found':
+    'Notification not found — it may have been deleted.',
+  'admin.notifications.detail.sent-at': 'Sent {value}',
+  'admin.notifications.detail.scheduled-for': 'Scheduled for {value}',
+  'admin.notifications.detail.cancelled-at': 'Cancelled {value}',
+  'admin.notifications.detail.section.content': 'Content',
+  'admin.notifications.detail.section.audience': 'Audience',
+  'admin.notifications.detail.section.deep-link': 'Deep link',
+  'admin.notifications.detail.section.stats': 'Delivery stats',
+  'admin.notifications.detail.section.audit': 'Audit',
+  'admin.notifications.detail.content.locale-tabs': 'Content locale tabs',
+  'admin.notifications.detail.content.read-only-hint':
+    'Already-sent notifications are immutable — content cannot be edited.',
+  'admin.notifications.detail.audience.type': 'Audience type',
+  'admin.notifications.detail.audience.recipient-count': 'Recipient count',
+  'admin.notifications.detail.audience.criteria': 'Criteria',
+  'admin.notifications.detail.deep-link.no-params': 'No params',
+  'admin.notifications.detail.stats.total': 'Total sent',
+  'admin.notifications.detail.stats.delivered': 'Delivered',
+  'admin.notifications.detail.stats.opened': 'Opened',
+  'admin.notifications.detail.stats.click-through': 'Click-through',
+  'admin.notifications.detail.stats.language-breakdown':
+    'Recipient breakdown by language',
+  'admin.notifications.detail.stats.no-recipients': 'No recipients',
+  'admin.notifications.detail.audit.composed-by': 'Composed by',
+  'admin.notifications.detail.audit.created-at': 'Created at',
+  'admin.notifications.detail.audit.sent-at': 'Sent at',
+  'admin.notifications.detail.audit.scheduled-for': 'Scheduled for',
+  'admin.notifications.detail.audit.cancelled': 'Cancelled',
+  'admin.notifications.detail.audit.view-in-log': 'View in audit log',
+
+  // Cancel scheduled (action bar + dialog)
+  'admin.notifications.detail.cancel-scheduled.action-bar-hint':
+    'This send hasn’t fired yet. You can cancel it before it dispatches.',
+  'admin.notifications.detail.cancel-scheduled.button': 'Cancel scheduled send',
+  'admin.notifications.detail.cancel-scheduled.title':
+    'Cancel scheduled notification?',
+  'admin.notifications.detail.cancel-scheduled.body':
+    'This will stop "{title}" from being sent. The action is permanent — to send again, compose a new notification.',
+  'admin.notifications.detail.cancel-scheduled.warning':
+    'Cancellation is logged. Already-sent notifications cannot be retracted on user devices.',
+  'admin.notifications.detail.cancel-scheduled.reason-label':
+    'Reason for cancelling',
+  'admin.notifications.detail.cancel-scheduled.reason-placeholder':
+    'At least 20 characters — recorded in the audit log.',
+  'admin.notifications.detail.cancel-scheduled.reason-counter':
+    '{count} / {min} characters minimum',
+  'admin.notifications.detail.cancel-scheduled.confirm':
+    'Confirm cancellation',
+  'admin.notifications.detail.cancel-scheduled.toast-success':
+    'Scheduled send cancelled.',
+  'admin.notifications.detail.cancel-scheduled.toast-failure':
+    'Could not cancel — please retry.',
 };
 
 /**

@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Image as ImageIcon,
   Newspaper,
+  Bell,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -106,6 +107,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             <Newspaper className="mr-2" />
             <span>News</span>
             <CommandShortcut>g n</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/content/notifications')}>
+            <Bell className="mr-2" />
+            <span>Notifications</span>
+            <CommandShortcut>g i</CommandShortcut>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />

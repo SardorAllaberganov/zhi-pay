@@ -95,6 +95,11 @@ import {
   type NewsAuditAction,
   type NewsAuditEntry,
 } from './mockNews';
+import {
+  listNotificationAudit,
+  type NotificationAuditAction,
+  type NotificationAuditEntry,
+} from './mockNotifications';
 
 // =====================================================================
 // Public types
@@ -1022,6 +1027,44 @@ const NEWS_ACTION_MAP: Record<NewsAuditAction, AuditAction> = {
   delete: 'deleted',
 };
 
+const NOTIFICATION_ACTION_MAP: Record<NotificationAuditAction, AuditAction> = {
+  send: 'created',
+  schedule: 'created',
+  cancel_scheduled: 'status_changed',
+};
+
+function bridgeNotificationAudit(e: NotificationAuditEntry): AuditEvent {
+  return {
+    id: `bridge_notification_${e.id}`,
+    timestamp: e.createdAt,
+    actorType: 'admin',
+    actor: adminFromName(e.actorName, e.actorId),
+    action: NOTIFICATION_ACTION_MAP[e.action],
+    entity: { type: 'notification', id: e.notificationId },
+    fromStatus: e.action === 'cancel_scheduled' ? 'scheduled' : null,
+    toStatus:
+      e.action === 'send'
+        ? 'sent'
+        : e.action === 'schedule'
+          ? 'scheduled'
+          : e.action === 'cancel_scheduled'
+            ? 'cancelled'
+            : null,
+    reason: e.reason || undefined,
+    context: {
+      kind: e.action,
+      title_en: e.snapshot.titleEn,
+      type: e.snapshot.type,
+      audience_type: e.snapshot.audienceType,
+      recipient_count: e.snapshot.recipientCount,
+      ...(e.snapshot.scheduledFor
+        ? { scheduled_for: e.snapshot.scheduledFor.toISOString() }
+        : {}),
+      ...(e.snapshot.sentAt ? { sent_at: e.snapshot.sentAt.toISOString() } : {}),
+    },
+  };
+}
+
 function bridgeNewsAudit(e: NewsAuditEntry): AuditEvent {
   return {
     id: `bridge_news_${e.id}`,
@@ -1127,6 +1170,7 @@ export function listAuditEvents(): AuditEvent[] {
     ...listAppVersionsAudit().map(bridgeAppVersionAudit),
     ...listStoriesAudit().map(bridgeStoryAudit),
     ...listNewsAudit().map(bridgeNewsAudit),
+    ...listNotificationAudit().map(bridgeNotificationAudit),
   ];
   merged.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   return merged;

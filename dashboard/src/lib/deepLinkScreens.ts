@@ -19,7 +19,9 @@ export type DeepLinkScreen =
   | 'kyc'
   | 'transfer_detail'
   | 'news'
-  | 'story';
+  | 'story'
+  | 'card_detail'
+  | 'settings';
 
 export const DEEP_LINK_SCREEN_ORDER: DeepLinkScreen[] = [
   'home',
@@ -28,8 +30,10 @@ export const DEEP_LINK_SCREEN_ORDER: DeepLinkScreen[] = [
   'profile',
   'kyc',
   'transfer_detail',
+  'card_detail',
   'news',
   'story',
+  'settings',
 ];
 
 export const DEEP_LINK_SCREEN_LABEL_KEY: Record<DeepLinkScreen, string> = {
@@ -41,6 +45,8 @@ export const DEEP_LINK_SCREEN_LABEL_KEY: Record<DeepLinkScreen, string> = {
   transfer_detail: 'admin.deep-link.screen.transfer-detail',
   news: 'admin.deep-link.screen.news',
   story: 'admin.deep-link.screen.story',
+  card_detail: 'admin.deep-link.screen.card-detail',
+  settings: 'admin.deep-link.screen.settings',
 };
 
 /**
@@ -57,6 +63,25 @@ export const DEEP_LINK_PARAMS_HINT_KEY: Record<DeepLinkScreen, string> = {
   transfer_detail: 'admin.deep-link.params-hint.transfer-detail',
   news: 'admin.deep-link.params-hint.news',
   story: 'admin.deep-link.params-hint.story',
+  card_detail: 'admin.deep-link.params-hint.card-detail',
+  settings: 'admin.deep-link.params-hint.settings',
+};
+
+/**
+ * Required param keys per screen — soft-validated in the composer (a missing
+ * required key surfaces a non-blocking warning). Empty array = no required keys.
+ */
+export const DEEP_LINK_REQUIRED_PARAMS: Record<DeepLinkScreen, readonly string[]> = {
+  home: [],
+  send_money: [],
+  history: [],
+  profile: [],
+  kyc: [],
+  transfer_detail: ['transfer_id'],
+  news: [],
+  story: [],
+  card_detail: ['card_id'],
+  settings: [],
 };
 
 /**

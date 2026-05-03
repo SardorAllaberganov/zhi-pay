@@ -127,6 +127,34 @@ The v1 feature surface, grouped by domain:
 | 10| Push notifications               | P0       | —                  |
 | 11| Stories / news feed              | P1       | —                  |
 | 12| Transfer receipt PDF export      | P2       | tier_1+            |
+| 13| Admin push notification composer | P0       | — (admin surface)  |
+
+> Feature 13 is the admin-side surface at `/content/notifications` that authors push notifications targeting users (broadcast / segment / single). Multi-locale (uz/ru/en), schedulable, audit-trailed. Compliance-typed sends require typed-confirm and bypass user notification preferences. See [`docs/mermaid_schemas/notification_send_state_machine.md`](./mermaid_schemas/notification_send_state_machine.md) for the send lifecycle. Acceptance criteria:
+>
+> ```
+> GIVEN admin authenticated WITH role IN (compliance | ops | comms)
+> WHEN  admin submits notification with audience=broadcast AND status='sent'
+> THEN  one row inserted into notifications WITH user_id=NULL, audience_type='broadcast'
+> AND   audit row written WITH actor=admin, action='send', entity_type='notification'
+> AND   recipient_count snapshot = COUNT(active users at send time)
+> AND   fanout dispatched via push gateway
+>
+> GIVEN admin submits notification with audience=segment AND audience_criteria={...}
+> THEN  recipient_count snapshot = COUNT(users matching criteria at send time)
+> AND   audience_criteria persisted on the notifications row (immutable post-send)
+>
+> GIVEN admin submits notification with type='compliance'
+> THEN  send-confirmation dialog requires typed confirmation (localized literal)
+> AND   compliance sends bypass user notification preferences
+>
+> GIVEN status='scheduled' AND scheduled_for > now()
+> WHEN  admin clicks "Cancel scheduled send" with reason ≥ 20 chars
+> THEN  status flips to 'cancelled', cancelled_at = now(), cancellation_reason persisted
+> AND   audit row written WITH action='cancel_scheduled'
+>
+> GIVEN status='sent'
+> THEN  no admin action mutates the row — push notifications are non-recallable
+> ```
 
 ---
 

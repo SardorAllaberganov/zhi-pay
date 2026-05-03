@@ -28,11 +28,12 @@ import { Stories } from '@/pages/Stories';
 import { StoryEditor } from '@/pages/StoryEditor';
 import { News } from '@/pages/News';
 import { NewsEditor } from '@/pages/NewsEditor';
+import { Notifications } from '@/pages/Notifications';
+import { NotificationsCompose } from '@/pages/NotificationsCompose';
+import { SentNotificationDetail } from '@/pages/SentNotificationDetail';
 import { Placeholder } from '@/pages/Placeholder';
 
-const PLACEHOLDER_ROUTES = [
-  '/notifications',
-];
+const PLACEHOLDER_ROUTES: string[] = [];
 
 function RedirectPreservingQuery({ to }: { to: string }) {
   const { search } = useLocation();
@@ -109,6 +110,14 @@ export function Router() {
         <Route path="/content/news/new" element={<NewsEditor />} />
         <Route path="/content/news/:id" element={<NewsEditor />} />
 
+        {/* Content — Notifications (admin composer + sent history) */}
+        <Route path="/content/notifications" element={<Notifications />} />
+        <Route path="/content/notifications/new" element={<NotificationsCompose />} />
+        <Route
+          path="/content/notifications/sent/:id"
+          element={<SentNotificationDetail />}
+        />
+
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
         <Route
@@ -141,6 +150,10 @@ export function Router() {
         <Route path="/news" element={<Navigate to="/content/news" replace />} />
         <Route path="/news/new" element={<Navigate to="/content/news/new" replace />} />
         <Route path="/news/:id" element={<Navigate to="/content/news" replace />} />
+        <Route
+          path="/notifications"
+          element={<RedirectPreservingQuery to="/content/notifications" />}
+        />
 
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />

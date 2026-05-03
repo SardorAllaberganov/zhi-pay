@@ -506,22 +506,41 @@ erDiagram
   }
   NOTIFICATIONS {
     uuid id PK
-    uuid user_id FK "null = broadcast"
+    uuid user_id FK "null = broadcast/segment row; set only when audience_type = single"
     enum type "transfer|promo|system|compliance"
+    enum status "scheduled|sending|sent|cancelled|failed — composer-side lifecycle"
+    enum audience_type "broadcast|segment|single"
+    jsonb audience_criteria "nullable — segment filter shape (tiers/languages/has_card/has_transfer/last_login)"
     string title_uz
     string title_ru
     string title_en
     string body_uz
     string body_ru
     string body_en
-    boolean is_read
-    jsonb deep_link "{screen, params}"
-    timestamp sent_at
-    timestamp read_at
+    boolean is_read "per-user inbox flag — only meaningful when audience_type = single"
+    jsonb deep_link "{screen, params}, nullable"
+    uuid composed_by FK "admin actor who authored the send"
+    integer recipient_count "snapshot at send time"
+    integer delivered_count "nullable until status = sent"
+    integer opened_count "nullable until status = sent"
+    integer click_through_count "nullable when no deep_link or pre-send"
+    timestamp scheduled_for "nullable — set when status = scheduled"
+    timestamp cancelled_at "nullable — set when status = cancelled"
+    text cancellation_reason "nullable — required (≥20 chars) when cancelling"
+    timestamp sent_at "nullable until status = sent"
+    timestamp read_at "nullable — per-user inbox; only when audience_type = single"
     timestamp created_at
   }
-  USERS ||--o{ NOTIFICATIONS : "receives"
+  USERS ||--o{ NOTIFICATIONS : "receives (when audience_type=single)"
+  ADMIN_USERS ||--o{ NOTIFICATIONS : "composes"
 ```
+
+**Lifecycle:** see [`docs/mermaid_schemas/notification_send_state_machine.md`](./mermaid_schemas/notification_send_state_machine.md). Terminal states (`sent`, `failed`, `cancelled`) are immutable — push notifications cannot be retracted on user devices once dispatched.
+
+**Audience semantics:**
+- `audience_type = broadcast` → `user_id IS NULL`, `audience_criteria IS NULL`. Targets every active user at send time.
+- `audience_type = segment` → `user_id IS NULL`, `audience_criteria` carries the filter (e.g. `{tiers: ['tier_1','tier_2'], languages: ['uz'], hasLinkedCard: true, lastLogin: 'lt30d'}`). Recipient set frozen at send time via `recipient_count` snapshot.
+- `audience_type = single` → `user_id IS NOT NULL`, `audience_criteria IS NULL`. Per-user transactional notification (transfer status, KYC reminder, etc.). `is_read` / `read_at` are meaningful here only.
 
 ### 7.1 Error code examples
 
@@ -625,6 +644,8 @@ erDiagram
 | `transfer_status`   | `created`, `processing`, `completed`, `failed`, `reversed`              | `transfers`, `transfer_events`         |
 | `transfer_destination` | `alipay`, `wechat`                                                   | `transfers`, `recipients`              |
 | `notification_type` | `transfer`, `promo`, `system`, `compliance`                             | `notifications`                        |
+| `notification_status` | `scheduled`, `sending`, `sent`, `cancelled`, `failed`                 | `notifications`                        |
+| `notification_audience_type` | `broadcast`, `segment`, `single`                                | `notifications`                        |
 | `aml_flag_type`     | `velocity`, `amount`, `pattern`, `sanctions`, `manual`                  | `aml_flags`                            |
 | `aml_severity`      | `info`, `warning`, `critical`                                           | `aml_flags`                            |
 | `language`          | `uz`, `ru`, `en`                                                        | `users.preferred_language`             |
@@ -647,6 +668,10 @@ erDiagram
 | `stories`          | `(display_order)` UNIQUE PARTIAL where is_published=true | enforce unique slot among visible stories  |
 | `stories`          | `(is_published, published_at DESC)`                  | "live carousel" + "scheduled queue" scans    |
 | `news`             | `(is_published, published_at DESC NULLS LAST)`       | feed listing — published rows newest-first, drafts admin-only |
+| `notifications`    | `(status, scheduled_for)` PARTIAL where status='scheduled' | cron picks up due-soon scheduled sends    |
+| `notifications`    | `(status, sent_at DESC)` PARTIAL where status='sent'  | admin Sent tab listing — newest first      |
+| `notifications`    | `(composed_by, sent_at DESC)`                         | per-admin audit-log filter                 |
+| `notifications`    | `(user_id, sent_at DESC)` PARTIAL where user_id is not null | per-user inbox listing (mobile)      |
 
 ### 9.3 Money-handling rules
 
