@@ -401,10 +401,11 @@ If they conflict, **`docs/` wins.** Fix the doc, then propagate to rules / orien
 - ☐ Other admin sub-pages — none remaining (Stories ✓, News ✓, Notifications ✓, Sign-in ✓, Settings ✓)
 - ☐ Real brand assets (UzCard / Humo logos, Alipay / WeChat marks, ZhiPay wordmark) — currently stylized SVG placeholders
 - ☐ Visa / Mastercard re-introduction in dashboard — paused per LESSONS, returns when user explicitly invokes
-- ☐ Mobile design system tokens — not started
-- ☐ Mobile onboarding screens — not started
-- ☐ Mobile send-money flow — not started
-- ☐ Mobile localization seed (`i18n/uz.json`) — not started
+- 🚧 Mobile design workspace ([`mobile/`](../mobile/)) — design-prep scaffolding established 2026-05-04. Folder + README + `research/references.md` (Wise + Apple Pay + Behance fintech aesthetic anchor) + `prompts/00-shared-context.md` (canonical paste-in: PRD recap, money/FX, statuses, tiers, errors, privacy, brand tokens) + `prompts/01-foundation.md` (tokens / primitives / components / sample shell brief). One example user-flow + one example surface prompt (`flow-01-onboarding` + `02-onboarding-screens`) drafted as template for the remaining 8 flows + 10 surfaces. Sequence locked: foundation first, then marquee-path surfaces in order (onboarding → MyID → home → card linking → send-money → history → receipts → tier upgrade → card management → notifications → settings → help). Output target: claude.ai rendered React+Tailwind artefact + Figma library export. Tech stack (RN vs Flutter) still open — designs stay tech-stack-agnostic for now.
+- ☐ Mobile design system tokens — brief drafted, rendered output pending
+- ☐ Mobile onboarding screens — brief drafted, rendered output pending
+- ☐ Mobile send-money flow — brief pending (next surface prompt to draft)
+- ☐ Mobile localization seed (`i18n/uz.json`) — per-screen keys enumerated in surface prompts; JSON files generate alongside rendered designs
 
 ## Open questions (carried from PRD §12)
 

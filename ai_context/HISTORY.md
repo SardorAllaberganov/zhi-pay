@@ -4,6 +4,58 @@
 
 ---
 
+### 2026-05-04 — Mobile design-prep workspace established (`mobile/`) — Wise + Apple + Behance aesthetic anchor · canonical shared-context paste-in · foundation prompt · onboarding flow + surface as template for remaining 8 flows + 10 surfaces
+
+- **Summary**: First pivot from admin (21 surfaces shipped) toward the mobile end-user app. Set up the design-prep workspace at `mobile/` with the prompts that will be fed to Claude design (claude.ai rendered React+Tailwind artefact target) + a Figma library export. **No implementation yet** — tech stack (React Native vs Flutter) still open, designs stay tech-stack-agnostic. Sequence locked: foundation first (tokens / primitives / components / sample shell), then surfaces in marquee-path order.
+
+  **Decisions captured before scaffolding**:
+  - **D1** Output format = high-fi rendered React+Tailwind artefact via claude.ai + Figma library export (NOT descriptive spec doc, NOT SVG wireframes).
+  - **D2** Aesthetic = Wise × Apple Pay × Behance fintech composure. Brand-anchored blue (no red as primary accent — red reserved for `danger` semantic). User supplied a Behance gallery reference (behance.net/gallery/243705045) — fetched via WebFetch but content was thin (image-heavy gallery); leaned on genre cues + Wise + Apple as primary anchors.
+  - **D3** Sequence = foundation first, surfaces step-by-step. Each surface preceded by a user-flow plan that references the canonical `docs/mermaid_schemas/*` state machines and lays out the screen sequence.
+  - **D4** Color system = inherit admin's tokens verbatim (`brand-50→950`, `slate-50→950`, `success-50/600/700`, `warning-50/600/700`, `danger-50/600/700`); mobile-specific hue is "brand carries more visual weight than on admin" (used on home-screen card surface + headline amounts + primary CTAs).
+  - **D5** User flows are first-class artefacts in the prompt structure — `mobile/prompts/user-flows/flow-XX.md` planned per surface, then matching `mobile/prompts/surfaces/YY-screens.md` references it.
+  - **Bonus** Native mobile only (Flutter or React Native); NOT Telegram WebView. Designs are tech-stack-agnostic.
+
+  **Folder structure created**:
+  ```
+  mobile/
+    README.md                              workflow + folder map
+    research/
+      references.md                        Wise + Apple + Behance aesthetic notes (what we steal / don't steal, color palette inheritance, typography hint, motion rules)
+    prompts/
+      00-shared-context.md                 canonical paste-in (289 ln) — project, user persona, corridor, tier system, status state machines, money rules, FX transparency, privacy invariants, error UX, localization, design language, color tokens, forbidden patterns, output format expected
+      01-foundation.md                     foundation design prompt (325 ln) — tokens (color / type / spacing / radii / shadows / motion), primitives (Button / Input / Chip / Avatar / Icon), components (Card / ListRow / Sheet / Modal / Toast / Banner / SegmentedControl / TabBar / HeadlineNumber / StatusTimeline), sample app shell, accessibility callouts
+      user-flows/
+        flow-01-onboarding.md              example flow plan (179 ln) — screen sequence, state machine reference, prerequisites, states-table per screen, error states, edge cases, Gherkin AC seeds, telemetry annotations, cross-references
+      surfaces/
+        02-onboarding-screens.md           example surface prompt (307 ln) — per-screen layout, states to render, microinteractions, cross-screen patterns (app bar, safe-area, keyboard), localization annotations with i18n keys, Russian-longest-translation test, accessibility focus orders, output format checklist, forbidden patterns
+    design/                                empty placeholder folder structure for rendered output (tokens / primitives / components / patterns / screens / flows)
+  ```
+
+  **Pending generation** (waiting for user to sanity-check the shape before generating in bulk):
+  - 8 user-flow plans: `flow-02-myid.md` through `flow-09-settings.md`
+  - 10 surface prompts: `03-home-screen.md` through `12-help-support-screens.md`
+
+  **No PRD / models / mermaid cascade** — the prompts REFERENCE existing canonical sources (`docs/mermaid_schemas/onboarding_flow.md`, `kyc_state_machine.md`, `card_state_machine.md`, `transfer_state_machine.md`, `transfer_send_flow.md`, `transfer_failure_recovery_flow.md`) without duplicating them. Mobile's role is to design AGAINST these, not to redefine them.
+
+- **Files added**:
+  - `mobile/README.md`
+  - `mobile/research/references.md`
+  - `mobile/prompts/00-shared-context.md`
+  - `mobile/prompts/01-foundation.md`
+  - `mobile/prompts/user-flows/flow-01-onboarding.md`
+  - `mobile/prompts/surfaces/02-onboarding-screens.md`
+  - `mobile/{design/{tokens,primitives,components,patterns,screens,flows},research}/` — empty placeholder folders
+
+- **Files modified**:
+  - `docs/product_states.md` — Mobile foundation row added (workspace status 🚧); existing rows annotated with brief-drafted vs rendered-pending; last-updated bumped
+  - `ai_context/AI_CONTEXT.md` — workstreams: mobile design workspace 🚧 entry inserted ahead of the existing mobile rows; existing rows refreshed
+  - `ai_context/HISTORY.md` — this entry
+
+- **Verified**: 6 prompt/research files written totalling 1,100 lines across the canonical paste-in + foundation brief + flow plan + surface prompt + references. No code changes; no build run needed.
+
+---
+
 ### 2026-05-04 — `/doc_sync` checkpoint — primitive-count drift fixed (shadcn 21→25, ZhiPay 12→19) + foundation row extended
 
 - **Summary**: Post-Phase-22b `/doc_sync` discovered the shadcn and ZhiPay primitive counts in `docs/product_states.md` + `ai_context/AI_CONTEXT.md` had been drifting since around Phase 10 — never updated as later phases added Switch / Select / OTP / scroll-area / qr-placeholder shadcn primitives, and as several pattern-layer components (LocaleFlag · LocaleTabInputs · LocaleTabTextarea · PhoneMockup) were lifted to `components/zhipay/` to satisfy the 3rd-consumer rule. Updated both docs to reflect current state: shadcn primitives (25) · ZhiPay domain primitives (19, ending with WriteButton from Phase 22b).

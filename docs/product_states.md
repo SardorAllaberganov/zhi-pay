@@ -2,7 +2,7 @@
 
 > Snapshot of build progress per surface across the two scopes (admin dashboard + mobile app).
 > Source: [`ai_context/AI_CONTEXT.md`](../ai_context/AI_CONTEXT.md) + [`dashboard/src/router.tsx`](../dashboard/src/router.tsx).
-> Last updated: 2026-05-04 (Phase 22b — Error & System States, gap-fill: outside-shell 404 organic flow · WriteButton sweep · offline queue/replay · maintenance draft preservation).
+> Last updated: 2026-05-04 (Phase 22b — Error & System States gap-fill · `mobile/` design-prep workspace established).
 
 ## Legend
 
@@ -79,16 +79,17 @@ Tech stack: Vite + React 18 + TS + Tailwind + shadcn/ui · Router: HashRouter ·
 
 ## Mobile app (end-user)
 
-Nothing built yet. Tech stack not chosen — no tokens, no primitives, no screens.
+Tech stack not chosen — no tokens, no primitives, no screens. **Design-prep workspace established at [`mobile/`](../mobile/)** — prompts to feed Claude design + Figma, foundation brief drafted, one user-flow plan (onboarding) + matching surface prompt as the template for the remaining 8 flows + 10 surfaces.
 
 ### Foundation
 
 | Layer | Status | Notes |
 |---|:---:|---|
+| Mobile design workspace ([`mobile/`](../mobile/)) | 🚧 | Folder + README + `research/references.md` (Wise + Apple + Behance aesthetic anchor) + `prompts/00-shared-context.md` (canonical paste-in: PRD recap, money/FX rules, status states, tier system, error codes, privacy invariants, brand tokens, forbidden patterns) + `prompts/01-foundation.md` (tokens / primitives / components / sample shell brief) + 1 of 9 user-flow plans + 1 of 11 surface prompts. **Recommended sequence locked**: foundation first, then surfaces in marquee-path order (onboarding → MyID → home → card linking → send-money → history → receipts → tier upgrade → card management → notifications → settings → help). Output target: claude.ai rendered React+Tailwind artefact + Figma library export |
 | Tech stack decision (RN / Flutter / native iOS+Android) | ❌ | Open — see [`AI_CONTEXT.md`](../ai_context/AI_CONTEXT.md) "Decisions made" |
-| Design tokens (mobile-first) | ❌ | Will share brand anchor with dashboard; density rules differ |
-| Mobile primitives + components + patterns | ❌ | See [design-system-layers](../.claude/rules/design-system-layers.md) |
-| Localization seed (`i18n/{uz,ru,en}.json`) | ❌ | UZ default · RU + EN co-equal · see [localization](../.claude/rules/localization.md) |
+| Design tokens (mobile-first) | ❌ | Brief written ([`mobile/prompts/01-foundation.md`](../mobile/prompts/01-foundation.md)); rendered output pending. Will share brand anchor + semantic palette with dashboard |
+| Mobile primitives + components + patterns | ❌ | Brief written ([`mobile/prompts/01-foundation.md`](../mobile/prompts/01-foundation.md)); rendered output pending. See [design-system-layers](../.claude/rules/design-system-layers.md) |
+| Localization seed (`i18n/{uz,ru,en}.json`) | ❌ | UZ default · RU + EN co-equal · per-screen i18n keys enumerated in surface prompts; JSON files generate alongside the rendered designs |
 | Real brand assets (logo · scheme marks · destination marks) | ❌ | Same gap as dashboard |
 
 ### Surfaces
