@@ -31,6 +31,67 @@ Lead with the **rule itself**. The Why and How-to-apply lines exist so you can j
 
 ## Lessons
 
+### 2026-05-03 — Fixed-bottom mobile action bars: every row spans the same edge-to-edge width — never mix a centered content-sized control with full-width siblings
+
+**Why:** Phase 14 (Services & Health) mobile `<ActionBar variant="mobile">` shipped first-pass with the 3-segment `<StatusToggleGroup>` rendered as `inline-flex` (content-sized, centered via `self-center`) above a `flex w-full gap-2` row of two `flex-1` buttons. Result: the toggle row read ~240px wide centered, the button row spanned edge-to-edge — visibly inconsistent. User feedback: "the bottom segmentation in fix bar in mobile view should be consistent full width with below buttons." The root cause: a content-sized control and a full-width control stacked together always read as a layout error, even when each is internally well-formed. Fixed-bottom action bars are read as a single chrome surface; every row inside should hit the same left + right edges.
+
+**How to apply:** For any fixed-bottom action bar in mobile / `<lg` layouts:
+
+- **Every row spans the bar width.** No centered content-sized rows. No partial-width chips next to full-width buttons.
+- **Segmented controls / toggle groups** that need to share a row inside the bar should support a `fullWidth` mode (root: `flex w-full`; segments: `flex-1 justify-center`). Default rendering can stay `inline-flex` for desktop usages — but the prop must exist so mobile bars can opt in.
+- **Button rows** use `flex w-full gap-2` with each button `flex-1` to split equally (or weighted via `flex-[2]`/`flex-1` if a primary needs more visual weight).
+- **Stack vertically** (`flex flex-col gap-2`) when there's more than one row of controls. Don't try to fit toggle + buttons + meta on one horizontal mobile row — at 360px viewport the bar runs out of room and individual elements squeeze.
+- **Desktop / pane variants** of the same component can keep `inline-flex` content sizing — desktop bars typically right-align the action buttons via `ml-auto` and the toggle floats on the left without needing equal width. The `fullWidth` opt-in keeps the desktop ergonomics intact.
+
+**Quick grep to verify:**
+```
+# Mobile action bars that center an inline-flex toggle above full-width buttons:
+grep -rE "self-center.*StatusToggleGroup|self-center.*ToggleGroup" dashboard/src
+# (must be 0 hits in any /components/*/ActionBar.tsx — toggle should be fullWidth in mobile bars)
+```
+
+**Context:** Services & Health mobile action bar polish, 2026-05-03. Fix added `fullWidth` prop to `<StatusToggleGroup>`; mobile branch of `<ActionBar>` switched to 2 stacked full-width rows. Desktop pane variant unchanged (still right-aligned with `ml-auto`).
+
+---
+
+### 2026-05-03 — Master-detail dashboards (Services-shape): single-column tile list on the left + always-visible detail pane on the right — match the tile density to the pane width, never the other way around
+
+**Why:** Phase 14 (Services & Health) cycled through three layouts before settling. The root mistake on every wrong pass was deciding the layout from the *page width* and then sizing tiles to fit, instead of fixing the tile density first and letting the layout follow.
+
+1. **Pass 1** — spec-as-written "always two-pane on desktop · empty state on right when nothing selected" with `lg:grid-cols-5` in the left pane. Result on 1280–1440px viewports: each tile ~120px wide, content crammed. User: "the layout is wrong all elements are in the one line in a row, fix it."
+2. **Pass 2** (my correction) — full-width grid `lg:grid-cols-5` when no selection · two-pane (`lg:w-[420px]` + `lg:grid-cols-2`) when selected. Tiles got room when no detail open, but the layout *changed shape* between selection states — the grid jumping from 5-wide to 2-wide on first click felt jarring. User: "change the layout like the cards are in a column and the service details in right when click the service it will show the all details in the right service details section."
+3. **Pass 3** (final) — **single-column tile list always**, detail pane always rendered on `lg+` (EmptyDetailPane until selection, then the service body). One layout, two states, no shape change.
+
+The lesson isn't "always two-pane" or "never two-pane" — it's **pick a tile density that fits the narrowest pane width you'll ever render at, then keep that density at every selection state**. A 1-col list of ~360px-wide tiles fits both the desktop list pane (`lg:w-[380px]`) and the mobile viewport (~360–420px) without shape change. A 5-col grid only works when the list pane is full-width, so it forces the layout to morph on selection — which is the actual UX problem.
+
+**How to apply:** For Services-shape master-detail (small pinned set of items, rich detail per item):
+
+- **List pane density** = single column (`grid grid-cols-1 gap-3`). Tiles flow vertically. This works at desktop pane width (`lg:w-[360–400px]`) and mobile viewport (`100%`) without changes.
+- **Desktop layout** (`lg+`) = `flex lg:gap-4 lg:items-start` with `[list pane lg:w-[380px] lg:shrink-0 min-w-0]` + `[detail pane lg:flex-1 min-w-0]`. Detail pane always rendered. Empty state shown until `:id` matches a row, then swap to the body. **Layout shape doesn't change on selection** — only the right pane's contents do.
+- **Mobile layout** (`<lg`) = list-only at `/system/services`, tile click navigates to `/system/services/:id` which renders the same detail body full-page. No two-pane on mobile.
+- **Selected-tile highlight** reads off the URL's `:id`. Brand-tinted `border-brand-600 bg-brand-50/60 shadow-sm` ring.
+- **Page headers** and **DetailHeaders** still stack vertically on `<md` and side-by-side from `md+` (per the "narrow widths breed cramping" sub-rule).
+
+**This shape doesn't fit every master-detail.** It's right for "small pinned set + rich detail per item" (Services / Settings / Webhooks list / per-rail config). It's **wrong** for "high-volume queue + per-row triage" (KYC Queue / AML Triage / Transfers list) where the list pane needs to surface dense scanable rows and a 2–3-line row layout fits more on screen — those surfaces correctly use a 480–520px wider list pane with denser row layout, not 1-column tiles.
+
+**Quick grep to verify (Services-shape pages):**
+```
+# Should find single-column list pane + always-rendered detail pane on lg+
+grep -nE 'grid-cols-1.*ServiceTile|ServicesGrid' dashboard/src/components/services/ServicesGrid.tsx
+grep -nE 'lg:w-\[380px\]|lg:flex.*lg:items-start' dashboard/src/pages/Services.tsx
+```
+
+**Spec-vs-feedback:** When a written spec says "always two-pane with empty state on right" AND the natural tile density doesn't fit the resulting list-pane width, **change the tile density** (drop to single column), not the always-two-pane structure. The spec's intent was usually right — the implementation just picked the wrong tile density.
+
+**Context:** Services & Health page, 2026-05-03. Final landing after three passes. Sequence:
+- Pass 1 (5-col tiles in half-width pane) → user feedback "all elements in one row, fix it"
+- Pass 2 (5-col when no detail, 2-col when detail) → user feedback "cards in a column, details in right"
+- Pass 3 (1-col tiles + always-visible detail pane) — final.
+
+The earlier full-width-grid LESSON authored mid-sequence was retired in favor of this entry. EmptyDetailPane is mounted alongside the list pane on `lg+` whenever no service is selected.
+
+---
+
 ### 2026-05-03 — Calendar / date-picker header is `[<]   Month YYYY   [>]` with `justify-between` — never the default react-day-picker chrome
 
 **Why:** The `<DateTimeInput>` Popover initially passed through react-day-picker v9's default header — month/year text in `month_caption` with the `Nav` (prev / next chevrons) absolutely positioned by rdp's stylesheet. Result: the chevrons hugged the caption text instead of sitting on the sides of the calendar panel, which read as cramped and inconsistent with `<DateRangePicker>` (which already renders a custom `<  Month A | Month B  >` bar via `classNames={{ nav: 'hidden' }}`). User feedback: "the top controller of date picker in fx should be `< may 2026 >` with space between the arrow should be in the side". The fix is one canonical header pattern for **every** Calendar usage in the dashboard, single-month or range.
