@@ -26,10 +26,11 @@ import { AppVersions } from '@/pages/AppVersions';
 import { ErrorCodes } from '@/pages/ErrorCodes';
 import { Stories } from '@/pages/Stories';
 import { StoryEditor } from '@/pages/StoryEditor';
+import { News } from '@/pages/News';
+import { NewsEditor } from '@/pages/NewsEditor';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES = [
-  '/news',
   '/notifications',
 ];
 
@@ -103,6 +104,11 @@ export function Router() {
         <Route path="/content/stories/new" element={<StoryEditor />} />
         <Route path="/content/stories/:id" element={<StoryEditor />} />
 
+        {/* Content — News (CMS) */}
+        <Route path="/content/news" element={<News />} />
+        <Route path="/content/news/new" element={<NewsEditor />} />
+        <Route path="/content/news/:id" element={<NewsEditor />} />
+
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
         <Route
@@ -132,6 +138,9 @@ export function Router() {
         <Route path="/stories" element={<Navigate to="/content/stories" replace />} />
         <Route path="/stories/new" element={<Navigate to="/content/stories/new" replace />} />
         <Route path="/stories/:id" element={<Navigate to="/content/stories" replace />} />
+        <Route path="/news" element={<Navigate to="/content/news" replace />} />
+        <Route path="/news/new" element={<Navigate to="/content/news/new" replace />} />
+        <Route path="/news/:id" element={<Navigate to="/content/news" replace />} />
 
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />

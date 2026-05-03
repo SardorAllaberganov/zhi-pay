@@ -90,6 +90,11 @@ import {
   type StoryAuditAction,
   type StoryAuditEntry,
 } from './mockStories';
+import {
+  listNewsAudit,
+  type NewsAuditAction,
+  type NewsAuditEntry,
+} from './mockNews';
 
 // =====================================================================
 // Public types
@@ -109,6 +114,7 @@ export type AuditEntityType =
   | 'service'
   | 'app_version'
   | 'story'
+  | 'news'
   | 'notification';
 
 export type AuditAction =
@@ -1008,6 +1014,36 @@ function bridgeStoryAudit(e: StoryAuditEntry): AuditEvent {
   };
 }
 
+const NEWS_ACTION_MAP: Record<NewsAuditAction, AuditAction> = {
+  add: 'created',
+  edit: 'updated',
+  publish: 'status_changed',
+  unpublish: 'status_changed',
+  delete: 'deleted',
+};
+
+function bridgeNewsAudit(e: NewsAuditEntry): AuditEvent {
+  return {
+    id: `bridge_news_${e.id}`,
+    timestamp: e.createdAt,
+    actorType: 'admin',
+    actor: adminFromName(e.actorName, e.actorId),
+    action: NEWS_ACTION_MAP[e.action],
+    entity: { type: 'news', id: e.newsId },
+    fromStatus: e.action === 'publish' ? 'draft' : e.action === 'unpublish' ? 'published' : null,
+    toStatus: e.action === 'publish' ? 'published' : e.action === 'unpublish' ? 'draft' : null,
+    reason: e.reason || undefined,
+    context: {
+      kind: e.action,
+      title_en: e.snapshot.titleEn,
+      is_published: e.snapshot.isPublished,
+      has_image: e.snapshot.hasImage,
+      ...(e.snapshot.publishedAt ? { published_at: e.snapshot.publishedAt.toISOString() } : {}),
+      ...(e.previous ? { previous: e.previous } : {}),
+    },
+  };
+}
+
 function bridgeAppVersionAudit(e: AppVersionAuditEntry): AuditEvent {
   return {
     id: `bridge_app_version_${e.id}`,
@@ -1090,6 +1126,7 @@ export function listAuditEvents(): AuditEvent[] {
     ...listServicesAudit().map(bridgeServiceAudit),
     ...listAppVersionsAudit().map(bridgeAppVersionAudit),
     ...listStoriesAudit().map(bridgeStoryAudit),
+    ...listNewsAudit().map(bridgeNewsAudit),
   ];
   merged.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   return merged;

@@ -45,7 +45,7 @@ const ROUTE_TITLES: Record<string, { title: string; section?: string }> = {
   '/system/app-versions': { title: t('admin.nav.app-versions'), section: t('admin.nav.section.system') },
   '/system/error-codes': { title: t('admin.nav.error-codes'), section: t('admin.nav.section.system') },
   '/content/stories': { title: t('admin.nav.stories'), section: t('admin.nav.section.content') },
-  '/news': { title: t('admin.nav.news'), section: t('admin.nav.section.content') },
+  '/content/news': { title: t('admin.nav.news'), section: t('admin.nav.section.content') },
   '/notifications': { title: t('admin.nav.notifications'), section: t('admin.nav.section.content') },
 };
 

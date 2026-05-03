@@ -1917,6 +1917,7 @@ const EN: Record<string, string> = {
   'admin.audit-log.entity-type.service': 'Service',
   'admin.audit-log.entity-type.app_version': 'App version',
   'admin.audit-log.entity-type.story': 'Story',
+  'admin.audit-log.entity-type.news': 'News',
   'admin.audit-log.entity-type.notification': 'Notification',
 
   // Action labels (12 spec values)
@@ -2794,6 +2795,266 @@ const EN: Record<string, string> = {
   // Phone preview
   'admin.stories.preview.title-fallback': 'Untitled story',
   'admin.stories.preview.close': 'Close',
+
+  // ===================================================================
+  // News (Phase 18) — /content/news
+  // ===================================================================
+
+  // Page chrome
+  'admin.news.title': 'News',
+  'admin.news.subtitle.counts': '{published} published · {draft} drafts',
+  'admin.news.action.new': 'New article',
+
+  // Filter bar
+  'admin.news.filter.search-placeholder': 'Search title across uz / ru / en…',
+  'admin.news.filter.search-aria': 'Search news titles',
+  'admin.news.filter.search-clear': 'Clear search',
+  'admin.news.filter.status': 'Status',
+  'admin.news.filter.date-range': 'Published in',
+  'admin.news.filter.clear-all': 'Clear all',
+
+  // Sort
+  'admin.news.sort.default': 'Default',
+  'admin.news.sort.published': 'Published date',
+  'admin.news.sort.created': 'Created date',
+
+  // Status enum
+  'admin.news.status.published': 'Published',
+  'admin.news.status.draft': 'Draft',
+
+  // Table columns
+  'admin.news.column.image': 'Image',
+  'admin.news.column.title': 'Title',
+  'admin.news.column.title-empty': 'Untitled',
+  'admin.news.column.status': 'Status',
+  'admin.news.column.published-at': 'Published at',
+  'admin.news.column.published-at-none': 'Not published',
+  'admin.news.column.created-at': 'Created at',
+  'admin.news.column.actions': 'Actions',
+
+  // Row kebab
+  'admin.news.row.edit': 'Edit',
+  'admin.news.row.preview': 'Preview',
+  'admin.news.row.publish-now': 'Publish now',
+  'admin.news.row.unpublish': 'Move to drafts',
+  'admin.news.row.open-audit': 'Open audit log entry',
+  'admin.news.row.delete': 'Delete',
+
+  // Delete dialog
+  'admin.news.delete.title': 'Delete article?',
+  'admin.news.delete.description':
+    'This article will be permanently removed. The audit log keeps a snapshot.',
+  'admin.news.delete.warning-title': 'This cannot be undone',
+  'admin.news.delete.warning-body':
+    'Once deleted, the article disappears from the mobile feed and the dashboard list. Audit log retains a snapshot for compliance.',
+  'admin.news.delete.target': 'Article',
+  'admin.news.delete.reason-label': 'Reason for deletion',
+  'admin.news.delete.reason-placeholder':
+    'Why is this article being deleted? (≥ 20 characters)',
+  'admin.news.delete.reason-counter': '{count}/20+ characters',
+  'admin.news.delete.continue': 'Delete article',
+  'admin.news.delete.confirm-title': 'Delete this article?',
+  'admin.news.delete.confirm-body':
+    'This action is permanent. Are you sure?',
+  'admin.news.delete.confirm-action': 'Yes, delete',
+
+  // Publish-now dialog
+  'admin.news.publish-now.title': 'Publish article now?',
+  'admin.news.publish-now.body':
+    'It will appear in the News feed for all users immediately.',
+  'admin.news.publish-now.action': 'Publish now',
+
+  // Unpublish dialog
+  'admin.news.unpublish.title': 'Move to drafts?',
+  'admin.news.unpublish.description':
+    'The article will no longer be visible in the mobile feed. It can be re-published later.',
+  'admin.news.unpublish.target': 'Article',
+  'admin.news.unpublish.reason-label': 'Reason for unpublishing',
+  'admin.news.unpublish.reason-placeholder':
+    'Why is this being moved to drafts? (≥ 20 characters)',
+  'admin.news.unpublish.reason-counter': '{count}/20+ characters',
+  'admin.news.unpublish.action': 'Move to drafts',
+
+  // Empty states
+  'admin.news.empty.no-records-title': 'No articles yet',
+  'admin.news.empty.no-records-body':
+    'Create the first article to surface news in the mobile app.',
+  'admin.news.empty.no-matches-title': 'No articles match',
+  'admin.news.empty.no-matches-body':
+    'Try removing one or more filters to see more results.',
+
+  // Toasts
+  'admin.news.toast.deleted': 'Article deleted',
+  'admin.news.toast.published': 'Article published',
+  'admin.news.toast.unpublished': 'Article moved to drafts',
+  'admin.news.toast.draft-saved': 'Draft saved',
+  'admin.news.toast.updated': 'Article updated',
+  'admin.news.toast.save-failed': 'Save failed — please try again',
+
+  // Editor — page chrome
+  'admin.news.editor.title.new': 'New article',
+  'admin.news.editor.title.edit': 'Edit article',
+  'admin.news.editor.back-to-list': 'Back to news',
+  'admin.news.editor.last-edited': 'Last edited by {by}',
+  'admin.news.editor.created-by': 'Created by {by}',
+
+  // Editor — sections
+  'admin.news.editor.section.image': 'Cover image',
+  'admin.news.editor.section.titles': 'Titles',
+  'admin.news.editor.section.bodies': 'Article body',
+  'admin.news.editor.section.publish': 'Publishing',
+  'admin.news.editor.section.reason': 'Reason for change',
+
+  // Editor — image
+  'admin.news.editor.image-url': 'Image URL',
+  'admin.news.editor.image-url-uploaded': 'Uploaded — remove to paste a URL instead',
+  'admin.news.editor.image-hint':
+    'Optional — recommended ratio 16:9. Upload a file or paste a public URL.',
+  'admin.news.editor.image-error':
+    'Image URL must start with http:// or https://',
+  'admin.news.editor.image-preview-alt': 'Cover preview',
+  'admin.news.editor.image-upload.cta': 'Upload',
+  'admin.news.editor.image-upload.remove': 'Remove image',
+  'admin.news.editor.image-upload.hint':
+    'PNG / JPG / WebP / GIF · up to 5 MB. Or paste a public URL above.',
+  'admin.news.editor.image-upload.caption-empty':
+    'Here the uploaded image appears',
+  'admin.news.editor.image-upload.caption-loaded': 'Cover image preview',
+  'admin.news.editor.image-upload.error-type':
+    'Unsupported file type. Use PNG, JPG, WebP, or GIF.',
+  'admin.news.editor.image-upload.error-size':
+    'Image is too large. Maximum 5 MB.',
+  'admin.news.editor.image-upload.error-read':
+    'Could not read the file — please try again.',
+
+  // Editor — titles
+  'admin.news.editor.titles-hint':
+    'All three locales required to publish. Drafts can be partial.',
+  'admin.news.editor.titles-tab-aria': 'Title locale tabs',
+  'admin.news.editor.title-placeholder.uz': 'Sarlavha (o‘zbek)',
+  'admin.news.editor.title-placeholder.ru': 'Заголовок (русский)',
+  'admin.news.editor.title-placeholder.en': 'Title (English)',
+  'admin.news.editor.title-counter': '{count}/{max} characters',
+
+  // Editor — bodies
+  'admin.news.editor.bodies-hint':
+    'Use the toolbar above the editor for formatting. Bold ⌘B · Italic ⌘I · Underline ⌘U.',
+  'admin.news.editor.bodies-tab-aria': 'Body locale tabs',
+  'admin.news.editor.body-placeholder.uz':
+    'Maqola matnini bu yerga yozing. Toolbardan formatlardan foydalaning…',
+  'admin.news.editor.body-placeholder.ru':
+    'Введите текст статьи здесь. Используйте инструменты форматирования сверху…',
+  'admin.news.editor.body-placeholder.en':
+    'Type the article body here. Use the toolbar for formatting…',
+  'admin.news.editor.body-counter':
+    '{count} characters (≥ {min} required to publish)',
+  'admin.news.editor.body-format-hint':
+    'Body supports headings, lists, links, quotes, dividers, and inline images.',
+
+  // Editor — toolbar
+  'admin.news.editor.toolbar.aria': 'Editor formatting toolbar',
+  'admin.news.editor.toolbar.bold': 'Bold',
+  'admin.news.editor.toolbar.italic': 'Italic',
+  'admin.news.editor.toolbar.underline': 'Underline',
+  'admin.news.editor.toolbar.heading-2': 'Heading 2',
+  'admin.news.editor.toolbar.heading-3': 'Heading 3',
+  'admin.news.editor.toolbar.bullet-list': 'Bulleted list',
+  'admin.news.editor.toolbar.numbered-list': 'Numbered list',
+  'admin.news.editor.toolbar.link': 'Insert link',
+  'admin.news.editor.toolbar.quote': 'Block quote',
+  'admin.news.editor.toolbar.divider': 'Horizontal divider',
+  'admin.news.editor.toolbar.image': 'Inline image',
+
+  // Editor — link dialog
+  'admin.news.editor.link-dialog.title': 'Insert link',
+  'admin.news.editor.link-dialog.description':
+    'Apply a link to the selected text or insert a placeholder. Opens in a new tab.',
+  'admin.news.editor.link-dialog.url-label': 'URL (https://…)',
+  'admin.news.editor.link-dialog.apply': 'Apply',
+  'admin.news.editor.link-dialog.remove': 'Remove link',
+
+  // Editor — inline image dialog
+  'admin.news.editor.image-dialog.title': 'Insert inline image',
+  'admin.news.editor.image-dialog.description':
+    'Paste an image URL. Add an alt description for accessibility.',
+  'admin.news.editor.image-dialog.url-label': 'Image URL',
+  'admin.news.editor.image-dialog.alt-label': 'Alt text (optional)',
+  'admin.news.editor.image-dialog.alt-placeholder':
+    'Brief description of the image',
+  'admin.news.editor.image-dialog.insert': 'Insert image',
+
+  // Editor — publish section
+  'admin.news.editor.is-published': 'Publish this article',
+  'admin.news.editor.published-at': 'Published at',
+  'admin.news.editor.published-at-locked':
+    'Locked — this article was already published. Changes happen via Update.',
+  'admin.news.editor.publish-hint':
+    'When the toggle is on, the article appears in the mobile News feed at the timestamp below.',
+
+  // Editor — reason
+  'admin.news.editor.reason-hint':
+    'Required when editing an already-published article. ≥ 20 characters.',
+  'admin.news.editor.reason-placeholder':
+    'Briefly explain what changed and why (e.g., typo fix, updated rate).',
+  'admin.news.editor.reason-counter': '{count}/20+ characters',
+
+  // Editor — validation
+  'admin.news.editor.validation.title-required':
+    'Title is required for this locale (max 120 characters).',
+  'admin.news.editor.validation.body-required':
+    'Body needs at least {min} characters of content.',
+  'admin.news.editor.validation.body-incomplete': 'Body is below the minimum length',
+  'admin.news.editor.validation.locale-required':
+    'All three locales (uz / ru / en) are required to publish.',
+  'admin.news.editor.validation.summary.titles':
+    'Title missing for {locales}',
+  'admin.news.editor.validation.summary.bodies':
+    'Body needs ≥ {min} characters for {locales}',
+  'admin.news.editor.validation.summary.image-url':
+    'Image URL must start with http(s):// or be an uploaded image',
+  'admin.news.editor.validation.summary.reason':
+    'Reason note ≥ {min} chars required',
+  'admin.news.editor.validation.summary.draft-empty':
+    'Add a title and body to at least one locale first',
+
+  // Editor — preview pane
+  'admin.news.editor.preview.title': 'Live preview',
+  'admin.news.editor.preview.open': 'Open preview',
+
+  // Editor — phone preview chrome
+  'admin.news.preview.section': 'News',
+  'admin.news.preview.meta': 'ZhiPay · Just now',
+  'admin.news.preview.title-placeholder': 'Article title appears here',
+  'admin.news.preview.body-placeholder':
+    'Body content will render here as you type.',
+
+  // Editor — footer actions
+  'admin.news.editor.action.back': 'Back',
+  'admin.news.editor.action.back-to-list': 'Back to news',
+  'admin.news.editor.action.save-draft': 'Save as draft',
+  'admin.news.editor.action.saving': 'Saving…',
+  'admin.news.editor.action.publish': 'Publish',
+  'admin.news.editor.action.publishing': 'Publishing…',
+  'admin.news.editor.action.update': 'Update',
+  'admin.news.editor.action.update-draft': 'Save draft',
+
+  // Editor — confirm dialogs
+  'admin.news.editor.confirm.publish.title': 'Publish article now?',
+  'admin.news.editor.confirm.publish.body':
+    'It will appear in the News feed for all users at {when}.',
+  'admin.news.editor.confirm.publish.action': 'Publish now',
+  'admin.news.editor.confirm.publish.now': 'now',
+  'admin.news.editor.confirm.update.title': 'Apply update?',
+  'admin.news.editor.confirm.update.body':
+    'Changes apply immediately. The reason note will be recorded in the audit log.',
+  'admin.news.editor.confirm.update.action': 'Update',
+  'admin.news.editor.confirm.update.reason-required':
+    'Reason note required to update a published article.',
+
+  // Editor — not found (invalid :id)
+  'admin.news.editor.not-found.title': 'Article not found',
+  'admin.news.editor.not-found.body':
+    'It may have been deleted. The audit log retains a snapshot.',
 
   // Deep-link screen taxonomy
   'admin.deep-link.screen.home': 'Home',
