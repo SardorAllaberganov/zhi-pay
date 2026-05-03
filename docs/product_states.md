@@ -2,7 +2,7 @@
 
 > Snapshot of build progress per surface across the two scopes (admin dashboard + mobile app).
 > Source: [`ai_context/AI_CONTEXT.md`](../ai_context/AI_CONTEXT.md) + [`dashboard/src/router.tsx`](../dashboard/src/router.tsx).
-> Last updated: 2026-05-04 (Phase 22b — Error & System States gap-fill · `mobile/` design-prep workspace established).
+> Last updated: 2026-05-04 (Phase 22b — Error & System States gap-fill · `mobile/` design-prep workspace established · **mobile design-brief library complete**: all 9 user-flow plans + 11 surface prompts drafted).
 
 ## Legend
 
@@ -79,13 +79,13 @@ Tech stack: Vite + React 18 + TS + Tailwind + shadcn/ui · Router: HashRouter ·
 
 ## Mobile app (end-user)
 
-Tech stack not chosen — no tokens, no primitives, no screens. **Design-prep workspace established at [`mobile/`](../mobile/)** — prompts to feed Claude design + Figma, foundation brief drafted, one user-flow plan (onboarding) + matching surface prompt as the template for the remaining 8 flows + 10 surfaces.
+Tech stack not chosen — no tokens, no primitives, no screens. **Design-prep workspace established at [`mobile/`](../mobile/)** with the **complete brief library now in place**: foundation brief + 9 user-flow plans + 11 surface prompts. Rendered design output (claude.ai artefacts + Figma library) pending — surfaces will be generated in marquee-path order using the prompts as paste-in inputs.
 
 ### Foundation
 
 | Layer | Status | Notes |
 |---|:---:|---|
-| Mobile design workspace ([`mobile/`](../mobile/)) | 🚧 | Folder + README + `research/references.md` (Wise + Apple + Behance aesthetic anchor) + `prompts/00-shared-context.md` (canonical paste-in: PRD recap, money/FX rules, status states, tier system, error codes, privacy invariants, brand tokens, forbidden patterns) + `prompts/01-foundation.md` (tokens / primitives / components / sample shell brief) + 1 of 9 user-flow plans + 1 of 11 surface prompts. **Recommended sequence locked**: foundation first, then surfaces in marquee-path order (onboarding → MyID → home → card linking → send-money → history → receipts → tier upgrade → card management → notifications → settings → help). Output target: claude.ai rendered React+Tailwind artefact + Figma library export |
+| Mobile design workspace ([`mobile/`](../mobile/)) | 🚧 | Folder + README + `research/references.md` (Wise + Apple + Behance aesthetic anchor) + `prompts/00-shared-context.md` (canonical paste-in: PRD recap, money/FX rules, status states, tier system, error codes, privacy invariants, brand tokens, forbidden patterns) + `prompts/01-foundation.md` (tokens / primitives / components / sample shell brief) + **9 of 9 user-flow plans** (onboarding · MyID · card linking · send-money · history · tier upgrade · card management · notifications · settings/support) + **11 of 11 surface prompts** (02 onboarding · 03 home · 04 card linking · 05 send-money · 06 history · 07 receipt · 08 tier-upgrade-and-MyID · 09 card mgmt · 10 notifications · 11 settings · 12 help-support). **Sequence locked**: foundation first, then surfaces in marquee-path order. Each prompt mirrors the locked template shape (goal · prerequisites · state-machine ref · per-screen layout + states · microinteractions · cross-screen patterns · ~30–80 i18n keys · longest-translation test · accessibility focus order · output checklist · forbidden patterns · cross-references). References canonical truth (mermaid schemas + `.claude/rules/`), never duplicates. Rendered output (claude.ai React+Tailwind artefact + Figma library) pending |
 | Tech stack decision (RN / Flutter / native iOS+Android) | ❌ | Open — see [`AI_CONTEXT.md`](../ai_context/AI_CONTEXT.md) "Decisions made" |
 | Design tokens (mobile-first) | ❌ | Brief written ([`mobile/prompts/01-foundation.md`](../mobile/prompts/01-foundation.md)); rendered output pending. Will share brand anchor + semantic palette with dashboard |
 | Mobile primitives + components + patterns | ❌ | Brief written ([`mobile/prompts/01-foundation.md`](../mobile/prompts/01-foundation.md)); rendered output pending. See [design-system-layers](../.claude/rules/design-system-layers.md) |
@@ -96,19 +96,17 @@ Tech stack not chosen — no tokens, no primitives, no screens. **Design-prep wo
 
 | Surface | Status | Notes |
 |---|:---:|---|
-| Onboarding (welcome · language picker) | ❌ | First-run only |
-| Phone verification (SMS OTP) → `tier_1` | ❌ | KYC state machine: [`kyc_state_machine.md`](./mermaid_schemas/kyc_state_machine.md) |
-| MyID verification → `tier_2` | ❌ | WebView + result handling |
-| Home (balance · quick send · recent activity) | ❌ | Mobile primary surface |
-| Card linking (UzCard / Humo; Visa/MC `tier_2`-gated) | ❌ | 3DS WebView · see [card-schemes](../.claude/rules/card-schemes.md) |
-| Card management (list · freeze · remove) | ❌ | Status mapping per [card-schemes](../.claude/rules/card-schemes.md) |
-| Send money (recipient → amount → FX review → 3DS → status) | ❌ | Rate-lock + breakdown per [money-and-fx](../.claude/rules/money-and-fx.md) |
-| Transfer history (list + filters) | ❌ | Mirrors `transfers` table with locale formatting |
-| Transfer detail / receipt | ❌ | Timeline from [`transfer_state_machine.md`](./mermaid_schemas/transfer_state_machine.md) |
-| Tier upgrade flow (`tier_0 → tier_1 → tier_2`) | ❌ | Banner + CTA per [kyc-tiers-and-limits](../.claude/rules/kyc-tiers-and-limits.md) |
-| Notifications inbox | ❌ | `type ∈ {compliance, transfer, system}` |
-| Settings (profile · language · sign-out) | ❌ | `users.preferred_language` drives all formatting |
-| Help / Support | ❌ | Routes to `error_codes.suggested_action` for in-context help |
+| Onboarding (welcome · language picker · phone OTP · tier_1 landing) | ❌ | Brief: [`02-onboarding-screens.md`](../mobile/prompts/surfaces/02-onboarding-screens.md) (paired with [`flow-01-onboarding.md`](../mobile/prompts/user-flows/flow-01-onboarding.md)). First-run only. Rendered output pending |
+| Home (tier_1 view-only · tier_2 full · tier_2-expired soft-demote) | ❌ | Brief: [`03-home-screen.md`](../mobile/prompts/surfaces/03-home-screen.md). Mobile primary surface; banner triggers tied to [`flow-06-tier-upgrade.md`](../mobile/prompts/user-flows/flow-06-tier-upgrade.md) |
+| Card linking (UzCard / Humo; Visa/MC `tier_2`-gated) | ❌ | Brief: [`04-card-linking-screens.md`](../mobile/prompts/surfaces/04-card-linking-screens.md) (paired with [`flow-03-card-linking.md`](../mobile/prompts/user-flows/flow-03-card-linking.md)). 3DS WebView · see [card-schemes](../.claude/rules/card-schemes.md) |
+| Send money (recipient → amount → FX review → 3DS → submitting → failure) | ❌ | Brief: [`05-send-money-screens.md`](../mobile/prompts/surfaces/05-send-money-screens.md) (paired with [`flow-04-send-money.md`](../mobile/prompts/user-flows/flow-04-send-money.md)). Rate-lock + breakdown per [money-and-fx](../.claude/rules/money-and-fx.md) |
+| Transfer history (list · filter sheet · detail) | ❌ | Brief: [`06-history-screens.md`](../mobile/prompts/surfaces/06-history-screens.md) (paired with [`flow-05-history.md`](../mobile/prompts/user-flows/flow-05-history.md)). Mirrors `transfers` table with locale formatting |
+| Receipt (post-send + history detail; shared component) | ❌ | Brief: [`07-receipt-screens.md`](../mobile/prompts/surfaces/07-receipt-screens.md). Timeline from [`transfer_state_machine.md`](./mermaid_schemas/transfer_state_machine.md). Re-mounted by History detail |
+| Tier-upgrade prompts + MyID verification (consent · ID · face · result) | ❌ | Brief: [`08-tier-upgrade-screens.md`](../mobile/prompts/surfaces/08-tier-upgrade-screens.md) (paired with [`flow-02-myid.md`](../mobile/prompts/user-flows/flow-02-myid.md) + [`flow-06-tier-upgrade.md`](../mobile/prompts/user-flows/flow-06-tier-upgrade.md)). Banner / sheet / full-screen prompts + the MyID flow itself |
+| Card management (list · detail · freeze · unfreeze · remove) | ❌ | Brief: [`09-card-management-screens.md`](../mobile/prompts/surfaces/09-card-management-screens.md) (paired with [`flow-07-card-management.md`](../mobile/prompts/user-flows/flow-07-card-management.md)). Status mapping per [card-schemes](../.claude/rules/card-schemes.md) |
+| Notifications inbox + push handling | ❌ | Brief: [`10-notifications-screens.md`](../mobile/prompts/surfaces/10-notifications-screens.md) (paired with [`flow-08-notifications.md`](../mobile/prompts/user-flows/flow-08-notifications.md)). Inbox + filter sheet + detail + foreground push toast; `type ∈ {transfer, compliance, security, card, system, marketing}` |
+| Settings (profile · KYC · language · notif prefs · appearance · security · sign-in history · about · sign-out · account deletion) | ❌ | Brief: [`11-settings-screens.md`](../mobile/prompts/surfaces/11-settings-screens.md) (paired with [`flow-09-settings.md`](../mobile/prompts/user-flows/flow-09-settings.md)). `users.preferred_language` drives all formatting |
+| Help / Support (help center · article · contact form · confirmation) | ❌ | Brief: [`12-help-support-screens.md`](../mobile/prompts/surfaces/12-help-support-screens.md) (shares [`flow-09-settings.md`](../mobile/prompts/user-flows/flow-09-settings.md)) |
 
 ---
 

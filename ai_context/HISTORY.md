@@ -4,6 +4,79 @@
 
 ---
 
+### 2026-05-04 — Mobile design-brief library COMPLETE — 8 user-flow plans + 10 surface prompts drafted at template depth (~7,367 lines across 18 new files; 20 total in `mobile/prompts/`)
+
+- **Summary**: Bulk-generated the remaining 8 user-flow plans and 10 surface prompts after the template shape was locked earlier today. The mobile design-prep workspace now has the **complete brief library** ready for paste-into-claude.ai surface-by-surface rendering. Each file mirrors the locked template shape from `flow-01-onboarding.md` + `02-onboarding-screens.md` (committed `899ba7f`).
+
+  **Generated user-flow plans** (`mobile/prompts/user-flows/`):
+  - `flow-02-myid.md` — MyID verification (tier_1 → tier_2): consent → ID-card front/back → face capture (liveness) → submit → success/failure/pending. References [`kyc_state_machine.md`](../docs/mermaid_schemas/kyc_state_machine.md). Calm-review pattern for terminal failures (sanctions / under-18 / doc-mismatch).
+  - `flow-03-card-linking.md` — UzCard / Humo (tier_1+) and Visa/MC (tier_2-gated, paused for v1 mock per LESSON 2026-04-30). References [`card_linking_flow.md`](../docs/mermaid_schemas/card_linking_flow.md) + [`card_state_machine.md`](../docs/mermaid_schemas/card_state_machine.md). Tier-2 gate sheet on V/MC tap routes to MyID.
+  - `flow-04-send-money.md` — marquee path: recipient picker → amount → review (FX + fees + locked rate) → 3DS → submitting → receipt or failure. References [`transfer_send_flow.md`](../docs/mermaid_schemas/transfer_send_flow.md) + [`transfer_state_machine.md`](../docs/mermaid_schemas/transfer_state_machine.md) + [`transfer_failure_recovery_flow.md`](../docs/mermaid_schemas/transfer_failure_recovery_flow.md).
+  - `flow-05-history.md` — read-only browse / search / filter / detail. References transfer state machine. Send-again deep-link to flow-04.
+  - `flow-06-tier-upgrade.md` — banner / sheet / full-screen upgrade prompts surfaced contextually (home-banner, send-money tap, V/MC tap, post-limit, post-expiry, resume-state). Routes into flow-02.
+  - `flow-07-card-management.md` — list / detail / freeze / unfreeze / set-default / remove. References [`card_state_machine.md`](../docs/mermaid_schemas/card_state_machine.md). Add-card lives in flow-03.
+  - `flow-08-notifications.md` — inbox + push handling (foreground toast + background deep-link). References [`notification_send_state_machine.md`](../docs/mermaid_schemas/notification_send_state_machine.md). Per-user read state.
+  - `flow-09-settings.md` — settings + help/support shared plan: profile / KYC / language / notif prefs / appearance / security (PIN + biometric) / sign-in history / about / sign-out / account-deletion sub-flow + help center / contact / report.
+
+  **Generated surface prompts** (`mobile/prompts/surfaces/`):
+  - `03-home-screen.md` — tier_1 view-only / tier_2 full / tier_2-expired soft-demote (3 variants) + pre-expiry warning sub-state. Banner stacking order codified.
+  - `04-card-linking-screens.md` — scheme picker / tier-2 gate / details / 3DS / linking / success / failure / max-cards-reached (8 screens).
+  - `05-send-money-screens.md` — recipient picker / new-recipient / amount / review / 3DS / submitting / failure / tier-1 gate (8 screens). Canonical breakdown line set per [`money-and-fx.md`](../.claude/rules/money-and-fx.md). Rate-lock countdown + diff-banner pattern.
+  - `06-history-screens.md` — list / filter sheet / detail (3 screens). Sticky day-dividers + canonical filter chip rhythm.
+  - `07-receipt-screens.md` — shared component for post-send + history detail (single screen, multiple sections + states). Status timeline canonical pattern.
+  - `08-tier-upgrade-screens.md` — Group A (6 prompt screens: inline banner / half-sheet / full-screen / pre-expiry / post-expiry / resume) + Group B (9 MyID screens: consent / ID-front / ID-back / face / submitting / success / failure-retryable / failure-terminal / pending). Largest single surface (681 lines).
+  - `09-card-management-screens.md` — list / detail / 3 action sheets (freeze/unfreeze/remove with default-card and last-card variants).
+  - `10-notifications-screens.md` — inbox / filter sheet / detail / inbox actions sheet / foreground push toast (5 screens). Type-icon palette codified (transfer / compliance / security / card / system / marketing).
+  - `11-settings-screens.md` — 10 sub-screens (settings home / profile / KYC / language / notif prefs / appearance / security / sign-in history / about / sign-out / account-deletion). Largest by content (settings touches every preference).
+  - `12-help-support-screens.md` — help center / article / contact form / submission confirmation (4 screens). Markdown rendering rules codified.
+
+  **Locked patterns across all 11 surfaces**:
+  - **App bar** rhythm — back arrow on most screens; transfer-id / scheme chip below heading where contextual; right-side icons consistent (filter / kebab / share / contact link)
+  - **Bottom safe-area** — every sticky-bottom CTA respects iOS home-indicator (extra 16pt); detail action bars use the canonical `fixed inset-x-0 bottom-0` overlay equivalent for mobile
+  - **WriteButton offline-aware pattern** — every primary CTA disables itself when offline + shows "Reconnect to perform this action" tooltip (re-uses admin's Phase 22b pattern, adapted for mobile)
+  - **Status display** — every status badge pairs color WITH icon AND text label (no color-only signals; per LESSON 2026-05-01 + accessibility rule)
+  - **Error UX** — every failure path sources copy from `error_codes.message_*` / `suggested_action_*` (3 locales); calm-review pattern for `SANCTIONS_HIT` (no retry, no underlying reason exposed); retryable=false has no retry CTA per [`error-ux.md`](../.claude/rules/error-ux.md)
+  - **Privacy invariants** — full PAN, full PINFL, full document number NEVER displayed (masked-only across every surface that touches them); mask is first6 + last4
+  - **Tier visibility** — every screen that involves money/cards/compliance respects user's `kyc_tier`; gates are explicit (banner/sheet/full-screen) NEVER silent
+  - **Localization** — every string keyed for uz/ru/en with longest-translation tests targeted at the densest copy on each surface (~30–80 keys per surface)
+  - **Reduced-motion fallbacks** — every animated transition has an instantaneous variant; no exceptions
+
+- **Files added** (18):
+  - `mobile/prompts/user-flows/flow-02-myid.md` (249 lines)
+  - `mobile/prompts/user-flows/flow-03-card-linking.md` (225 lines)
+  - `mobile/prompts/user-flows/flow-04-send-money.md` (340 lines)
+  - `mobile/prompts/user-flows/flow-05-history.md` (267 lines)
+  - `mobile/prompts/user-flows/flow-06-tier-upgrade.md` (238 lines)
+  - `mobile/prompts/user-flows/flow-07-card-management.md` (247 lines)
+  - `mobile/prompts/user-flows/flow-08-notifications.md` (213 lines)
+  - `mobile/prompts/user-flows/flow-09-settings.md` (348 lines)
+  - `mobile/prompts/surfaces/03-home-screen.md` (356 lines)
+  - `mobile/prompts/surfaces/04-card-linking-screens.md` (437 lines)
+  - `mobile/prompts/surfaces/05-send-money-screens.md` (574 lines)
+  - `mobile/prompts/surfaces/06-history-screens.md` (452 lines)
+  - `mobile/prompts/surfaces/07-receipt-screens.md` (476 lines)
+  - `mobile/prompts/surfaces/08-tier-upgrade-screens.md` (613 lines — largest)
+  - `mobile/prompts/surfaces/09-card-management-screens.md` (373 lines)
+  - `mobile/prompts/surfaces/10-notifications-screens.md` (378 lines)
+  - `mobile/prompts/surfaces/11-settings-screens.md` (681 lines — largest by content)
+  - `mobile/prompts/surfaces/12-help-support-screens.md` (414 lines)
+
+  Total: ~7,367 lines added across the 18 files.
+
+- **Files modified** (3 — doc cascade):
+  - `docs/product_states.md` — workspace row updated to "9 of 9 user-flow plans + 11 of 11 surface prompts" + every mobile surface row in the Surfaces table linked to its rendered brief; last-updated bumped
+  - `ai_context/AI_CONTEXT.md` — workstreams entry rewritten to reflect library completion + 4 follow-up `☐` rows for rendered output / localization seed / tech-stack decision
+  - `ai_context/HISTORY.md` — this entry
+
+- **Verified**: No code changes, no schema changes, no PRD changes, no mermaid changes — all 18 new files reference existing canonical sources without duplicating them. `git status --short` shows only the 18 new mobile files + the 3 modified doc files.
+
+- **Pending generation** (offline / paste-into-claude.ai work — NOT for the assistant to do):
+  - Foundation rendered output (claude.ai artefact + Figma library) — paste `00-shared-context.md` + `01-foundation.md` into a fresh Claude conversation, render, capture spec table
+  - Surface rendered outputs — paste `00 → 01-rendered-spec → flow-XX → surface-YY` per surface, render at 390 × 844pt mobile viewport, capture all states
+  - Tech stack decision (RN vs Flutter) — separate decision; designs stay tech-stack-agnostic
+
+---
+
 ### 2026-05-04 — Mobile design-prep workspace established (`mobile/`) — Wise + Apple + Behance aesthetic anchor · canonical shared-context paste-in · foundation prompt · onboarding flow + surface as template for remaining 8 flows + 10 surfaces
 
 - **Summary**: First pivot from admin (21 surfaces shipped) toward the mobile end-user app. Set up the design-prep workspace at `mobile/` with the prompts that will be fed to Claude design (claude.ai rendered React+Tailwind artefact target) + a Figma library export. **No implementation yet** — tech stack (React Native vs Flutter) still open, designs stay tech-stack-agnostic. Sequence locked: foundation first (tokens / primitives / components / sample shell), then surfaces in marquee-path order.
