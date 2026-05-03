@@ -2,12 +2,8 @@ import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * 9:16 phone-frame primitive used by the Stories editor preview pane.
- *
- * Stays Stories-internal for now — promote to `components/zhipay/` when a
- * second consumer (e.g. Notifications preview) lands. The frame renders a
- * notch chrome + brand-themed status-bar so the preview reads as a real
- * mobile screen rather than a generic rectangle.
+ * 9:16 phone-frame primitive used by editor preview panes (Stories, News, future
+ * Notifications). Lifted to the shared layer when News became the second consumer.
  */
 export function PhoneMockup({
   children,
@@ -24,9 +20,7 @@ export function PhoneMockup({
         className,
       )}
     >
-      {/* Inner viewport */}
       <div className="relative h-full w-full overflow-hidden rounded-[1.75rem] bg-background">
-        {/* Status bar (faux — illustrative chrome only, no real type) */}
         <div className="absolute inset-x-0 top-0 z-10 flex h-7 items-center justify-between px-5 text-foreground/60">
           <SignalIcon className="h-2.5 w-3.5" />
           <span className="flex items-center gap-1">
@@ -34,13 +28,10 @@ export function PhoneMockup({
           </span>
         </div>
 
-        {/* Notch */}
         <div className="absolute left-1/2 top-1.5 z-10 h-4 w-20 -translate-x-1/2 rounded-full bg-foreground/90" />
 
-        {/* Body */}
         <div className="absolute inset-0">{children}</div>
 
-        {/* Home indicator */}
         <div className="absolute bottom-1.5 left-1/2 z-10 h-1 w-24 -translate-x-1/2 rounded-full bg-foreground/35" />
       </div>
     </div>

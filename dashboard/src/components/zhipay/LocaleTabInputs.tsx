@@ -7,7 +7,7 @@ import { LOCALE_ORDER } from '@/components/zhipay/LocaleTabTextarea';
 /**
  * Locale tab strip + single-line `<Input>` — single-line analogue of
  * `<LocaleTabTextarea>` for short fields like titles + cta labels.
- * Stays Stories-internal until a second consumer appears.
+ * Lifted from Stories' editor when News became the second consumer.
  */
 
 interface Props {
@@ -16,17 +16,11 @@ interface Props {
   active: LocaleCode;
   onActiveChange: (loc: LocaleCode) => void;
   invalidLocales?: ReadonlySet<LocaleCode>;
-  /** i18n key for the tablist aria-label. */
   ariaLabelKey: string;
-  /** i18n key map per locale for tab labels. */
   localeLabelKey: Record<LocaleCode, string>;
-  /** i18n key prefix for placeholders — full key is `${placeholderKeyPrefix}.${locale}`. */
   placeholderKeyPrefix: string;
-  /** i18n key for the per-locale required-error message. */
   requiredErrorKey: string;
-  /** Optional max length. */
   maxLength?: number;
-  /** Optional id prefix for `aria-controls`. */
   idPrefix?: string;
 }
 
@@ -64,7 +58,7 @@ export function LocaleTabInputs({
                 'inline-flex items-center gap-2 rounded-md px-3 h-9 text-sm font-medium transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 isActive
-                  ? 'bg-brand-50 text-brand-700 dark:bg-brand-700/15 dark:text-brand-300 ring-1 ring-brand-200 dark:ring-brand-700/30'
+                  ? 'bg-card text-brand-700 dark:text-brand-300 ring-1 ring-brand-300 dark:ring-brand-700/40 shadow-sm'
                   : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )}
             >

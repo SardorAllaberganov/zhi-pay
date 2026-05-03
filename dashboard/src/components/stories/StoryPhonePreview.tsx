@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { LocaleCode } from '@/components/zhipay/LocaleFlag';
 import type { CtaDeepLink, StoryType } from '@/data/mockStories';
-import { PhoneMockup } from './PhoneMockup';
+import { PhoneMockup } from '@/components/zhipay/PhoneMockup';
 import { MediaPreviewPortrait } from './MediaPreview';
 
 /**

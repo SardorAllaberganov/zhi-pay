@@ -9,7 +9,7 @@ import type { LocaleCode } from '@/components/zhipay/LocaleFlag';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { CtaDeepLink, StoryType } from '@/data/mockStories';
-import { LocaleTabInputs } from './LocaleTabInputs';
+import { LocaleTabInputs } from '@/components/zhipay/LocaleTabInputs';
 import { DeepLinkBuilder } from './DeepLinkBuilder';
 import type { StoryFormErrors } from './types';
 
