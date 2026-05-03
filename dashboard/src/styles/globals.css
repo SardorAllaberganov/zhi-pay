@@ -141,6 +141,27 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Density tokens — set by /settings Preferences (lib/preferences.ts).
+   * `--row-h` is consumed by `<TableRow>` (components/ui/table.tsx) to
+   * scale every data table in the app live as the admin toggles between
+   * compact and comfortable. `compact` is the admin default. */
+  :root {
+    --row-h: 40px;
+  }
+  html[data-density='compact'] {
+    --row-h: 40px;
+  }
+  html[data-density='comfortable'] {
+    --row-h: 44px;
+  }
+
+  /* Tabular numerals — applied globally when toggled on in /settings.
+   * Scoped to body so that monospace `.tabular` opt-in still works
+   * regardless of the global setting. */
+  html[data-tabular-nums='true'] body {
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Skip link */
   .skip-link {
     @apply sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded;

@@ -36,9 +36,14 @@ const TableFooter = React.forwardRef<HTMLTableSectionElement, React.HTMLAttribut
 TableFooter.displayName = 'TableFooter';
 
 const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(
-  ({ className, ...props }, ref) => (
+  ({ className, style, ...props }, ref) => (
+    // `min-height` (not `height`) — cells with multi-line content can
+    // still grow past the density floor. Row height tracks the
+    // `--row-h` CSS var set by /settings Preferences (40px compact /
+    // 44px comfortable) so density toggles live across every table.
     <tr
       ref={ref}
+      style={{ height: 'var(--row-h)', ...style }}
       className={cn(
         'border-b transition-colors hover:bg-muted/40 data-[state=selected]:bg-muted',
         className,
