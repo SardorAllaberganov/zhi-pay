@@ -43,7 +43,7 @@ const ROUTE_TITLES: Record<string, { title: string; section?: string }> = {
   '/kyc-tiers': { title: t('admin.nav.kyc-tiers'), section: t('admin.nav.section.compliance') },
   '/system/services': { title: t('admin.nav.services'), section: t('admin.nav.section.system') },
   '/system/app-versions': { title: t('admin.nav.app-versions'), section: t('admin.nav.section.system') },
-  '/error-codes': { title: t('admin.nav.error-codes'), section: t('admin.nav.section.system') },
+  '/system/error-codes': { title: t('admin.nav.error-codes'), section: t('admin.nav.section.system') },
   '/stories': { title: t('admin.nav.stories'), section: t('admin.nav.section.content') },
   '/news': { title: t('admin.nav.news'), section: t('admin.nav.section.content') },
   '/notifications': { title: t('admin.nav.notifications'), section: t('admin.nav.section.content') },

@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Activity,
   Smartphone,
+  AlertCircle,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -88,6 +89,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             <Smartphone className="mr-2" />
             <span>App Versions</span>
             <CommandShortcut>g v</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/system/error-codes')}>
+            <AlertCircle className="mr-2" />
+            <span>Error Codes</span>
+            <CommandShortcut>g e</CommandShortcut>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />

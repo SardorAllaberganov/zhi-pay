@@ -23,6 +23,14 @@ export interface TransferFilters {
   tiers: Set<KycTier>;
   hasAml: boolean;
   hasFailure: boolean;
+  /**
+   * Literal `failure_code` match — seeded from `?failure_code=` URL
+   * param when the user lands here from Error Codes' "View transfers
+   * that failed with this code →" link. Cleared via the dismissable
+   * banner at the top of the list page; not exposed as a chip-row
+   * filter (kept off-keyboard since it's a deep-link only).
+   */
+  failureCode?: string;
 }
 
 /**
@@ -115,6 +123,7 @@ export function applyFilters(
     }
 
     if (filters.hasFailure && !t.failureCode) return false;
+    if (filters.failureCode && t.failureCode !== filters.failureCode) return false;
     if (filters.hasAml && !hasAmlByTransferId(t.id)) return false;
 
     if (search) {
@@ -158,5 +167,6 @@ export function countActiveFilters(f: TransferFilters): number {
   if (f.tiers.size > 0) n++;
   if (f.hasAml) n++;
   if (f.hasFailure) n++;
+  if (f.failureCode) n++;
   return n;
 }

@@ -1508,6 +1508,9 @@ const EN: Record<string, string> = {
   'admin.transfers.context.open-recipient': 'Open recipient',
   'admin.transfer-detail.back-link.recipient': 'Back to recipient',
 
+  // Transfers failure-code deep-link banner (from Error Codes catalog)
+  'admin.transfers.context.failure-code-prefix': 'Showing transfers that failed with',
+
   // ── Recipients (cross-user list + detail) ────────────────────────────
   'admin.recipients.title': 'Recipients',
   'admin.recipients.subtitle.counts': '{total} saved across {owners} users',
@@ -2498,6 +2501,67 @@ const EN: Record<string, string> = {
     'A reason note of at least 20 characters is required for edits.',
   'admin.app-versions.toast.error.not-found':
     'This version is no longer available.',
+
+  // ===================================================================
+  // Error Codes — read-only catalog at /system/error-codes (Phase 16)
+  // ===================================================================
+  'admin.error-codes.title': 'Error Codes',
+  'admin.error-codes.subtitle': 'User-facing failure messages — read-only catalog',
+  'admin.error-codes.banner.read-only':
+    'Error codes are seeded via deployment, not edited in this UI. Updates require a release.',
+  'admin.error-codes.action.export': 'Export CSV',
+
+  'admin.error-codes.filter.search-placeholder':
+    'Search by code, message, or suggested action…',
+  'admin.error-codes.filter.search-aria': 'Search error codes',
+  'admin.error-codes.filter.clear-search': 'Clear search',
+  'admin.error-codes.filter.clear-all': 'Clear all',
+  'admin.error-codes.filter.category': 'Category',
+  'admin.error-codes.filter.retryable': 'Retryable',
+
+  'admin.error-codes.category.kyc': 'KYC',
+  'admin.error-codes.category.acquiring': 'Acquiring',
+  'admin.error-codes.category.fx': 'FX',
+  'admin.error-codes.category.provider': 'Provider',
+  'admin.error-codes.category.compliance': 'Compliance',
+  'admin.error-codes.category.system': 'System',
+
+  'admin.error-codes.retryable.yes': 'Yes',
+  'admin.error-codes.retryable.no': 'No',
+  'admin.error-codes.retryable.any': 'Any',
+
+  'admin.error-codes.column.code': 'Code',
+  'admin.error-codes.column.category': 'Category',
+  'admin.error-codes.column.retryable': 'Retryable',
+  'admin.error-codes.column.message': 'Message preview',
+
+  'admin.error-codes.locale.uz': 'Uzbek',
+  'admin.error-codes.locale.ru': 'Russian',
+  'admin.error-codes.locale.en': 'English',
+
+  'admin.error-codes.detail.localized-messages': 'Localized messages',
+  'admin.error-codes.detail.suggested-action': 'Suggested action',
+  'admin.error-codes.detail.where-referenced': 'Where this code is referenced',
+  'admin.error-codes.detail.last-triggered': 'Last triggered',
+  'admin.error-codes.detail.never-triggered': 'Never triggered',
+
+  'admin.error-codes.detail.window.24h': 'Last 24h',
+  'admin.error-codes.detail.window.7d': 'Last 7 days',
+  'admin.error-codes.detail.window.30d': 'Last 30 days',
+
+  'admin.error-codes.detail.sparkline-label': '7-day trend',
+  'admin.error-codes.detail.sparkline-meta': '{count} total',
+
+  'admin.error-codes.detail.link.transfers':
+    'View transfers that failed with this code',
+  'admin.error-codes.detail.link.aml': 'View AML flags involving this code',
+
+  'admin.error-codes.empty.no-results.title': 'No codes match these filters',
+  'admin.error-codes.empty.no-results.body':
+    'Try clearing one or more filters to see more rows.',
+  'admin.error-codes.empty.no-data.title': 'No error codes loaded',
+  'admin.error-codes.empty.no-data.body':
+    'Check the deployment seed — error codes should always be present.',
 };
 
 /**

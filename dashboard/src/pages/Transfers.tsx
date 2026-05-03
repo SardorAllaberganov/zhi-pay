@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, BookmarkPlus, ChevronDown, CreditCard, FileDown, Inbox, MoreVertical, Pencil, Trash2, UserCircle, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, BookmarkPlus, ChevronDown, CreditCard, FileDown, Inbox, MoreVertical, Pencil, Trash2, UserCircle, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,10 +75,21 @@ export function Transfers() {
     ? getRecipientById(recipientContextId)
     : null;
 
+  // Deep-link from Error Codes' row-expanded "View transfers that
+  // failed with this code →" link. Seeds `filters.failureCode` once
+  // on mount; the URL param is then stripped so subsequent filter
+  // clears don't snap back to it.
+  const failureCodeFromUrl = searchParams.get('failure_code');
+
   // Hydrate from module cache so detail-page round-trips preserve list state.
   const cached = readTransfersState();
 
-  const [filters, setFilters] = useState<TransferFilters>(cached?.filters ?? makeEmptyFilters());
+  const [filters, setFilters] = useState<TransferFilters>(() => {
+    const base = cached?.filters ?? makeEmptyFilters();
+    return failureCodeFromUrl
+      ? { ...base, failureCode: failureCodeFromUrl }
+      : base;
+  });
   const [sort, setSort] = useState<SortState>(cached?.sort ?? { key: 'createdAt', dir: 'desc' });
   const [page, setPage] = useState(cached?.page ?? 0);
   const [pageSize, setPageSize] = useState<number>(cached?.pageSize ?? 50);
@@ -98,6 +109,18 @@ export function Transfers() {
   useEffect(() => {
     const tid = window.setTimeout(() => setLoading(false), 600);
     return () => window.clearTimeout(tid);
+  }, []);
+
+  // Strip the deep-link `?failure_code=` after it's been applied to the
+  // filter state — keeps subsequent filter clears from snapping back
+  // to the seed code. Mirrors AuditLog's `?entity=` / `?id=` strip.
+  useEffect(() => {
+    if (searchParams.get('failure_code')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('failure_code');
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Saved-filters dropdown control + dialog state.
@@ -597,6 +620,30 @@ export function Transfers() {
               {t('admin.transfers.context.clear')}
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Failure-code deep-link banner */}
+      {filters.failureCode && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-brand-600/30 bg-brand-50/50 dark:bg-brand-950/20 px-3 py-2">
+          <div className="flex items-center gap-2 text-sm">
+            <AlertCircle className="h-4 w-4 text-brand-700 dark:text-brand-400" aria-hidden="true" />
+            <span className="text-foreground/80">
+              {t('admin.transfers.context.failure-code-prefix')}
+            </span>
+            <span className="font-mono tabular text-foreground">
+              {filters.failureCode}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setFilters({ ...filters, failureCode: undefined })}
+            className="text-muted-foreground"
+          >
+            <X className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+            {t('admin.transfers.context.clear')}
+          </Button>
         </div>
       )}
 
