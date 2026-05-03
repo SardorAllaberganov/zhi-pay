@@ -4,6 +4,56 @@
 
 ---
 
+### 2026-05-04 — Mobile Foundation Tokens layer LOCKED — 9 token files (~67 KB) in `mobile/design/tokens/`; first design artefacts to land under `mobile/design/`
+
+- **Summary**: Executed the foundation Tokens pass (slice of [`mobile/prompts/01-foundation.md`](../mobile/prompts/01-foundation.md)). Six spec docs + two exports + a layer-index README — the lowest layer of the mobile design system, the gate that blocks every primitive / component / pattern / screen / flow upstream. Every `mobile/design/*` folder was empty before this commit; tokens is now populated.
+
+  **Files written** (`mobile/design/tokens/`, 9 total):
+  - [`colors.md`](../mobile/design/tokens/colors.md) — 11-stop brand + slate ramps, 3-stop success/warning/danger ramps, semantic mappings (light + dark), full WCAG 2.1 AA contrast verification table (foreground × background pairings, AA body ≥4.5 / large ≥3, non-text UI ≥3 — every stop classified safe / decorative / forbidden-as-text). Brand anchor: `brand-600 = hsl(209 90% 39%) ≈ #0a64bc` (verbatim from admin).
+  - [`typography.md`](../mobile/design/tokens/typography.md) — 6-role scale: Display 1 (44pt / 700 / 48 / -0.02em — hero amount on home + receipt), Display 2 (32pt / 700 / 38 / -0.015em — page titles), Heading (22pt / 600 / 28 / -0.01em — section heads), Body (16pt / 400 / 24 — default body + button label md), Body small (14pt / 400 / 20 — secondary meta), Label (13pt / 500 / 18 / +0.04em uppercased only — chips/kbd/uppercase labels). Inter font-stack with system fallback. Tabular-nums required on every monetary/count/ID/timestamp value. Dynamic type to 200%. Locked deviations from admin web scale: Display 1 +8pt over `4xl`; Display 2 +4pt over `3xl`; Body 15→16pt.
+  - [`spacing.md`](../mobile/design/tokens/spacing.md) — 8pt base, `space-0`…`space-12` (0/4/8/12/16/20/24/32/40/48/64/80/96), page-gutter rule (default 16pt; hero screens 20pt), component-padding presets (Button sm/md/lg, Input, Card, Sheet, Modal, Toast, Banner, Chip, List row, Tab bar item), ≥44pt tap-target rule with min-8pt separation between adjacent targets.
+  - [`radii.md`](../mobile/design/tokens/radii.md) — 4 stops + pill: `radius-sm` 8pt (inputs/chips/toast — bumped from admin's 4pt because mobile inputs at 48pt height read tinny at 4pt corners), `radius-md` 12pt (cards/buttons/banners), `radius-lg` 20pt (sheets top corners only / hero card-as-object / receipt amount card — admin doesn't have a hero surface), `radius-pill` 9999px (badges/segmented track + thumb/avatar). Composition rules for nested cards + image-in-card.
+  - [`shadows.md`](../mobile/design/tokens/shadows.md) — 3 elevations × 2 modes: `shadow-sm` (resting card), `shadow-md` (sheet/modal-card/popover), `shadow-lg` (toast/dropdown/picker overlay). New `shadow-hero` brand-tinted lift (`hsl(var(--brand-900) / 0.20)` blur — light; `hsl(var(--brand-950) / 0.65)` — dark) reserved for home card-as-object + receipt amount card; **limit one per screen**. Dark-mode shadows lean on opacity (~2-3× alpha) at identical blur radii — never duplicate light values and bump opacity, that reads smudgy. `prefers-reduced-transparency` falls `shadow-hero` back to plain `shadow-lg`.
+  - [`motion.md`](../mobile/design/tokens/motion.md) — Duration tokens (`fast` 140ms, `base` 220ms, `slow` 320ms — default bumps from admin's 180ms because hand interaction reads better at slightly longer durations than mouse). Easing tokens (`standard` `cubic-bezier(0.2, 0, 0, 1)` inherited from admin verbatim for cross-surface designer muscle memory; the brief's recommended Material `cubic-bezier(0.4, 0, 0.2, 1)` was overridden — flagged as deviation). 8 reserved animated patterns: status timeline tick-forward, FX rate countdown, card-flip on long-press, sheet slide-in, toast slide-in-from-top, tab-bar active dot, segmented thumb, skeleton shimmer. `prefers-reduced-motion` collapses to instantaneous (admin pattern inherited verbatim). Forbidden idioms: parallax, scroll-triggered reveals, autoplay, spring physics with overshoot >1.05, particle/confetti.
+  - [`tokens.json`](../mobile/design/tokens/tokens.json) — Tokens Studio / Style Dictionary compatible export (`$value` + `$type` shape with reference syntax `{color.brand.600}`). Composed `typography.role.*` text-style tokens for direct Figma binding. `color.semantic.light` + `color.semantic.dark` resolve roles per mode. Importable into Figma via the Tokens Studio plugin or convertible to Figma Variables JSON via `style-dictionary build`.
+  - [`tailwind.tokens.css`](../mobile/design/tokens/tailwind.tokens.css) — CSS vars block (HSL components, no `hsl()` wrap so Tailwind's `hsl(var(--brand-600))` pattern works for arbitrary opacities). `:root` + `.dark` blocks. Reduced-motion + reduced-transparency media queries inline. Tabular-nums utility class. `font-feature-settings` on `<body>` (`cv11` single-storey `a` + `ss01` open digits + `ss03` curved `l`/`I`/`1` disambiguation). Includes a paste-into `tailwind.config.ts` extend snippet (commented) covering colors / borderRadius / boxShadow / fontFamily / fontSize / transitionDuration / transitionTimingFunction.
+  - [`README.md`](../mobile/design/tokens/README.md) — Layer index + consumption rules ("imports go downward only — never sideways, never upward"), Tailwind utility-class examples for screens/components, CSS-var examples for primitives, Figma plugin import flow, cross-surface parity rule, **mobile-vs-admin deviations table** (intentional, documented to distinguish from drift), and "what's next" pointer to Primitives.
+
+  **Mobile-vs-admin deviations** (intentional, called out in README + spec docs):
+  | Token | Admin | Mobile | Why |
+  |---|---|---|---|
+  | `radius-lg` | 12px | 20px | Mobile hero card-as-object needs softer corners |
+  | `radius-sm` | 4px | 8px | 48pt-tall mobile inputs read tinny at 4pt corners |
+  | `shadow-hero` | (none) | brand-tinted lift | Mobile has hero card-as-object surface; admin doesn't |
+  | `duration-base` | 180ms | 220ms | Hand interaction reads better at slightly longer durations |
+  | Display 1 fontSize | 36px (`4xl`) | 44px | Mobile hero amount must outrank everything; Wise iOS sits at ~42pt |
+  | Display 2 fontSize | 28px (`3xl`) | 32px | Page titles need clear step from Display 1 to Heading |
+  | Body fontSize | 15px (`base`) | 16px | Mobile reading distance + one-handed thumb interaction |
+
+  Everything else inherits verbatim — brand + slate + semantic palettes, `radius-md`, `shadow-sm`/`md`/`lg`, easing curves.
+
+  **Decisions locked during the pass**: Display sizes 44/32/22/16/14/13 (proposed and confirmed by user choosing "do which is better"); easing inherits admin's `cubic-bezier(0.2, 0, 0, 1)` over the brief's recommended Material curve, on cross-surface-muscle-memory grounds — the 220ms duration bump alone gives mobile its hand-driven cushion without diverging the curve vocabulary.
+
+  **No PRD / models / mermaid cascade** — Tokens are local to `mobile/design/tokens/`, no schema changes, no state machines touched, no flow diagrams to update. Doc cascade scope is `docs/product_states.md` (mobile foundation Tokens row flips ❌ → ✅) + this HISTORY entry + `ai_context/AI_CONTEXT.md` mobile section.
+
+  **What's next**: Per the layer hierarchy, **Primitives** (buttons / inputs / chips / badges / icons / avatars). Brief lives at [`mobile/prompts/01-foundation.md`](../mobile/prompts/01-foundation.md) §"Primitive requirements". Subsequent passes follow the marquee path in [`mobile/README.md`](../mobile/README.md): Primitives → Components → Patterns → Onboarding → MyID → Home → Card linking → Send-money → ...
+
+- **Files**:
+  - `mobile/design/tokens/colors.md` (NEW)
+  - `mobile/design/tokens/typography.md` (NEW)
+  - `mobile/design/tokens/spacing.md` (NEW)
+  - `mobile/design/tokens/radii.md` (NEW)
+  - `mobile/design/tokens/shadows.md` (NEW)
+  - `mobile/design/tokens/motion.md` (NEW)
+  - `mobile/design/tokens/tokens.json` (NEW)
+  - `mobile/design/tokens/tailwind.tokens.css` (NEW)
+  - `mobile/design/tokens/README.md` (NEW)
+  - `docs/product_states.md` (mobile design tokens row ❌ → ✅; mobile-app section opener rewritten; "Last updated" stamp updated)
+  - `ai_context/HISTORY.md` (this entry)
+  - `ai_context/AI_CONTEXT.md` (mobile section appended)
+
+---
+
 ### 2026-05-04 — Mobile design-brief library COMPLETE — 8 user-flow plans + 10 surface prompts drafted at template depth (~7,367 lines across 18 new files; 20 total in `mobile/prompts/`)
 
 - **Summary**: Bulk-generated the remaining 8 user-flow plans and 10 surface prompts after the template shape was locked earlier today. The mobile design-prep workspace now has the **complete brief library** ready for paste-into-claude.ai surface-by-surface rendering. Each file mirrors the locked template shape from `flow-01-onboarding.md` + `02-onboarding-screens.md` (committed `899ba7f`).
