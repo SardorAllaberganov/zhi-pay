@@ -4,6 +4,196 @@
 
 ---
 
+### 2026-05-03 — `/doc_sync` checkpoint — flip Notifications row to ✅ in product_states.md
+
+- **Summary**: Caught one stale row in `docs/product_states.md` line 62 — Notifications was still listed at `/notifications` ❌ Placeholder. Flipped to `/content/notifications` (+ `/new` + `/sent/:id`) ✅ with the full Phase 19 + Phase 19a description (composer dedicated route, sent-history list, sent-detail, schema cascade, audit bridge, etc.). Other product_states rows already current. `docs/models.md` + `docs/product_requirements_document.md` + `docs/mermaid_schemas/notification_send_state_machine.md` + `ai_context/AI_CONTEXT.md` + `ai_context/HISTORY.md` were all updated inline during the Phase 19 + Phase 19a work — no further changes needed in this sync.
+- **Files modified**: `docs/product_states.md` (Notifications row) · `ai_context/HISTORY.md` (this entry)
+- **Verified**: no schema / state-machine / PRD drift; cross-references resolve.
+
+---
+
+### 2026-05-03 — Notifications restructure (Phase 19a) — Compose moved out of in-page tab into dedicated `/content/notifications/new` route · list page now Sent-only with `+ New notification` CTA · matches Stories / News editor sibling pattern
+
+- **Summary**: Followed up on Phase 19 by restructuring the surface to match the rest of the `/content/*` family. The original spec called for tabbed Compose / Sent inside one page, but on review the in-tab composer was inconsistent with Stories (`/content/stories/new` + `/:id`) and News (`/content/news/new` + `/:id`) — both of which use a list page + dedicated editor route. Admin mental model is "open Notifications → scan recent sends → click `+ New notification` to compose", which matches every other admin surface. Tradeoff accepted: lost the in-tab Compose↔Sent quick-flip via `c`/`s` chords, but `n` (matching News) replaces the relevant entry chord cleanly.
+
+  **Routing**:
+  - `/content/notifications` — list-only (was tabbed page); renders the former `<SentPane>` content directly. Page header has `+ New notification` CTA on the right (`Plus` icon + label, brand-primary, matches News' `+ New article`).
+  - `/content/notifications/new` — new dedicated page (`pages/NotificationsCompose.tsx`); inline header w/ `<ArrowLeft> Back to notifications` + `New notification` title + subtitle, then the existing `<ComposePane>` consuming the full viewport with its sticky preview + sticky-bottom `<ComposeActionBar>`.
+  - `/content/notifications/sent/:id` — unchanged.
+
+  **Page-scoped chord changes**:
+  - List page: `c` / `s` removed (no tabs); `n` added → navigates to `/new` (matches News pattern). `j/k/Enter` row focus + `/` focus search + `f` focus first chip stay.
+  - Compose page: existing `Cmd/Ctrl+1/2/3` (locale tabs) + `Cmd/Ctrl+Enter` (submit) inside `<ComposePane>` unchanged.
+
+  **Component changes**:
+  - `pages/Notifications.tsx` — full rewrite. Dropped `<Tabs>`/`<TabsList>`/`<TabsTrigger>`/`<TabsContent>` wrappers + `?tab=compose|sent` query-param plumbing + `c`/`s` chords + `refreshVersion`/`onSwitchToCompose`/`onCreated` callbacks. Now just renders `<header>` + `<SentPane>` directly. Counts subtitle stays.
+  - `pages/NotificationsCompose.tsx` — new file. Mirrors `NewsEditor.tsx` shape: 350ms loading flag NOT needed (no list to fetch), inline header with back-link + title + subtitle, then `<ComposePane onCreated={navigate(`/sent/:id`)} onCancel={navigate('/content/notifications')} />`.
+  - `components/notifications/sent/SentPane.tsx` — `Props.onSwitchToCompose` renamed to `Props.onCreateNew`; `Props.refreshVersion` removed (no longer plumbed). `useMemo(() => listNotifications(), [])` lost its `refreshVersion` dep.
+  - `components/notifications/detail/DetailHeader.tsx` — back-link `to="/content/notifications?tab=sent"` → `to="/content/notifications"` (no tabs to target).
+  - `pages/SentNotificationDetail.tsx` — not-found fallback `navigate('/content/notifications?tab=sent', { replace: true })` → `navigate('/content/notifications', { replace: true })`.
+  - `components/notifications/filterState.ts` — doc-comment trimmed (the `?tab=` URL-driven note is no longer relevant).
+
+  **Router**: `pages/NotificationsCompose` imported in `router.tsx`; new `<Route path="/content/notifications/new" element={<NotificationsCompose />} />` added between the list + detail routes. Back-compat redirect `/notifications` → `/content/notifications` via `RedirectPreservingQuery` unchanged (still works; the `?tab=` param it preserved is now ignored by the destination, harmless).
+
+  **i18n**:
+  - **Removed** (no longer referenced): `admin.notifications.tab.compose`, `admin.notifications.tab.sent` (the Tabs triggers).
+  - **Added**: `admin.notifications.action.new` ("New notification" — header CTA), `admin.notifications.compose.back-to-list` ("Back to notifications" — Compose page back-link, no `← ` prefix per LESSON 2026-05-02), `admin.notifications.compose.page-title` ("New notification"), `admin.notifications.compose.page-subtitle` ("Compose and dispatch a push notification — broadcast, segmented, or single-recipient.").
+  - **Reused**: `admin.notifications.title`, `admin.notifications.subtitle.counts` (still drives the list page's count subtitle), all `compose.*` body keys consumed by `<ComposePane>`.
+
+- **Files modified**:
+  - `dashboard/src/pages/Notifications.tsx` — full rewrite to list-only
+  - `dashboard/src/components/notifications/sent/SentPane.tsx` — Props rename `onSwitchToCompose` → `onCreateNew`; drop `refreshVersion` plumbing
+  - `dashboard/src/components/notifications/detail/DetailHeader.tsx` — back-link path simplified
+  - `dashboard/src/components/notifications/filterState.ts` — doc-comment trimmed
+  - `dashboard/src/pages/SentNotificationDetail.tsx` — not-found fallback path simplified
+  - `dashboard/src/router.tsx` — `/new` route added; `NotificationsCompose` import
+  - `dashboard/src/lib/i18n.ts` — 4 keys added, 2 removed
+  - `ai_context/HISTORY.md` — this entry
+  - `ai_context/AI_CONTEXT.md` — Current phase paragraph + Routes (admin) decision row + Active workstreams entry updated
+
+- **Files added**:
+  - `dashboard/src/pages/NotificationsCompose.tsx` — new dedicated compose page
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npx vite build` (exit 0) · dev-server probes returned HTTP 200 for `/content/notifications`, `/content/notifications/new`, and `/content/notifications/sent/notif_023`. Lessons-compliance grep sweep clean (sub-13px / sticky-thead / Visa-Mastercard / `← ` prefix / uppercase-tracking-wider all 0 hits). Browser eyeballing deferred — please spot-check: list page shows `+ New notification` CTA in header that routes to `/new`; compose page renders inline back-link + title + subtitle then the form + sticky preview + sticky-bottom action bar; Cancel button on action bar navigates back to list; submit (send/schedule) navigates to the new row's detail page; `n` chord on list opens compose; back-link on detail page returns to list (no `?tab=` query); browser back/forward + direct URL navigation works on every route.
+
+---
+
+### 2026-05-03 — Admin Notifications (Phase 19) — `/content/notifications` · composer + sent history · 38-row uz/ru/en seed · schema cascade (notifications status / audience / scheduling / send-stats fields + state machine doc) · `/notifications` placeholder retired in favor of `/content/notifications`
+
+- **Summary**: Built the admin Notifications surface — third `/content/*` admin CMS after Stories (Phase 17) and News (Phase 18). Two-tab page (Compose / Sent) at `/content/notifications` plus full-page detail at `/content/notifications/sent/:id`. **`mockNotifications.ts` is single source of truth** — 38 deterministic records (32 sent + 4 scheduled + 2 cancelled) covering 4 types (transfer / promo / system / compliance) × 3 audience types (broadcast / segment / single). Seed authored in 3 locales (uz default, ru, en) with realistic content per spec ("Pul jo'natildi — 5 000 000 UZS / 3 562 CNY", "Sniženные тарифы", "MyID expiring in 14 days"). Per LESSON 2026-04-30: zero Visa/Mastercard mentions in mock copy — all card-themed transfer notifications use UzCard/Humo only. Five admin authors in the pool: Yulduz Otaboeva (super), Adel Ortiqova (finance), Bobur Yusupov (comms — new this phase), Madina Kholmatova (ops/compliance — new this phase), and a synthetic "System Notifications" actor for transactional per-user pushes.
+
+  **Schema cascade (D1–D4)** — landed BEFORE any code per CLAUDE.md "Match the schema" rule:
+  - **D1** `docs/models.md §7 NOTIFICATIONS` extended with 11 composer-side fields: `status` (`scheduled / sending / sent / cancelled / failed`), `audience_type` (`broadcast / segment / single`), `audience_criteria` (jsonb, segment-only), `scheduled_for`, `cancelled_at`, `cancellation_reason` (text, ≥20 chars), `composed_by` (FK admin_users), `recipient_count`, `delivered_count` / `opened_count` / `click_through_count` (nullable until status=sent). `user_id NULL = broadcast/segment` semantics preserved verbatim. `is_read` / `read_at` clarified as per-user-only (audience_type=single).
+  - **D2** New state machine doc `docs/mermaid_schemas/notification_send_state_machine.md` — terminal states `sent / failed / cancelled` are immutable (push notifications non-recallable); audit verbs mapped to `send / schedule / cancel_scheduled` for the `entity_type=notification` rows.
+  - **D3** `dashboard/src/lib/deepLinkScreens.ts` extended to 10 screens — added `card_detail` (requires `card_id`) and `settings` (no params). New `DEEP_LINK_REQUIRED_PARAMS` map provides soft-validation hints in the composer's params editor.
+  - **D4** `notification_type` enum unchanged — already matched spec (`transfer / promo / system / compliance`). Compliance typed-confirm ("I confirm" / "Подтверждаю" / "Tasdiqlayman") is a UI-layer rule only, not schema.
+  - **D5** Route move `/notifications` (placeholder) → `/content/notifications` with back-compat redirect. Sidebar entry rewired to the new path; the `/notifications` route is now a `RedirectPreservingQuery` to `/content/notifications`.
+  - **D6** Keyboard chord `g+i` reserved for the route — added to `HelpOverlay` and `CommandPalette` (the dashboard's chord prefix-handler is documentation-only at this point; cosmetic listing only).
+  - **D9** Mock seed scope: 32 sent + 4 scheduled + 2 cancelled = 38 rows. Stats numbers tuned (delivered ~96–99%, opened 30–55% for broadcasts / 60–85% for single-user transactional, click-through 12–28% of opened when deep_link present).
+
+  **`docs/product_requirements_document.md` updated**: added feature row 13 ("Admin push notification composer | P0 | broadcast / segment / single · 3-locale · scheduled · audit-trailed") + Gherkin AC fragment covering the broadcast / segment / compliance / cancel-scheduled / immutability paths.
+
+  **Pattern layer** (`dashboard/src/components/notifications/`):
+  - `types.ts` — `ComposeForm`, `ComposeErrors`, `SegmentCriteria`, `LastLoginBucket`, `NotificationFilters`, `NotificationSort`, `applyNotificationFilters`, `applyNotificationSort`, `countActiveFilters`, `TITLE_MAX=60`, `BODY_MAX=180`, `CANCEL_REASON_MIN=20`, `LARGE_AUDIENCE_THRESHOLD=5000`, `USER_SEARCH_DEBOUNCE_MS=300`, label-key maps for status / audience / type / last-login enums
+  - `filterState.ts` — module-level UI cache (filters / sort / focusedId) for Sent tab; URL-driven active-tab is NOT cached (URL is source of truth)
+  - `audienceEstimate.ts` — pure-function `estimateAudience(criteria)` against `mockUsers.ts` (50-user seed) + `audienceLanguageBreakdown` for Stats card + `searchUsersForPicker(query)` for the single-user picker (debounced)
+  - `compose/RadioCard.tsx` — branded radio-card primitive (mirrors Stories' `TypeRadioCard` styling)
+  - `compose/AudienceSection.tsx` — radio (broadcast / segment / single) with conditional `<SegmentBuilder>` and `<UserPicker>`, live `Estimated audience: N users` line, `audience-empty` validation hint
+  - `compose/SegmentBuilder.tsx` — chip-toggle UI for tier multi · language multi · has-card tristate · has-transfer tristate · last-login enum (4 buckets); `Clear all criteria` action
+  - `compose/UserPicker.tsx` — debounced (300ms) name-or-phone search; results dropdown with `<UserAvatar>` + name + phone subline + `<TierBadge>`; selected-state shows compact card + `Change` button
+  - `compose/TypePicker.tsx` — 4-radio picker with tooltip per type (compliance tooltip explicitly notes "bypasses user notification preferences")
+  - `compose/ContentSection.tsx` — `<LocaleTabInputs>` for title (max 60) + `<LocaleTabTextarea>` for body (max 180); both consume the lifted `zhipay/` primitives; red-dot indicator on missing locale tabs after `setShowErrors(true)` (News pattern)
+  - `compose/DeepLinkSection.tsx` — toggle + screen `<Select>` (10 screens) + `<ParamsEditor>` (JSON textarea) + live preview-string line `zhipay://<screen>?<query>`
+  - `compose/ParamsEditor.tsx` — JSON object validator with on-blur commit + soft warning when required params missing (per `DEEP_LINK_REQUIRED_PARAMS`); copied from Stories' `ParamsEditor` rather than lifted to `zhipay/` (lift deferred — only 2 consumers, the third would justify it)
+  - `compose/ScheduleSection.tsx` — radio (now / later) with conditional `<DateTimeInput>` (5min granularity, min = now+5min snapped); error state when datetime missing or in the past
+  - `compose/PreviewPane.tsx` — sticky on `lg+` (`lg:sticky lg:top-4`), mode toggle (Lock screen / In-app), locale switcher (uz/ru/en), renders `<LockScreenPreview>` or `<InAppPreview>` inside the lifted `<PhoneMockup>`
+  - `compose/MobilePreviewSheet.tsx` — `<lg` mirror of preview, opens via `<Sheet side="bottom">` with `<PreviewPane bare />` inside
+  - `preview/LockScreenPreview.tsx` — iOS-style lock-screen card (gradient dark wallpaper + 9:41 clock + brand-mini-icon notification card with title-bold + body + "now" + chevron+screen-name when deep-link)
+  - `preview/InAppPreview.tsx` — in-app notifications-list-row variant (faux app header + ghost row for context + active row with type-toned icon chip + brand-tinted ring on the active row + chevron+screen-name when deep-link)
+  - `compose/ComposeActionBar.tsx` — sticky-bottom (`fixed inset-x-0 bottom-0 md:left-[var(--sidebar-width,4rem)]` per LESSON 2026-05-02); audience summary chip + type chip + schedule chip + Cancel + primary CTA (Send / Schedule per radio state)
+  - `compose/SendConfirmDialog.tsx` — AlertDialog with 4 visual variants (standard / large-broadcast > 5000 / compliance typed-confirm / scheduled-for); compliance gate uses trim+lowercase comparison against the localized "I confirm" string
+  - `compose/ComposePane.tsx` — orchestrator that owns form state, derives errors, renders the 6 sections + sticky preview + action bar + confirm dialog; `summarizeMissing()` helper + always-clickable primary button + sonner toast on validation failure (Phase 18b LESSON pattern); `Cmd/Ctrl+1/2/3` swap locale tabs, `Cmd/Ctrl+Enter` submits
+
+  **Sent tab pattern layer** (`dashboard/src/components/notifications/sent/`):
+  - `NotificationsFilterBar.tsx` — carded shell (Phase 18b LESSON: `bg-card` outer + `bg-background` search input); search · type-multi · audience-type-multi · DateRangePicker · Clear-all
+  - `StatusChip.tsx` — 5-tone palette (success Sent / brand Scheduled+Sending / muted Cancelled / danger Failed) with type-appropriate Lucide icons
+  - `AudienceCell.tsx` — broadcast (Megaphone + "All users · 12 423") / segment (Filter + "Segment · 2 847") / single (`<UserAvatar size="sm">` + name)
+  - `SentTable.tsx` — sortable desktop table on `lg+`, non-sticky thead per LESSON 2026-04-30, Title-Case `<TableHead>` per LESSON 2026-05-02, click row → navigate to detail; columns: Sent at (relative + absolute on hover) · Type chip+icon · Audience cell · Title (admin-locale) · Read rate (progress bar; em-dash for single-user / pre-send) · Sent by (`<UserAvatar size="sm">` + name) · Status chip
+  - `SentMobileCardStack.tsx` — `<lg` mirror; tap → detail
+  - `EmptyState.tsx` — 2 variants (no-records → Compose CTA; no-matches → Clear-all CTA)
+  - `SentPane.tsx` — list orchestrator (filter-bar + table or mobile cards + empty states); `j/k` row focus + `Enter` open; `/` focus search; `f` focus first chip
+
+  **Sent detail pattern layer** (`dashboard/src/components/notifications/detail/`):
+  - `DetailHeader.tsx` — flow inline (NEVER sticky per LESSON 2026-05-02); back-link `<ArrowLeft> Back to notifications` per LESSON 2026-05-02 (no `← ` prefix in i18n); identity row with type chip + StatusChip + audience summary
+  - `ContentCard.tsx` — read-only 3-locale tabs with brand-tinted active state (Phase 18b styling)
+  - `AudienceCard.tsx` — type + recipient count + criteria summary (segment) or user link (single, deep-links to `/customers/users/:id`)
+  - `DeepLinkCard.tsx` — screen + read-only jsonb viewer + full URL string (only rendered when `deep_link` is set)
+  - `StatsCard.tsx` — Total sent · Delivered % w/ progress · Opened % w/ progress · Click-through % (when deep_link present) · 3-segment horizontal stacked bar for recipient language breakdown (uz / ru / en) computed via `audienceLanguageBreakdown(criteria)`
+  - `AuditCard.tsx` — composed-by (`<UserAvatar>` + name + admin id) · created/sent/scheduled/cancelled timestamps (formatted) · cancellation reason banner (warning-tinted, when `cancelled`) · `View in audit log` deep-link to `/compliance/audit-log?entityType=notification&entityId={id}`
+  - `CancelScheduledActionBar.tsx` — sticky-bottom only when `status='scheduled'`, same `fixed inset-x-0 bottom-0 md:left-[var(--sidebar-width,4rem)]` pattern as ComposeActionBar
+  - `CancelScheduledDialog.tsx` — `<Dialog>` with ≥20-char reason + warning banner; on confirm, calls `cancelScheduledNotification(id, reason, actor)` mutator → status flips to `cancelled`, audit row written, toast.success
+
+  **Pages**:
+  - `pages/Notifications.tsx` — `<Tabs>` shell driven by `?tab=compose|sent` (URL is source of truth); page-scoped `c` / `s` chords switch tabs; admin locale hardcoded `uz` for v1 (forward-compat for global admin-locale switcher)
+  - `pages/SentNotificationDetail.tsx` — fetches by `:id`, bounces to list with toast if not found, two-column on `lg+` (left: Content / Audience / DeepLink / Audit · right: Stats), stacked on `<lg`, sticky-bottom Cancel-scheduled action bar only for `status='scheduled'`
+
+  **Mutators + audit-log integration** (`dashboard/src/data/mockNotifications.ts`):
+  - `createNotification(input, actor)` — single mutator handles both "send now" (status=sent + simulated stats) and "schedule for later" (status=scheduled + null stats); inserts row + audit entry (`send` or `schedule` action verb) atomically
+  - `cancelScheduledNotification(id, reason, actor)` — guard: id must exist + status must be `scheduled` + reason ≥20 chars; flips to `cancelled` with timestamp + reason + audit entry (`cancel_scheduled` action verb)
+  - `listNotifications()` / `getNotificationById(id)` / `listNotificationAudit()`
+  - Audit-bridge wired in `mockAuditLog.ts` via `bridgeNotificationAudit(e: NotificationAuditEntry)` — same pattern as News' `bridgeNewsAudit`. `AuditEntityType` already included `'notification'` (pre-existing). Action map: send→`created`, schedule→`created`, cancel_scheduled→`status_changed`. `fromStatus`/`toStatus` populated for the cancellation flip so the audit-log filter shows the state diff.
+  - Seed audit rows (one per existing notification, two for cancelled ones — schedule + cancel_scheduled in chronological order) populated via IIFE so the audit-log surface has matching entries from session boot.
+
+  **Lessons-compliance verified via grep sweep**:
+  - 0 sub-13px text in any new component
+  - 0 sticky thead in `SentTable.tsx`
+  - 0 Visa/Mastercard mentions in `mockNotifications.ts` seed copy (only the docstring header references "Visa / Mastercard are deliberately absent" as the lesson-compliance reminder)
+  - 0 `← ` literal prefix in any new i18n key
+  - 0 `uppercase tracking-wider` on `<TableHead>` cells
+  - 0 `text-xs` outside the reserved patterns (chips / badges / kbd / uppercase section labels)
+  - All compose / sent / detail buttons use `text-sm` minimum per LESSON 2026-05-01
+  - Detail header flows inline (`UserHeader` shape) per LESSON 2026-05-02; back-link uses `<ArrowLeft>` per LESSON 2026-05-02
+  - Compose + Cancel-scheduled action bars use the canonical `fixed inset-x-0 bottom-0 md:left-[var(--sidebar-width,4rem)]` pattern with page wrapper `pb-28` per LESSON 2026-05-02
+  - Filter bar uses carded `bg-card` shell + `bg-background` search input per Phase 18b LESSON
+  - Tabs / locale tabs / preview-mode toggle inherit `bg-card + shadow-sm + brand ring` active state per Phase 18b LESSON (the `<TabsTrigger>` primitive flip already landed in Phase 18b; this phase consumes it)
+
+- **Files modified**:
+  - `docs/models.md` — §7 NOTIFICATIONS extended with 11 fields + 2 new enums + lifecycle ref · §9.1 enums table extended w/ `notification_status` + `notification_audience_type` · §9.2 indexing recommendations extended w/ 4 new indexes
+  - `docs/mermaid_schemas/notification_send_state_machine.md` — new file (state diagram + audit-verb table + UI-mapping table)
+  - `docs/product_requirements_document.md` — feature row 13 + Gherkin AC fragment
+  - `dashboard/src/lib/deepLinkScreens.ts` — DeepLinkScreen union extended to 10 (added `card_detail`, `settings`); `DEEP_LINK_REQUIRED_PARAMS` map added
+  - `dashboard/src/lib/i18n.ts` — ~150 new `admin.notifications.*` keys (compose / sent / detail / preview / validation / dialogs / actions); plus 4 deep-link keys for the 2 new screens
+  - `dashboard/src/router.tsx` — `Notifications` + `SentNotificationDetail` routes added; `/notifications` placeholder retired; `/notifications` → `/content/notifications` redirect added
+  - `dashboard/src/components/layout/Sidebar.tsx` — Content section href `/notifications` → `/content/notifications`
+  - `dashboard/src/components/layout/HelpOverlay.tsx` — Navigation chords list extended with `g y` (Stories), `g n` (News), `g i` (Notifications)
+  - `dashboard/src/components/layout/CommandPalette.tsx` — Notifications row added to Navigate group
+  - `dashboard/src/data/mockAuditLog.ts` — `NotificationAuditEntry` import + `NOTIFICATION_ACTION_MAP` + `bridgeNotificationAudit` + listing-merge entry
+
+- **Files added**:
+  - `dashboard/src/data/mockNotifications.ts` — 38-row seed + types + mutators + audit
+  - `dashboard/src/components/notifications/types.ts` — domain types + filters/sort + label-key maps + constants
+  - `dashboard/src/components/notifications/filterState.ts` — module-level UI cache for Sent tab
+  - `dashboard/src/components/notifications/audienceEstimate.ts` — pure-function audience estimation + breakdown + user search
+  - `dashboard/src/components/notifications/compose/RadioCard.tsx`
+  - `dashboard/src/components/notifications/compose/AudienceSection.tsx`
+  - `dashboard/src/components/notifications/compose/SegmentBuilder.tsx`
+  - `dashboard/src/components/notifications/compose/UserPicker.tsx`
+  - `dashboard/src/components/notifications/compose/TypePicker.tsx`
+  - `dashboard/src/components/notifications/compose/ContentSection.tsx`
+  - `dashboard/src/components/notifications/compose/DeepLinkSection.tsx`
+  - `dashboard/src/components/notifications/compose/ParamsEditor.tsx`
+  - `dashboard/src/components/notifications/compose/ScheduleSection.tsx`
+  - `dashboard/src/components/notifications/compose/PreviewPane.tsx`
+  - `dashboard/src/components/notifications/compose/MobilePreviewSheet.tsx`
+  - `dashboard/src/components/notifications/compose/ComposeActionBar.tsx`
+  - `dashboard/src/components/notifications/compose/SendConfirmDialog.tsx`
+  - `dashboard/src/components/notifications/compose/ComposePane.tsx`
+  - `dashboard/src/components/notifications/preview/LockScreenPreview.tsx`
+  - `dashboard/src/components/notifications/preview/InAppPreview.tsx`
+  - `dashboard/src/components/notifications/sent/NotificationsFilterBar.tsx`
+  - `dashboard/src/components/notifications/sent/StatusChip.tsx`
+  - `dashboard/src/components/notifications/sent/AudienceCell.tsx`
+  - `dashboard/src/components/notifications/sent/SentTable.tsx`
+  - `dashboard/src/components/notifications/sent/SentMobileCardStack.tsx`
+  - `dashboard/src/components/notifications/sent/EmptyState.tsx`
+  - `dashboard/src/components/notifications/sent/SentPane.tsx`
+  - `dashboard/src/components/notifications/detail/DetailHeader.tsx`
+  - `dashboard/src/components/notifications/detail/ContentCard.tsx`
+  - `dashboard/src/components/notifications/detail/AudienceCard.tsx`
+  - `dashboard/src/components/notifications/detail/DeepLinkCard.tsx`
+  - `dashboard/src/components/notifications/detail/StatsCard.tsx`
+  - `dashboard/src/components/notifications/detail/AuditCard.tsx`
+  - `dashboard/src/components/notifications/detail/CancelScheduledActionBar.tsx`
+  - `dashboard/src/components/notifications/detail/CancelScheduledDialog.tsx`
+  - `dashboard/src/pages/Notifications.tsx`
+  - `dashboard/src/pages/SentNotificationDetail.tsx`
+
+- **Docs updated**: `docs/models.md` (§7 + §9.1 + §9.2) · `docs/mermaid_schemas/notification_send_state_machine.md` (new) · `docs/product_requirements_document.md` (§6.1 row 13 + AC fragment) · `ai_context/AI_CONTEXT.md` (decisions table + route map + phase index — see below) · `ai_context/HISTORY.md` (this entry).
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npx vite build` (exit 0; chunk-size warning is pre-existing) · `npx vite --port 5181` boots; `curl /` HTTP 200; `curl /#/content/notifications` HTTP 200. Lessons-compliance grep sweep clean (sub-13px / sticky-thead / Visa-Mastercard-in-mock / `← ` prefix / uppercase-tracking-wider on column headers all 0 hits). Browser eyeballing deferred — please spot-check: Compose tab loads, audience radio switches sub-form correctly, segment criteria live-update count, single-user picker debounced search works, type tooltips render on hover, locale tabs swap correctly with red-dot on missing after submit attempt, char counters update live, deep-link toggle reveals editor + live preview string, schedule "later" reveals DateTimeInput with 5min granularity, lock-screen + in-app preview both render, send-confirm dialog has correct copy variants for standard / large / compliance / scheduled, compliance typed-confirm gates the primary CTA, send → row appears in Sent tab + audit-log row appears at `/compliance/audit-log?entityType=notification`, scheduled rows show Cancel-scheduled action bar on detail with ≥20-char reason gate, mobile (<lg) stacks correctly + Preview button opens sheet.
+
+---
+
 ### 2026-05-03 — News follow-ups + filter-bar unification + segmented active-state contrast bump (Phase 18b)
 
 - **Summary**: Cluster of polish items landed after the Phase 18 News build. Five threads:
