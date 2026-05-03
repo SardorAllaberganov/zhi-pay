@@ -2213,6 +2213,41 @@ const EN: Record<string, string> = {
   'admin.blacklist.toast.edit-reason.error': 'Reason could not be updated.',
   'admin.blacklist.toast.extend.title': 'Expiry updated.',
   'admin.blacklist.toast.extend.error': 'Expiry could not be updated.',
+
+  // ── KYC Tiers (compliance/kyc-tiers) — read-only reference ─────────
+  'admin.kyc-tiers.title': 'KYC Tier Limits',
+  'admin.kyc-tiers.subtitle':
+    'Tier definitions that drive every transfer-limit decision.',
+
+  // Tier card — labels
+  'admin.kyc-tiers.card.per-tx': 'Per-transaction limit',
+  'admin.kyc-tiers.card.daily': 'Daily limit',
+  'admin.kyc-tiers.card.monthly': 'Monthly limit',
+  'admin.kyc-tiers.card.max-cards': 'Max linked cards',
+  'admin.kyc-tiers.card.myid-required': 'MyID required',
+
+  // Tier card — names, descriptions, gate notes
+  'admin.kyc-tiers.tier.tier_0.name': 'Just signed up',
+  'admin.kyc-tiers.tier.tier_0.description':
+    'Account created. Phone OTP is the first gate.',
+  'admin.kyc-tiers.tier.tier_0.gate':
+    'Cannot access the app. Phone OTP verification is required before sign-in.',
+  'admin.kyc-tiers.tier.tier_1.name': 'Phone verified',
+  'admin.kyc-tiers.tier.tier_1.description': 'Phone OTP completed.',
+  'admin.kyc-tiers.tier.tier_1.gate':
+    'View-only access — services and FX rates visible. No card linking, no recipients, no transfers until MyID verification.',
+  'admin.kyc-tiers.tier.tier_2.name': 'MyID verified',
+  'admin.kyc-tiers.tier.tier_2.description':
+    'Full identity verification via MyID. Highest limits and Visa / Mastercard eligibility.',
+
+  // Live distribution card
+  'admin.kyc-tiers.impact.title': 'Live distribution',
+  'admin.kyc-tiers.impact.subtitle':
+    'Derived from current users + in-flight transfers in this environment.',
+  'admin.kyc-tiers.impact.total-users': 'Total users',
+  'admin.kyc-tiers.impact.active-transfers': 'Active transfers right now',
+  'admin.kyc-tiers.impact.avg-amount': 'Avg per-tx amount',
+  'admin.kyc-tiers.impact.no-active': 'No transfers in flight.',
 };
 
 /**

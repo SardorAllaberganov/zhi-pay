@@ -20,10 +20,10 @@ import { AuditLog } from '@/pages/AuditLog';
 import { Blacklist } from '@/pages/Blacklist';
 import { BlacklistNew } from '@/pages/BlacklistNew';
 import { BlacklistDetail } from '@/pages/BlacklistDetail';
+import { KycTiers } from '@/pages/KycTiers';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES = [
-  '/kyc-tiers',
   '/services',
   '/app-versions',
   '/error-codes',
@@ -84,6 +84,9 @@ export function Router() {
         <Route path="/compliance/blacklist/new" element={<BlacklistNew />} />
         <Route path="/compliance/blacklist/:id" element={<BlacklistDetail />} />
 
+        {/* Compliance — KYC Tiers (nested, read-only reference) */}
+        <Route path="/compliance/kyc-tiers" element={<KycTiers />} />
+
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
         <Route
@@ -105,6 +108,7 @@ export function Router() {
         <Route path="/audit-log" element={<Navigate to="/compliance/audit-log" replace />} />
         <Route path="/blacklist" element={<Navigate to="/compliance/blacklist" replace />} />
         <Route path="/blacklist/new" element={<RedirectPreservingQuery to="/compliance/blacklist/new" />} />
+        <Route path="/kyc-tiers" element={<Navigate to="/compliance/kyc-tiers" replace />} />
 
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />
