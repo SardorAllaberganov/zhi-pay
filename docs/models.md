@@ -598,12 +598,12 @@ erDiagram
     string title_uz
     string title_ru
     string title_en
-    string body_uz
-    string body_ru
-    string body_en
-    string image_url
+    text body_uz "rich text — HTML produced by admin RTE, sanitized server-side"
+    text body_ru "rich text — HTML produced by admin RTE, sanitized server-side"
+    text body_en "rich text — HTML produced by admin RTE, sanitized server-side"
+    string image_url "nullable — optional cover, recommended 16:9"
     boolean is_published
-    timestamp published_at
+    timestamp published_at "nullable until is_published flips true"
     timestamp created_at
   }
 ```
@@ -646,6 +646,7 @@ erDiagram
 | `fx_rates`         | `(pair, valid_from DESC)`                            | "latest live rate" lookup                    |
 | `stories`          | `(display_order)` UNIQUE PARTIAL where is_published=true | enforce unique slot among visible stories  |
 | `stories`          | `(is_published, published_at DESC)`                  | "live carousel" + "scheduled queue" scans    |
+| `news`             | `(is_published, published_at DESC NULLS LAST)`       | feed listing — published rows newest-first, drafts admin-only |
 
 ### 9.3 Money-handling rules
 
