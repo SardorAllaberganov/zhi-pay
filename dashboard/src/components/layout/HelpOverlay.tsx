@@ -29,6 +29,7 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['g', 'y'], label: 'Go to Stories', group: 'Navigation' },
   { keys: ['g', 'n'], label: 'Go to News', group: 'Navigation' },
   { keys: ['g', 'i'], label: 'Go to Notifications', group: 'Navigation' },
+  { keys: ['g', ','], label: 'Go to Settings', group: 'Navigation' },
   { keys: ['j'], label: 'Move down in lists', group: 'Lists' },
   { keys: ['k'], label: 'Move up in lists', group: 'Lists' },
   { keys: ['Enter'], label: 'Open focused item', group: 'Lists' },
@@ -128,6 +129,12 @@ const SHORTCUTS: { keys: string[]; label: string; group: string }[] = [
   { keys: ['b'], label: 'Back to list', group: 'Blacklist detail' },
   { keys: ['Backspace'], label: 'Back to list', group: 'Blacklist detail' },
   { keys: ['Del'], label: 'Open remove confirm', group: 'Blacklist detail' },
+  // Settings page (page-scoped)
+  { keys: ['1'], label: 'Jump to Profile tab', group: 'Settings' },
+  { keys: ['2'], label: 'Jump to Security tab', group: 'Settings' },
+  { keys: ['3'], label: 'Jump to Sessions tab', group: 'Settings' },
+  { keys: ['4'], label: 'Jump to Preferences tab', group: 'Settings' },
+  { keys: ['5'], label: 'Jump to My audit tab', group: 'Settings' },
 ];
 
 interface HelpOverlayProps {
@@ -136,7 +143,7 @@ interface HelpOverlayProps {
 }
 
 export function HelpOverlay({ open, onOpenChange }: HelpOverlayProps) {
-  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users', 'Cards', 'Card detail', 'Recipients', 'Recipient detail', 'FX Config', 'Update FX rate', 'Commission Rules', 'New commission version', 'Audit Log', 'Blacklist', 'New blacklist entry', 'Blacklist detail'];
+  const groups = ['Global', 'Navigation', 'Lists', 'Transfer detail', 'KYC Queue', 'AML Triage', 'Users', 'Cards', 'Card detail', 'Recipients', 'Recipient detail', 'FX Config', 'Update FX rate', 'Commission Rules', 'New commission version', 'Audit Log', 'Blacklist', 'New blacklist entry', 'Blacklist detail', 'Settings'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -96,6 +96,8 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
         else if (e.key === 'b') navigate('/compliance/blacklist');
         else if (e.key === 'y') navigate('/content/stories');
         else if (e.key === 'n') navigate('/content/news');
+        else if (e.key === 'i') navigate('/content/notifications');
+        else if (e.key === ',') navigate('/settings');
         lastKey.current = null;
         if (lastKeyTimeoutRef.current) window.clearTimeout(lastKeyTimeoutRef.current);
         return;

@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   Newspaper,
   Bell,
+  Settings as SettingsIcon,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -112,6 +113,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             <Bell className="mr-2" />
             <span>Notifications</span>
             <CommandShortcut>g i</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/settings')}>
+            <SettingsIcon className="mr-2" />
+            <span>Settings</span>
+            <CommandShortcut>g ,</CommandShortcut>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
