@@ -61,7 +61,7 @@ function ago(days: number, hour = 9, minute = 0): Date {
   return d;
 }
 
-const SUPER_ADMIN = { id: 'admin_super_01', name: 'Yulduz Otaboeva' } as const;
+const SUPER_ADMIN = { id: 'admin_super_01', name: 'Sardor Tursunov' } as const;
 const FINANCE_ADMIN = { id: 'admin_finance_02', name: 'Adel Ortiqova' } as const;
 
 // =====================================================================

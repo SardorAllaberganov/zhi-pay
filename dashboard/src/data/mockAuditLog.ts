@@ -185,8 +185,9 @@ interface AdminProfile {
 }
 
 const SUPER_ADMIN: AdminProfile = {
+  // Aligned with mockAdminAuth.ts SEED_USERS[0] (Phase 21 — /settings sample data).
   id: 'admin_super_01',
-  name: 'Yulduz Otaboeva',
+  name: 'Sardor Tursunov',
   ip: '95.214.10.42',
   device: 'macOS 14 · Chrome 132',
 };

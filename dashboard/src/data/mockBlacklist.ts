@@ -82,7 +82,7 @@ interface AdminProfile {
   id: string;
   name: string;
 }
-const SUPER_ADMIN: AdminProfile = { id: 'admin_super_01', name: 'Yulduz Otaboeva' };
+const SUPER_ADMIN: AdminProfile = { id: 'admin_super_01', name: 'Sardor Tursunov' };
 const FINANCE_ADMIN: AdminProfile = { id: 'admin_finance_02', name: 'Adel Ortiqova' };
 export const BLACKLIST_ADMIN_POOL: AdminProfile[] = [SUPER_ADMIN, FINANCE_ADMIN];
 
