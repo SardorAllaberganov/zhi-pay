@@ -3388,6 +3388,41 @@ const EN: Record<string, string> = {
     'Scheduled send cancelled.',
   'admin.notifications.detail.cancel-scheduled.toast-failure':
     'Could not cancel — please retry.',
+
+  // ===================================================================
+  // Sign-in surface (`/sign-in`) — Phase 20
+  // ===================================================================
+  'admin.sign-in.title': 'Sign in to admin',
+  'admin.sign-in.subtitle': 'Authorized personnel only. All actions are audited.',
+
+  'admin.sign-in.field.email': 'Email',
+  'admin.sign-in.field.password': 'Password',
+  'admin.sign-in.field.password.show': 'Show password',
+  'admin.sign-in.field.password.hide': 'Hide password',
+
+  'admin.sign-in.action.submit': 'Sign in',
+  'admin.sign-in.action.submitting': 'Signing in…',
+
+  'admin.sign-in.link.forgot': 'Forgot password?',
+
+  'admin.sign-in.error.invalid': 'Email or password is incorrect.',
+  'admin.sign-in.error.rate-limited': 'Too many attempts. Try again in 15 minutes.',
+  'admin.sign-in.error.disabled': 'This account has been disabled. Contact your administrator.',
+  'admin.sign-in.error.network': 'Couldn’t reach server. Check your connection and try again.',
+  'admin.sign-in.error.server':
+    'Something went wrong on our side. Contact your administrator if this persists.',
+
+  'admin.sign-in.banner.session-expired': 'Session expired. Sign in again to continue.',
+
+  'admin.sign-in.forgot.title': 'Forgot password?',
+  'admin.sign-in.forgot.body':
+    'Contact your administrator. Self-service reset is not available for compliance reasons.',
+  'admin.sign-in.forgot.ok': 'Got it',
+
+  'admin.sign-in.toast.welcome': 'Signed in. Welcome back, {name}.',
+
+  'admin.sign-in.footer.copyright': '© 2026 ZhiPay',
+  'admin.sign-in.footer.version': 'admin v0.1.0',
 };
 
 /**

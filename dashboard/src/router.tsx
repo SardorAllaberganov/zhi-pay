@@ -1,5 +1,8 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
+import { signOut, useIdleTimeout, useSession } from '@/lib/auth';
+import { SignIn } from '@/pages/SignIn';
 import { Overview } from '@/pages/Overview';
 import { Transfers } from '@/pages/Transfers';
 import { TransferDetail } from '@/pages/TransferDetail';
@@ -40,9 +43,46 @@ function RedirectPreservingQuery({ to }: { to: string }) {
   return <Navigate to={`${to}${search}`} replace />;
 }
 
+/**
+ * Wraps every authenticated route. Redirects to `/sign-in` when no
+ * session exists, and to `/sign-in?expired=1&next=<path>` when the
+ * idle-timeout fires while the user is on an authenticated surface.
+ */
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const session = useSession();
+  const idleState = useIdleTimeout();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (session && idleState === 'idle') {
+      signOut({ reason: 'session_expired' });
+    }
+  }, [session, idleState]);
+
+  if (!session) {
+    const here = `${location.pathname}${location.search}${location.hash}`;
+    const next = here && here !== '/' ? `?next=${encodeURIComponent(here)}` : '';
+    const expired = idleState === 'idle' ? `${next ? '&' : '?'}expired=1` : '';
+    return <Navigate to={`/sign-in${next}${expired}`} replace />;
+  }
+
+  return <AppShell>{children}</AppShell>;
+}
+
 export function Router() {
   return (
-    <AppShell>
+    <Routes>
+      {/* Auth surface — bare, outside <AppShell>. */}
+      <Route path="/sign-in" element={<SignIn />} />
+
+      {/* Every other route is wrapped by <AuthGuard> + <AppShell>. */}
+      <Route path="*" element={<AuthGuard><AppRoutes /></AuthGuard>} />
+    </Routes>
+  );
+}
+
+function AppRoutes() {
+  return (
       <Routes>
         <Route path="/" element={<Overview />} />
 
@@ -160,6 +200,5 @@ export function Router() {
         ))}
         <Route path="*" element={<Placeholder />} />
       </Routes>
-    </AppShell>
   );
 }
