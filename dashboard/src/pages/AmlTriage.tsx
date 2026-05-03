@@ -35,6 +35,7 @@ import {
   readAmlState,
   writeAmlState,
 } from '@/components/aml-triage/filterState';
+import { tryWriteOrQueue } from '@/lib/offlineActionQueue';
 
 /**
  * Master-detail AML triage page.
@@ -207,21 +208,35 @@ export function AmlTriage() {
 
   const handleAssignMe = () => {
     if (!selectedReview) return;
-    updateReview(selectedReview.id, {
-      assigneeId: CURRENT_ADMIN.id,
-      assigneeName: CURRENT_ADMIN.name,
-      // Open → reviewing on claim. Cleared/escalated stay terminal.
-      status: selectedReview.status === 'open' ? 'reviewing' : selectedReview.status,
+    // Wrapped through `tryWriteOrQueue` so offline keyboard-chord
+    // triggers (`m`) queue instead of being dropped. Online: executes
+    // synchronously and the success toast fires immediately. Offline:
+    // queues for replay; the offline-banner Retry CTA + reconnect both
+    // drain the queue with a single "Synced N actions" toast.
+    const review = selectedReview;
+    const result = tryWriteOrQueue({
+      label: t('admin.aml-triage.action.assign-me'),
+      executor: () => {
+        updateReview(review.id, {
+          assigneeId: CURRENT_ADMIN.id,
+          assigneeName: CURRENT_ADMIN.name,
+          // Open → reviewing on claim. Cleared/escalated stay terminal.
+          status: review.status === 'open' ? 'reviewing' : review.status,
+        });
+        appendAmlAudit({
+          flagId: review.id,
+          action: 'claim',
+          actorId: CURRENT_ADMIN.id,
+          actorName: CURRENT_ADMIN.name,
+          fromStatus: review.status,
+          toStatus: review.status === 'open' ? 'reviewing' : review.status,
+        });
+        toast.success(t('admin.aml-triage.action.assign-me.success'));
+      },
     });
-    appendAmlAudit({
-      flagId: selectedReview.id,
-      action: 'claim',
-      actorId: CURRENT_ADMIN.id,
-      actorName: CURRENT_ADMIN.name,
-      fromStatus: selectedReview.status,
-      toStatus: selectedReview.status === 'open' ? 'reviewing' : selectedReview.status,
-    });
-    toast.success(t('admin.aml-triage.action.assign-me.success'));
+    if (result === 'queued') {
+      toast.info(t('admin.system.offline.toast.queued'));
+    }
   };
 
   const handleReassign = (payload: { assigneeId: string | null }) => {
