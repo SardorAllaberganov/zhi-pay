@@ -140,12 +140,12 @@ export function HelpOverlay({ open, onOpenChange }: HelpOverlayProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[640px]">
-        <DialogHeader>
+      <DialogContent className="max-w-[640px] max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
+        <DialogHeader className="shrink-0 border-b border-border px-6 pt-6 pb-4">
           <DialogTitle>{t('admin.help.title')}</DialogTitle>
           <DialogDescription>{t('admin.help.subtitle')}</DialogDescription>
         </DialogHeader>
-        <div className="space-y-5 py-2">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
           {groups.map((group) => (
             <div key={group}>
               <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">

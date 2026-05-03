@@ -1,12 +1,12 @@
 import { Fragment, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Bell, Menu, ChevronRight } from 'lucide-react';
+import { Search, Menu, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { ThemeToggle } from './ThemeToggle';
+import { NotificationsBell } from './NotificationsBell';
 import { UserMenu } from './UserMenu';
 
 interface TopBarProps {
@@ -211,18 +211,7 @@ export function TopBar({
 
       <ThemeToggle />
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative" aria-label={t('common.actions.notifications')}>
-            <Bell className="h-4 w-4" />
-            <span
-              className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-danger-600 ring-2 ring-card"
-              aria-hidden="true"
-            />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{t('common.actions.notifications')}</TooltipContent>
-      </Tooltip>
+      <NotificationsBell />
 
       <UserMenu onShowHelp={onShowHelp} />
     </header>

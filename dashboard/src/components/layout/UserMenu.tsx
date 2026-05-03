@@ -9,13 +9,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { signOut, useSession } from '@/lib/auth';
 import { t } from '@/lib/i18n';
 
 interface UserMenuProps {
   onShowHelp?: () => void;
 }
 
+function initialsFor(displayName: string): string {
+  const parts = displayName.trim().split(/\s+/);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export function UserMenu({ onShowHelp }: UserMenuProps) {
+  const session = useSession();
+  const displayName = session?.profile.displayName ?? 'Admin';
+  const email = session?.profile.email ?? '';
+  const initials = initialsFor(displayName);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -27,15 +40,17 @@ export function UserMenu({ onShowHelp }: UserMenuProps) {
         >
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-300">
-              SA
+              {initials}
             </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[200px]">
         <DropdownMenuLabel className="flex flex-col">
-          <span className="font-medium">Super Admin</span>
-          <span className="text-sm text-muted-foreground font-normal">admin@zhipay.uz</span>
+          <span className="font-medium">{displayName}</span>
+          {email ? (
+            <span className="text-sm text-muted-foreground font-normal">{email}</span>
+          ) : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
@@ -50,7 +65,10 @@ export function UserMenu({ onShowHelp }: UserMenuProps) {
           </kbd>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-danger-600 focus:text-danger-700">
+        <DropdownMenuItem
+          onClick={() => signOut({ reason: 'user' })}
+          className="text-danger-600 focus:text-danger-700"
+        >
           <LogOut className="mr-2 h-4 w-4" />
           {t('common.actions.signout')}
         </DropdownMenuItem>
