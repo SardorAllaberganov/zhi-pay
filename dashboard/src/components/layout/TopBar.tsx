@@ -41,7 +41,7 @@ const ROUTE_TITLES: Record<string, { title: string; section?: string }> = {
   '/audit-log': { title: t('admin.nav.audit-log'), section: t('admin.nav.section.compliance') },
   '/compliance/blacklist': { title: t('admin.nav.blacklist'), section: t('admin.nav.section.compliance') },
   '/kyc-tiers': { title: t('admin.nav.kyc-tiers'), section: t('admin.nav.section.compliance') },
-  '/services': { title: t('admin.nav.services'), section: t('admin.nav.section.system') },
+  '/system/services': { title: t('admin.nav.services'), section: t('admin.nav.section.system') },
   '/app-versions': { title: t('admin.nav.app-versions'), section: t('admin.nav.section.system') },
   '/error-codes': { title: t('admin.nav.error-codes'), section: t('admin.nav.section.system') },
   '/stories': { title: t('admin.nav.stories'), section: t('admin.nav.section.content') },
@@ -64,6 +64,17 @@ function getBreadcrumbs(pathname: string): Crumb[] {
       { label: t('admin.nav.section.operations') },
       { label: t('admin.nav.transfers'), to: '/operations/transfers' },
       { label: transferDetailMatch[1] },
+    ];
+  }
+
+  // /system/services/:id — show System › Services & Health › <name>.
+  const serviceDetailMatch = pathname.match(/^\/system\/services\/(.+)$/);
+  if (serviceDetailMatch) {
+    const id = serviceDetailMatch[1];
+    return [
+      { label: t('admin.nav.section.system') },
+      { label: t('admin.nav.services'), to: '/system/services' },
+      { label: id.replace(/^svc_/, '') },
     ];
   }
 

@@ -303,7 +303,7 @@ export function Overview() {
       ) : (
         <ServicesHealthCard
           services={SERVICES}
-          onSelect={(s) => navigate(`/services?service=${s.name}`)}
+          onSelect={(s) => navigate(`/system/services/svc_${s.name}`)}
         />
       )}
 

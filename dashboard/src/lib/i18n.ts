@@ -2248,6 +2248,127 @@ const EN: Record<string, string> = {
   'admin.kyc-tiers.impact.active-transfers': 'Active transfers right now',
   'admin.kyc-tiers.impact.avg-amount': 'Avg per-tx amount',
   'admin.kyc-tiers.impact.no-active': 'No transfers in flight.',
+
+  // ── Services & Health (system/services) ─────────────────────────────
+  'admin.services.title': 'Services & Health',
+  'admin.services.subtitle': 'Status of payment rails and external integrations.',
+  'admin.services.refreshed-at': 'Refreshed {time}',
+  'admin.services.action.refresh': 'Refresh',
+  'admin.services.action.refresh-all': 'Run health check on all',
+
+  // status enum
+  'admin.services.status.active': 'Active',
+  'admin.services.status.maintenance': 'Maintenance',
+  'admin.services.status.disabled': 'Disabled',
+  'admin.services.status-toggle.aria-label': 'Service status',
+
+  // service display names
+  'admin.services.name.alipay': 'Alipay',
+  'admin.services.name.wechat': 'WeChat Pay',
+  'admin.services.name.uzcard': 'UzCard',
+  'admin.services.name.humo': 'Humo',
+  'admin.services.name.myid': 'MyID',
+
+  // tile
+  'admin.services.tile.aria-label': '{name} — {status}',
+  'admin.services.tile.last-checked': 'Last checked {time}',
+  'admin.services.tile.latency': 'Latency P50',
+  'admin.services.tile.success-rate': 'Success 24h',
+  'admin.services.tile.priority': 'Priority',
+
+  // empty pane (lg+)
+  'admin.services.empty-pane.title': 'Select a service',
+  'admin.services.empty-pane.body':
+    'Pick a tile on the left to see live latency, health checks, and recent activity.',
+
+  // detail header / shared
+  'admin.services.detail.back': 'Back to services',
+
+  // detail stats
+  'admin.services.detail.stats': 'Quick stats',
+  'admin.services.detail.stats.latency-24h': 'Latency (last 24h)',
+  'admin.services.detail.stats.success-rate': 'Success rate',
+  'admin.services.detail.stats.window-24h': '24 hours',
+  'admin.services.detail.stats.window-7d': '7 days',
+  'admin.services.detail.stats.uptime-30d': 'Uptime (30d)',
+  'admin.services.detail.stats.inflight': 'Inflight requests',
+  'admin.services.detail.stats.webhooks-1h': 'Webhooks (last hour)',
+
+  // health checks card
+  'admin.services.detail.health-checks': 'Health checks',
+  'admin.services.detail.health-checks.last-20': 'Last 20 checks',
+  'admin.services.detail.health-checks.copy': 'Copy',
+  'admin.services.detail.health-checks.copied': 'Copied',
+  'admin.services.detail.health-checks.legend.ok': 'OK',
+  'admin.services.detail.health-checks.legend.slow': 'Slow',
+  'admin.services.detail.health-checks.legend.failed': 'Failed',
+  'admin.services.detail.health-checks.status.ok': 'OK',
+  'admin.services.detail.health-checks.status.slow': 'Slow',
+  'admin.services.detail.health-checks.status.failed': 'Failed',
+
+  // config card
+  'admin.services.detail.config': 'Configuration',
+  'admin.services.detail.config.summary':
+    'Endpoints and credentials. Sensitive keys are masked.',
+  'admin.services.detail.config.privacy-note':
+    'Sensitive keys (api_key, secrets, signing keys) are masked at the data layer and never round-trip to the client.',
+  'admin.services.detail.config.edit': 'Edit config',
+  'admin.services.detail.config.edit-disabled':
+    'Editing service config is out of v1 scope. Update via deployment.',
+
+  // recent activity
+  'admin.services.detail.recent-activity': 'Recent activity',
+  'admin.services.detail.recent-activity.webhooks': 'Webhook events (last 10)',
+  'admin.services.detail.recent-activity.no-webhooks':
+    'No webhook events received recently.',
+  'admin.services.detail.recent-activity.alerts': 'Latency-spike alerts (last 5)',
+  'admin.services.detail.recent-activity.no-alerts':
+    'No alerts in the last 30 days.',
+  'admin.services.detail.recent-activity.alert-line':
+    'P95 spiked to {ms} ms for {duration} min',
+  'admin.services.detail.recent-activity.webhook-status.received': 'Received',
+  'admin.services.detail.recent-activity.webhook-status.processed': 'Processed',
+  'admin.services.detail.recent-activity.webhook-status.failed': 'Failed',
+
+  // detail-page actions
+  'admin.services.detail.action.run-check': 'Run health check',
+  'admin.services.detail.action.open-audit-log': 'Open in audit log',
+
+  // status-change confirm dialog
+  'admin.services.confirm.maintenance.title': 'Put service into maintenance?',
+  'admin.services.confirm.maintenance.body':
+    'New transfers using this service will be queued. In-flight transfers will continue. Users will see a localized maintenance message.',
+  'admin.services.confirm.maintenance.cta': 'Enter maintenance',
+  'admin.services.confirm.disabled.title': 'Disable service?',
+  'admin.services.confirm.disabled.body':
+    '{inflight} transfers are currently in-flight using this service. New transfers will be rejected with PROVIDER_UNAVAILABLE. In-flight transfers may complete or fail unpredictably.',
+  'admin.services.confirm.disabled.cta': 'Disable service',
+  'admin.services.confirm.disabled.acknowledge': 'I understand the impact.',
+  'admin.services.confirm.active.title': 'Restore service to active?',
+  'admin.services.confirm.active.body':
+    'Service will resume accepting traffic immediately.',
+  'admin.services.confirm.active.cta': 'Restore service',
+  'admin.services.confirm.reason-label': 'Reason note',
+  'admin.services.confirm.reason-placeholder':
+    'Why is this status change happening? At least {min} characters — lands in the audit log.',
+  'admin.services.confirm.reason-counter': '{count} / {min} chars',
+  'admin.services.confirm.reason-required': 'A reason note is required for this change.',
+  'admin.services.confirm.submitting': 'Saving…',
+
+  // toasts
+  'admin.services.toast.refreshed': 'Services refreshed.',
+  'admin.services.toast.run-all-done': 'Health check fired for all services.',
+  'admin.services.toast.status-changed': '{name} is now {status}.',
+  'admin.services.toast.status-change-failed':
+    'Status change failed. Try again or contact engineering.',
+  'admin.services.toast.health-check.ok': 'Health check passed · {ms} ms',
+  'admin.services.toast.health-check.slow': 'Health check slow · {ms} ms',
+  'admin.services.toast.health-check.failed': 'Health check failed.',
+
+  // not-found
+  'admin.services.not-found.title': 'Service not found',
+  'admin.services.not-found.body': 'No service with id {id}.',
+  'admin.services.not-found.cta': 'Back to services',
 };
 
 /**

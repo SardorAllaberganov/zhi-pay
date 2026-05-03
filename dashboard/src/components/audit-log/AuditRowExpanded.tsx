@@ -9,7 +9,7 @@ import {
   formatContextJson,
   type AuditEvent,
 } from '@/data/mockAuditLog';
-import { useCopyFeedback } from './useCopyFeedback';
+import { useCopyFeedback } from '@/hooks/useCopyFeedback';
 
 interface AuditRowExpandedProps {
   event: AuditEvent;

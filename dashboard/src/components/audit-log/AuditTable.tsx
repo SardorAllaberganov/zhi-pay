@@ -28,7 +28,7 @@ import { ActorTypeChip } from './ActorTypeChip';
 import { ActionChip } from './ActionChip';
 import { StatusTransitionPill } from './StatusTransitionPill';
 import { AuditRowExpanded } from './AuditRowExpanded';
-import { useCopyFeedback } from './useCopyFeedback';
+import { useCopyFeedback } from '@/hooks/useCopyFeedback';
 import type { AuditSort } from './types';
 
 interface AuditTableProps {

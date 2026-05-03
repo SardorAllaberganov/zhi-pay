@@ -75,6 +75,11 @@ import {
   type BlacklistAuditAction,
   type BlacklistAuditEntry,
 } from './mockBlacklist';
+import {
+  listServicesAudit,
+  type ServiceAuditAction,
+  type ServiceAuditEntry,
+} from './mockServices';
 
 // =====================================================================
 // Public types
@@ -920,6 +925,36 @@ function bridgeBlacklistAudit(e: BlacklistAuditEntry): AuditEvent {
   };
 }
 
+const SERVICE_ACTION_MAP: Record<ServiceAuditAction, AuditAction> = {
+  activate:           'status_changed',
+  enter_maintenance:  'status_changed',
+  disable:            'status_changed',
+  run_health_check:   'updated',
+};
+
+function bridgeServiceAudit(e: ServiceAuditEntry): AuditEvent {
+  return {
+    id: `bridge_service_${e.id}`,
+    timestamp: e.createdAt,
+    actorType: 'admin',
+    actor: adminFromName(e.actorName, e.actorId),
+    action: SERVICE_ACTION_MAP[e.action],
+    entity: { type: 'service', id: e.serviceId },
+    fromStatus: e.fromStatus ?? null,
+    toStatus: e.toStatus ?? null,
+    reason: e.reason || undefined,
+    context: {
+      kind: e.action,
+      service_name: e.serviceName,
+      inflight_at_change: e.inflightAtChange,
+      ...(e.acknowledgeImpact !== undefined
+        ? { acknowledge_impact: e.acknowledgeImpact }
+        : {}),
+      ...(e.context ?? {}),
+    },
+  };
+}
+
 // Bridge the canonical TRANSFER_EVENTS_FULL set — these are the
 // state-machine rows for transfers (system / provider / user-driven).
 function bridgeTransferEvents(): AuditEvent[] {
@@ -976,6 +1011,7 @@ export function listAuditEvents(): AuditEvent[] {
     ...listFxAudit().map(bridgeFxAudit),
     ...listCommissionAudit().map(bridgeCommissionAudit),
     ...listBlacklistAudit().map(bridgeBlacklistAudit),
+    ...listServicesAudit().map(bridgeServiceAudit),
   ];
   merged.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   return merged;

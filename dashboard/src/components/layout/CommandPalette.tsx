@@ -78,7 +78,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             <span>FX Config</span>
             <CommandShortcut>g f</CommandShortcut>
           </CommandItem>
-          <CommandItem onSelect={() => go('/services')}>
+          <CommandItem onSelect={() => go('/system/services')}>
             <Activity className="mr-2" />
             <span>Services & Health</span>
             <CommandShortcut>g s</CommandShortcut>
