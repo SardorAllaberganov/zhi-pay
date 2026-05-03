@@ -115,7 +115,7 @@ function StatusChipMulti({
             'inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-sm transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             active
-              ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+              ? 'border-brand-600 bg-card text-brand-700 dark:text-brand-300 shadow-sm font-medium'
               : 'border-border bg-background hover:bg-muted',
           )}
         >
@@ -147,7 +147,7 @@ function StatusChipMulti({
                 className={cn(
                   'flex items-center gap-2.5 rounded-md px-2 py-2 text-sm cursor-pointer transition-colors',
                   checked
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+                    ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 font-medium'
                     : 'hover:bg-muted',
                 )}
               >
@@ -191,7 +191,7 @@ function TypeChipMulti({
             'inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-sm transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             active
-              ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+              ? 'border-brand-600 bg-card text-brand-700 dark:text-brand-300 shadow-sm font-medium'
               : 'border-border bg-background hover:bg-muted',
           )}
         >
@@ -223,7 +223,7 @@ function TypeChipMulti({
                 className={cn(
                   'flex items-center gap-2.5 rounded-md px-2 py-2 text-sm cursor-pointer transition-colors',
                   checked
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+                    ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 font-medium'
                     : 'hover:bg-muted',
                 )}
               >
@@ -253,7 +253,7 @@ function HasExpirationToggleChip({
         'inline-flex items-center gap-2 rounded-full border px-3 h-8 text-sm transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         value
-          ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+          ? 'border-brand-600 bg-card text-brand-700 dark:text-brand-300 shadow-sm font-medium'
           : 'border-border bg-background hover:bg-muted',
       )}
       aria-pressed={value}

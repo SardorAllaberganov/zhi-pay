@@ -376,7 +376,7 @@ const ChipButton = forwardRef<HTMLButtonElement, ChipButtonProps & React.ButtonH
           'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
           active
-            ? 'border-brand-600/50 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300'
+            ? 'border-brand-600/50 bg-card text-brand-700 dark:text-brand-300 shadow-sm'
             : 'border-border bg-background text-foreground/80 hover:bg-accent',
           className,
         )}
@@ -660,7 +660,7 @@ function ToggleChip({
         'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         active
-          ? 'border-brand-600/50 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300'
+          ? 'border-brand-600/50 bg-card text-brand-700 dark:text-brand-300 shadow-sm'
           : 'border-border bg-background text-foreground/80 hover:bg-accent',
         fullWidth && 'w-full justify-center',
       )}

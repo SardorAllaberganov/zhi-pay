@@ -87,7 +87,7 @@ export function LocaleTabTextarea({
                 'inline-flex items-center gap-2 rounded-md px-3 h-9 text-sm font-medium transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 isActive
-                  ? 'bg-brand-50 text-brand-700 dark:bg-brand-700/15 dark:text-brand-300 ring-1 ring-brand-200 dark:ring-brand-700/30'
+                  ? 'bg-card text-brand-700 dark:text-brand-300 ring-1 ring-brand-300 dark:ring-brand-700/40 shadow-sm'
                   : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )}
             >

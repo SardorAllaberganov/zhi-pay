@@ -163,7 +163,7 @@ function ChipSingle<T extends string>({
             'inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-sm transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             active
-              ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+              ? 'border-brand-600 bg-card text-brand-700 dark:text-brand-300 shadow-sm font-medium'
               : 'border-border bg-background hover:bg-muted',
           )}
         >
@@ -183,7 +183,7 @@ function ChipSingle<T extends string>({
                 className={cn(
                   'flex w-full items-center justify-between rounded-md px-2 py-2 text-sm cursor-pointer transition-colors',
                   checked
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+                    ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 font-medium'
                     : 'hover:bg-muted',
                 )}
               >
@@ -234,7 +234,7 @@ function ChipMulti({ label, values, options, onChange }: ChipMultiProps) {
             'inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-sm transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             active
-              ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+              ? 'border-brand-600 bg-card text-brand-700 dark:text-brand-300 shadow-sm font-medium'
               : 'border-border bg-background hover:bg-muted',
           )}
         >
@@ -266,7 +266,7 @@ function ChipMulti({ label, values, options, onChange }: ChipMultiProps) {
                 className={cn(
                   'flex items-center gap-2.5 rounded-md px-2 py-2 text-sm cursor-pointer transition-colors',
                   checked
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+                    ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 font-medium'
                     : 'hover:bg-muted',
                 )}
               >
@@ -307,7 +307,7 @@ function DateRangeChip({
             'inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-sm transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             active
-              ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium rounded-r-none border-r-0'
+              ? 'border-brand-600 bg-card text-brand-700 dark:text-brand-300 shadow-sm font-medium rounded-r-none border-r-0'
               : 'border-border bg-background hover:bg-muted',
           )}
         >

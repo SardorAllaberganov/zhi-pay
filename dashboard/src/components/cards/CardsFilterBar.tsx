@@ -55,7 +55,7 @@ export function CardsFilterBar({
 
   if (loading) {
     return (
-      <div className="space-y-3">
+      <div className="rounded-md border border-border bg-card px-3 py-3 space-y-3">
         <Skeleton className="h-10 w-full" />
         <div className="flex flex-wrap items-center gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -67,7 +67,7 @@ export function CardsFilterBar({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="rounded-md border border-border bg-card px-3 py-3 space-y-3">
       <div className="relative">
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
@@ -80,7 +80,7 @@ export function CardsFilterBar({
           onChange={(e) => onSearchInput(e.target.value)}
           placeholder={t('admin.cards.search-placeholder')}
           aria-label={t('admin.cards.search-placeholder')}
-          className="pl-9 h-10 bg-card text-sm shadow-sm"
+          className="pl-9 h-10 bg-background text-sm shadow-sm"
         />
       </div>
 
@@ -204,7 +204,7 @@ function ChipMulti<T extends string>({
             'inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-sm transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             active
-              ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+              ? 'border-brand-600 bg-card text-brand-700 dark:text-brand-300 shadow-sm font-medium'
               : 'border-border bg-background hover:bg-muted',
           )}
         >
@@ -244,7 +244,7 @@ function ChipMulti<T extends string>({
                   className={cn(
                     'flex items-center gap-2.5 rounded-md px-2 py-2 text-sm cursor-pointer transition-colors',
                     checked
-                      ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+                      ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 font-medium'
                       : 'hover:bg-muted',
                   )}
                 >
@@ -299,7 +299,7 @@ function SearchableOptions<T extends string>({
                 className={cn(
                   'flex items-center gap-2.5 rounded-md px-2 py-2 text-sm cursor-pointer transition-colors',
                   checked
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+                    ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300 font-medium'
                     : 'hover:bg-muted',
                 )}
               >
@@ -344,7 +344,7 @@ function LastUsedChip({ value, onChange }: LastUsedChipProps) {
           'inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-sm transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
           active
-            ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-medium'
+            ? 'border-brand-600 bg-card text-brand-700 dark:text-brand-300 shadow-sm font-medium'
             : 'border-border bg-background hover:bg-muted',
         )}
       >
@@ -398,7 +398,7 @@ function ToggleChip({ active, label, onClick }: ToggleChipProps) {
         'inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-sm transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         active
-          ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300'
+          ? 'border-brand-600 bg-card text-brand-700 dark:text-brand-300 shadow-sm'
           : 'border-border bg-background hover:bg-muted',
       )}
     >
