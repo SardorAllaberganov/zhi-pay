@@ -40,6 +40,7 @@ const ENTITY_TYPE_OPTIONS: AuditEntityType[] = [
   'commission',
   'service',
   'app_version',
+  'story',
   'notification',
 ];
 

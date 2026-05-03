@@ -83,7 +83,7 @@ const SECTIONS: NavSection[] = [
   {
     titleKey: 'admin.nav.section.content',
     items: [
-      { to: '/stories', labelKey: 'admin.nav.stories', icon: Image },
+      { to: '/content/stories', labelKey: 'admin.nav.stories', icon: Image },
       { to: '/news', labelKey: 'admin.nav.news', icon: Newspaper },
       { to: '/notifications', labelKey: 'admin.nav.notifications', icon: Bell },
     ],

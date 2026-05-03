@@ -10,6 +10,7 @@ import {
   Activity,
   Smartphone,
   AlertCircle,
+  Image as ImageIcon,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -94,6 +95,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             <AlertCircle className="mr-2" />
             <span>Error Codes</span>
             <CommandShortcut>g e</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/content/stories')}>
+            <ImageIcon className="mr-2" />
+            <span>Stories</span>
+            <CommandShortcut>g y</CommandShortcut>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />

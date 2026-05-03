@@ -24,10 +24,11 @@ import { KycTiers } from '@/pages/KycTiers';
 import { Services } from '@/pages/Services';
 import { AppVersions } from '@/pages/AppVersions';
 import { ErrorCodes } from '@/pages/ErrorCodes';
+import { Stories } from '@/pages/Stories';
+import { StoryEditor } from '@/pages/StoryEditor';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES = [
-  '/stories',
   '/news',
   '/notifications',
 ];
@@ -97,6 +98,11 @@ export function Router() {
         {/* System — Error Codes (read-only catalog) */}
         <Route path="/system/error-codes" element={<ErrorCodes />} />
 
+        {/* Content — Stories (CMS) */}
+        <Route path="/content/stories" element={<Stories />} />
+        <Route path="/content/stories/new" element={<StoryEditor />} />
+        <Route path="/content/stories/:id" element={<StoryEditor />} />
+
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
         <Route
@@ -123,6 +129,9 @@ export function Router() {
         <Route path="/services/:id" element={<Navigate to="/system/services" replace />} />
         <Route path="/app-versions" element={<RedirectPreservingQuery to="/system/app-versions" />} />
         <Route path="/error-codes" element={<RedirectPreservingQuery to="/system/error-codes" />} />
+        <Route path="/stories" element={<Navigate to="/content/stories" replace />} />
+        <Route path="/stories/new" element={<Navigate to="/content/stories/new" replace />} />
+        <Route path="/stories/:id" element={<Navigate to="/content/stories" replace />} />
 
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />

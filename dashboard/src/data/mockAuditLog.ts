@@ -85,6 +85,11 @@ import {
   type AppVersionAuditAction,
   type AppVersionAuditEntry,
 } from './mockAppVersions';
+import {
+  listStoriesAudit,
+  type StoryAuditAction,
+  type StoryAuditEntry,
+} from './mockStories';
 
 // =====================================================================
 // Public types
@@ -103,6 +108,7 @@ export type AuditEntityType =
   | 'commission'
   | 'service'
   | 'app_version'
+  | 'story'
   | 'notification';
 
 export type AuditAction =
@@ -965,6 +971,43 @@ const APP_VERSION_ACTION_MAP: Record<AppVersionAuditAction, AuditAction> = {
   edit: 'updated',
 };
 
+const STORY_ACTION_MAP: Record<StoryAuditAction, AuditAction> = {
+  add: 'created',
+  edit: 'updated',
+  publish: 'status_changed',
+  unpublish: 'status_changed',
+  reorder: 'updated',
+  delete: 'deleted',
+};
+
+function bridgeStoryAudit(e: StoryAuditEntry): AuditEvent {
+  return {
+    id: `bridge_story_${e.id}`,
+    timestamp: e.createdAt,
+    actorType: 'admin',
+    actor: adminFromName(e.actorName, e.actorId),
+    action: STORY_ACTION_MAP[e.action],
+    entity: { type: 'story', id: e.storyId },
+    fromStatus: e.action === 'publish' ? 'draft' : e.action === 'unpublish' ? 'published' : null,
+    toStatus: e.action === 'publish'
+      ? (e.snapshot.publishedAt && e.snapshot.publishedAt.getTime() > Date.now() ? 'scheduled' : 'published')
+      : e.action === 'unpublish'
+        ? 'draft'
+        : null,
+    reason: e.reason || undefined,
+    context: {
+      kind: e.action,
+      title_en: e.snapshot.titleEn,
+      type: e.snapshot.type,
+      display_order: e.snapshot.displayOrder,
+      is_published: e.snapshot.isPublished,
+      ...(e.snapshot.publishedAt ? { published_at: e.snapshot.publishedAt.toISOString() } : {}),
+      ...(e.snapshot.expiresAt ? { expires_at: e.snapshot.expiresAt.toISOString() } : {}),
+      ...(e.previous ? { previous: e.previous } : {}),
+    },
+  };
+}
+
 function bridgeAppVersionAudit(e: AppVersionAuditEntry): AuditEvent {
   return {
     id: `bridge_app_version_${e.id}`,
@@ -1046,6 +1089,7 @@ export function listAuditEvents(): AuditEvent[] {
     ...listBlacklistAudit().map(bridgeBlacklistAudit),
     ...listServicesAudit().map(bridgeServiceAudit),
     ...listAppVersionsAudit().map(bridgeAppVersionAudit),
+    ...listStoriesAudit().map(bridgeStoryAudit),
   ];
   merged.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   return merged;

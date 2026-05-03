@@ -25,6 +25,7 @@ const ENTITY_LINK: Partial<Record<AuditEvent['entity']['type'], (id: string) => 
   commission: (_id) => '/finance/commissions',
   aml: (id) => (id.startsWith('aml_seed') ? null : `/operations/aml-triage/${id}`),
   kyc: (id) => (id.startsWith('kyc_seed') ? null : `/operations/kyc-queue/${id}`),
+  story: (id) => `/content/stories/${id}`,
 };
 
 export function AuditRowExpanded({ event, onScopeToEntity }: AuditRowExpandedProps) {

@@ -36,6 +36,8 @@ const EN: Record<string, string> = {
   'common.actions.search': 'Search transfers, users, cards…',
   'common.actions.cancel': 'Cancel',
   'common.actions.confirm': 'Confirm',
+  'common.actions.copy': 'Copy',
+  'common.actions.copied': 'Copied',
   'common.actions.approve': 'Approve',
   'common.actions.reject': 'Reject',
   'common.actions.escalate': 'Escalate',
@@ -1914,6 +1916,7 @@ const EN: Record<string, string> = {
   'admin.audit-log.entity-type.commission': 'Commission rule',
   'admin.audit-log.entity-type.service': 'Service',
   'admin.audit-log.entity-type.app_version': 'App version',
+  'admin.audit-log.entity-type.story': 'Story',
   'admin.audit-log.entity-type.notification': 'Notification',
 
   // Action labels (12 spec values)
@@ -2562,6 +2565,261 @@ const EN: Record<string, string> = {
   'admin.error-codes.empty.no-data.title': 'No error codes loaded',
   'admin.error-codes.empty.no-data.body':
     'Check the deployment seed — error codes should always be present.',
+
+  // ===== Stories ===========================================================
+  'admin.stories.title': 'Stories',
+  'admin.stories.subtitle.counts':
+    '{published} published · {scheduled} scheduled · {draft} draft · {expired} expired',
+  'admin.stories.action.new': 'New story',
+
+  // Filter bar
+  'admin.stories.filter.status': 'Status',
+  'admin.stories.filter.type': 'Type',
+  'admin.stories.filter.has-expiration': 'Has expiration',
+  'admin.stories.filter.clear-all': 'Clear all',
+
+  // Sort dropdown
+  'admin.stories.sort.display-order': 'Display order',
+  'admin.stories.sort.created': 'Created',
+  'admin.stories.sort.expiring': 'Expiring soon',
+
+  // Status enum
+  'admin.stories.status.published': 'Published',
+  'admin.stories.status.scheduled': 'Scheduled',
+  'admin.stories.status.draft': 'Draft',
+  'admin.stories.status.expired': 'Expired',
+
+  // Type enum
+  'admin.stories.type.image': 'Image',
+  'admin.stories.type.video': 'Video',
+
+  // Story card
+  'admin.stories.card.drag-handle': 'Drag to reorder',
+  'admin.stories.card.actions': 'Story actions',
+  'admin.stories.card.edit-link': 'Edit →',
+  'admin.stories.card.scheduled-in': 'Scheduled · {rel}',
+  'admin.stories.card.expires-in': 'Expires {rel}',
+  'admin.stories.card.no-expiry': 'No expiration set',
+  'admin.stories.card.draft-meta': 'Not yet published',
+  'admin.stories.card.menu.edit': 'Edit',
+  'admin.stories.card.menu.publish-now': 'Publish now',
+  'admin.stories.card.menu.delete': 'Delete',
+
+  // Editor — page chrome
+  'admin.stories.editor.title.new': 'New story',
+  'admin.stories.editor.title.edit': 'Edit story',
+  'admin.stories.editor.back-link': 'Back to stories',
+  'admin.stories.editor.not-found.title': 'Story not found',
+  'admin.stories.editor.not-found.body':
+    'No story matches id "{id}". It may have been deleted.',
+  'admin.stories.editor.action.back-to-list': 'Back to stories',
+  'admin.stories.editor.action.back': 'Back',
+  'admin.stories.editor.action.save-draft': 'Save as draft',
+  'admin.stories.editor.action.publish': 'Publish',
+  'admin.stories.editor.action.update': 'Update',
+  'admin.stories.editor.action.schedule': 'Schedule',
+
+  // Editor — sections
+  'admin.stories.editor.section.media': 'Media',
+  'admin.stories.editor.section.media-subtitle':
+    'Pick a type and provide the media URL — image cover or video first frame.',
+  'admin.stories.editor.section.titles': 'Title',
+  'admin.stories.editor.section.titles-subtitle':
+    'All three locales are required before publish.',
+  'admin.stories.editor.section.display-order': 'Display order',
+  'admin.stories.editor.section.display-order-subtitle':
+    'Slot in the mobile carousel. Unique among published stories.',
+  'admin.stories.editor.section.cta': 'Call to action',
+  'admin.stories.editor.section.cta-subtitle':
+    'Optional. When enabled, all three locale labels and a deep-link target are required.',
+  'admin.stories.editor.section.schedule': 'Schedule',
+  'admin.stories.editor.section.schedule-subtitle':
+    'Leave both empty to publish now with no expiry. Set publish-at in the future to schedule.',
+  'admin.stories.editor.section.reason': 'Reason note',
+  'admin.stories.editor.section.reason-subtitle':
+    'Required for edits — at least 20 characters.',
+
+  // Editor — type radio cards
+  'admin.stories.editor.type-label': 'Type',
+  'admin.stories.editor.type.image.description': 'Static cover image',
+  'admin.stories.editor.type.video.description': 'Auto-playing short video',
+
+  // Editor — fields
+  'admin.stories.editor.media-url': 'Media URL',
+  'admin.stories.editor.media-url.placeholder-image':
+    'https://cdn.zhipay.uz/stories/cover.jpg',
+  'admin.stories.editor.media-url.placeholder-video':
+    'https://cdn.zhipay.uz/stories/cover.mp4',
+
+  // Editor — locale tab strips
+  'admin.stories.editor.titles-locale-strip': 'Title locale',
+  'admin.stories.editor.cta-locale-strip': 'CTA label locale',
+
+  // Editor — title placeholders per locale
+  'admin.stories.editor.title-placeholder.uz':
+    'O‘zbek tilida sarlavha (masalan, "Kartani 30 soniyada qo‘shing")',
+  'admin.stories.editor.title-placeholder.ru':
+    'Заголовок на русском (например, «Привяжите карту за 30 секунд»)',
+  'admin.stories.editor.title-placeholder.en':
+    'English title (e.g. "Add a card in 30 seconds")',
+
+  // Editor — display order
+  'admin.stories.editor.display-order': 'Display order',
+  'admin.stories.editor.display-order-suggested':
+    'Next available slot: #{n}. Other slots are valid — published rows shift.',
+
+  // Editor — CTA
+  'admin.stories.editor.cta.enable': 'Enable CTA',
+  'admin.stories.editor.cta.label-locale': 'Button label per locale',
+  'admin.stories.editor.cta-label-placeholder.uz': 'CTA matni',
+  'admin.stories.editor.cta-label-placeholder.ru': 'Текст кнопки',
+  'admin.stories.editor.cta-label-placeholder.en': 'CTA label',
+  'admin.stories.editor.cta.deep-link': 'Deep link target',
+  'admin.stories.editor.cta.screen-label': 'Screen',
+  'admin.stories.editor.cta.params-label': 'Params (JSON)',
+  'admin.stories.editor.cta.params-aria': 'Deep link params, JSON object',
+  'admin.stories.editor.cta.params-error-invalid':
+    'Params must be valid JSON. Wrap keys + string values in quotes.',
+  'admin.stories.editor.cta.params-error-shape':
+    'Params must be a JSON object (not an array or primitive).',
+  'admin.stories.editor.cta.preview-label': 'Preview deep link',
+
+  // Editor — schedule
+  'admin.stories.editor.schedule.publish-at': 'Publish at',
+  'admin.stories.editor.schedule.publish-at-hint':
+    'Leave empty to publish immediately when you hit Publish. Future date schedules.',
+  'admin.stories.editor.schedule.expires-at': 'Expires at',
+  'admin.stories.editor.schedule.expires-at-hint':
+    'Optional. After this time the story falls out of the carousel.',
+  'admin.stories.editor.is-published': 'Is published',
+
+  // Editor — reason note
+  'admin.stories.editor.reason-placeholder':
+    'Why this change? (≥ 20 chars — visible in the audit log)',
+  'admin.stories.editor.reason-hint': 'Reason ≥ 20 characters required.',
+  'admin.stories.editor.reason-fallback-draft': 'Reverted to draft from editor save',
+  'admin.stories.editor.reason-fallback-unpublish':
+    'Reverted to draft from editor save (no longer visible to users)',
+
+  // Editor — preview pane
+  'admin.stories.editor.preview.title': 'Preview',
+  'admin.stories.editor.preview.subtitle': 'How users will see this story.',
+  'admin.stories.editor.preview.locale-switcher': 'Preview locale',
+  'admin.stories.editor.preview.button': 'Preview',
+  'admin.stories.editor.preview.open-mobile': 'Open story preview',
+
+  // Editor — confirm dialogs
+  'admin.stories.editor.confirm.publish-now.title': 'Publish story now?',
+  'admin.stories.editor.confirm.publish-now.body':
+    'It will become visible in the mobile carousel immediately.',
+  'admin.stories.editor.confirm.publish-now.cta': 'Publish now',
+  'admin.stories.editor.confirm.schedule.title': 'Schedule this story?',
+  'admin.stories.editor.confirm.schedule.body':
+    'It will go live at {when} and stay until the expiry, if set.',
+  'admin.stories.editor.confirm.schedule.cta': 'Schedule',
+  'admin.stories.editor.confirm.update.title': 'Apply update?',
+  'admin.stories.editor.confirm.update.body':
+    'Changes apply immediately. The reason note will be recorded in the audit log.',
+  'admin.stories.editor.confirm.update.cta': 'Update',
+
+  // Editor — toasts
+  'admin.stories.editor.toast.created-draft': '"{title}" saved as draft',
+  'admin.stories.editor.toast.created-published': '"{title}" is live',
+  'admin.stories.editor.toast.updated': 'Story updated',
+  'admin.stories.editor.toast.updated-published': 'Story updated and published',
+  'admin.stories.editor.toast.save-failed': 'Could not save the story. Please try again.',
+
+  // Editor — validation
+  'admin.stories.editor.validation.media-required': 'Media URL is required.',
+  'admin.stories.editor.validation.media-invalid':
+    'Media URL must start with http:// or https://',
+  'admin.stories.editor.validation.titles-required':
+    'All three locale titles are required.',
+  'admin.stories.editor.validation.cta-labels-required':
+    'All three locale labels are required when CTA is enabled.',
+  'admin.stories.editor.validation.expires-after-publish':
+    'Expires at must be after the publish time.',
+  'admin.stories.editor.validation.display-order-integer':
+    'Display order must be a non-negative integer.',
+  'admin.stories.editor.validation.reason-short':
+    'Reason note must be at least 20 characters.',
+
+  // Reorder dialog
+  'admin.stories.reorder.title': 'Reorder published story?',
+  'admin.stories.reorder.body':
+    'Move "{title}" to a new slot. Other published stories will shift.',
+  'admin.stories.reorder.from': 'From',
+  'admin.stories.reorder.to': 'To',
+  'admin.stories.reorder.reason-label': 'Reason',
+  'admin.stories.reorder.reason-placeholder': 'Why is this story being reordered? (≥ 20 chars)',
+  'admin.stories.reorder.reason-hint': 'Reason ≥ 20 characters required.',
+  'admin.stories.reorder.confirm': 'Confirm reorder',
+  'admin.stories.reorder.toast.success': 'Display order updated.',
+  'admin.stories.reorder.toast.failed': 'Could not reorder the story.',
+
+  // Delete dialog
+  'admin.stories.delete.title': 'Delete story?',
+  'admin.stories.delete.body':
+    'About to delete "{title}". This action is recorded in the audit log.',
+  'admin.stories.delete.warning':
+    'Hard delete — the story is removed for good. Audit log retains a snapshot.',
+  'admin.stories.delete.reason-label': 'Reason',
+  'admin.stories.delete.reason-placeholder': 'Why are you deleting this story? (≥ 20 chars)',
+  'admin.stories.delete.reason-hint': 'Reason ≥ 20 characters required.',
+  'admin.stories.delete.confirm-cta': 'Delete story',
+  'admin.stories.delete.confirm-title': 'Are you sure?',
+  'admin.stories.delete.confirm-body':
+    'This permanently removes "{title}". This cannot be undone.',
+  'admin.stories.delete.confirm-accept': 'Yes, delete',
+  'admin.stories.delete.toast.success': 'Deleted "{title}"',
+  'admin.stories.delete.toast.failed': 'Could not delete the story.',
+
+  // Publish-now dialog (from card kebab)
+  'admin.stories.publish-now.title': 'Publish "{title}" now?',
+  'admin.stories.publish-now.body':
+    'It will become visible in the mobile carousel immediately, overriding any scheduled publish time.',
+  'admin.stories.publish-now.confirm': 'Publish now',
+  'admin.stories.publish-now.toast.success': '"{title}" is live',
+  'admin.stories.publish-now.toast.failed': 'Could not publish the story.',
+
+  // Empty states
+  'admin.stories.empty.title': 'No stories yet',
+  'admin.stories.empty.body':
+    'Stories appear in the mobile app carousel. Create your first one to get started.',
+  'admin.stories.empty.cta': 'Create your first',
+  'admin.stories.empty.filtered-title': 'No stories match',
+  'admin.stories.empty.filtered-body':
+    'Try removing one or more filters to see more results.',
+
+  // Phone preview
+  'admin.stories.preview.title-fallback': 'Untitled story',
+  'admin.stories.preview.close': 'Close',
+
+  // Deep-link screen taxonomy
+  'admin.deep-link.screen.home': 'Home',
+  'admin.deep-link.screen.send-money': 'Send money',
+  'admin.deep-link.screen.history': 'History',
+  'admin.deep-link.screen.profile': 'Profile',
+  'admin.deep-link.screen.kyc': 'KYC verification',
+  'admin.deep-link.screen.transfer-detail': 'Transfer detail',
+  'admin.deep-link.screen.news': 'News article',
+  'admin.deep-link.screen.story': 'Another story',
+  'admin.deep-link.params-hint.home':
+    'No params expected for home. Leave the object empty.',
+  'admin.deep-link.params-hint.send-money':
+    'Optional: { "destination": "alipay" | "wechat", "mode": "single" | "bulk" }',
+  'admin.deep-link.params-hint.history':
+    'Optional: { "filter": "completed" | "failed" } to pre-filter the history feed.',
+  'admin.deep-link.params-hint.profile':
+    'Optional: { "section": "cards" | "recipients" | "referrals" } to deep-link inside profile.',
+  'admin.deep-link.params-hint.kyc':
+    'Optional: { "step": "phone" | "myid" } to jump to a step.',
+  'admin.deep-link.params-hint.transfer-detail':
+    'Required: { "transfer_id": "tx_…" }',
+  'admin.deep-link.params-hint.news':
+    'Required: { "id": "news_…" } to surface the specific article.',
+  'admin.deep-link.params-hint.story':
+    'Required: { "id": "story_…" } to open a specific story.',
 };
 
 /**
