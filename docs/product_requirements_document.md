@@ -129,6 +129,7 @@ The v1 feature surface, grouped by domain:
 | 12| Transfer receipt PDF export      | P2       | tier_1+            |
 | 13| Admin push notification composer | P0       | — (admin surface)  |
 | 14| Admin sign-in (email + password) | P0       | — (admin surface)  |
+| 15| Admin profile & settings         | P0       | — (admin surface)  |
 
 > Feature 13 is the admin-side surface at `/content/notifications` that authors push notifications targeting users (broadcast / segment / single). Multi-locale (uz/ru/en), schedulable, audit-trailed. Compliance-typed sends require typed-confirm and bypass user notification preferences. See [`docs/mermaid_schemas/notification_send_state_machine.md`](./mermaid_schemas/notification_send_state_machine.md) for the send lifecycle. Acceptance criteria:
 >
@@ -196,6 +197,49 @@ The v1 feature surface, grouped by domain:
 >
 > GIVEN passwords
 > THEN  these MUST NEVER appear in admin_login_audit.context, server logs, or client console
+> ```
+
+> Feature 15 is the admin profile & settings surface at `/settings` — a single page with five tabbed sections (Profile · Security · Sessions · Preferences · My audit). Reachable from the TopBar avatar dropdown ("Settings"). Identity edits, password rotation, multi-device session management, and cosmetic / locale / notification preferences live here. **Email and role are read-only** (out-of-band changes only). **No 2FA card** — admin auth is email + password only per Feature 14. **Audit writes** for profile / password / session events route to `admin_login_audit` (preserving the Phase 20 separation between auth events and entity-state-change events) — see [`models.md §10.9`](./models.md#109-settings-audit-events). **My audit** tab reads from the central audit log filtered by `actor.id = current admin id`. Acceptance criteria:
+>
+> ```
+> GIVEN admin authenticated AND on /settings
+> WHEN  admin edits display_name and/or phone in Profile tab
+> THEN  Save button enabled only after change
+> AND   on submit, AlertDialog requires reason note ≥ 10 chars (name change is logged)
+> AND   on confirm, admin_users row updated AND admin_login_audit row written
+>       WITH event_type='profile_changed', context.fields=[…], context.previous={…}, context.reason
+>
+> GIVEN admin clicks "Change password" in Security tab
+> WHEN  current + new (≥12 chars, mixed case, number, symbol) + confirm match
+> THEN  AlertDialog warns "Change password? You will be signed out of all other sessions."
+> AND   on confirm, password_hash rotated, last_password_changed_at = now()
+> AND   all other admin_sessions rows revoked (revoked_at = now())
+> AND   admin_login_audit row written WITH event_type='password_changed',
+>       context.signed_out_other_sessions = N
+> AND   passwords NEVER appear in admin_login_audit.context
+>
+> GIVEN multiple active admin_sessions for the current admin
+> WHEN  admin clicks Revoke on a non-current session
+> THEN  AlertDialog confirms; on submit, that row's revoked_at = now()
+> AND   admin_login_audit row written WITH event_type='session_revoked',
+>       context.session_id, context.ip_address, context.user_agent
+> AND   the current session row's Revoke button stays disabled (admin must use TopBar Sign out)
+>
+> GIVEN admin clicks "Revoke all other sessions"
+> THEN  AlertDialog confirms "Sign out of all other devices? You'll stay signed in here."
+> AND   every non-current session row revoked
+> AND   ONE admin_login_audit row written WITH event_type='session_revoked_all', context.count = N
+>
+> GIVEN admin toggles Theme / Density / Tabular numerals in Preferences tab
+> THEN  CSS hook applied immediately (no Save), preferences jsonb updated
+> AND   NO audit row written (cosmetic; not security-relevant)
+>
+> GIVEN admin opens "My audit" tab
+> THEN  view = central audit log filtered to actor.id = current admin id
+> AND   quick stat row shows {N} actions in last 24h · {M} in last 7 days
+> AND   auth events (profile / password / session) do NOT appear here
+>       — they live in admin_login_audit, surfaced separately if a future
+>       /compliance/admin-login-audit page is built
 > ```
 
 ---

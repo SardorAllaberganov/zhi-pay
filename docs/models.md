@@ -652,7 +652,7 @@ erDiagram
 | `platform`          | `ios`, `android`                                                        | `user_devices`, `app_versions`         |
 | `admin_role`        | `super_admin`, `ops`, `compliance`, `finance`, `engineering`            | `admin_users`                          |
 | `admin_account_status` | `active`, `disabled`, `pending`                                      | `admin_users`                          |
-| `admin_login_event` | `signin_success`, `signin_failed_credentials`, `signin_rate_limited`, `signin_account_disabled`, `session_expired`, `signout` | `admin_login_audit` |
+| `admin_login_event` | `signin_success`, `signin_failed_credentials`, `signin_rate_limited`, `signin_account_disabled`, `session_expired`, `signout`, `profile_changed`, `password_changed`, `session_revoked`, `session_revoked_all` | `admin_login_audit` |
 
 ### 9.2 Indexing recommendations
 
@@ -729,12 +729,16 @@ erDiagram
     string email UK "case-insensitive uniqueness"
     string password_hash "bcrypt or argon2 — NEVER plaintext"
     string display_name "shown in TopBar / audit-log actor cells"
+    string phone "nullable — emergency contact only, never used for auth"
     enum role "super_admin|ops|compliance|finance|engineering"
     enum account_status "active|disabled|pending"
     integer failed_login_attempts "rolling counter; reset on success"
     timestamp locked_until "nullable — drives AUTH_RATE_LIMITED while > now()"
     timestamp last_signed_in_at "nullable until first success"
-    string preferred_language "uz|ru|en — drives admin-surface locale"
+    timestamp last_password_changed_at "nullable — set on every password rotation; drives the >90d staleness warning in /settings"
+    string recovery_contact "nullable — out-of-band recovery channel (super-admin or Anthropic operator). v1: read-only, surfaced in /settings"
+    string preferred_language "uz|ru|en — admin-surface locale; mirrors preferences.language"
+    jsonb preferences "see §10.8 — cosmetic display + locale + notification subscriptions"
     timestamp created_at
     timestamp disabled_at "nullable; set when account_status moved to disabled"
     string disabled_reason "nullable; required when account_status=disabled"
@@ -769,12 +773,15 @@ erDiagram
 
 | field | semantic |
 |---|---|
-| `email` | Lowercase-canonical and unique. Sign-in form normalizes to lowercase before lookup. |
+| `email` | Lowercase-canonical and unique. Sign-in form normalizes to lowercase before lookup. **Never editable from `/settings`** — the email is the credential identifier; rotation requires out-of-band reissue by a super-admin. |
 | `password_hash` | argon2id (preferred) or bcrypt cost ≥ 12. The verifier rejects empty, NULL, or any value < 60 chars. |
-| `role` | Coarse-grained — fine-grained permissions live in a separate `admin_role_permissions` table not specified in this phase. |
+| `phone` | Optional emergency contact (tel-format, normalized E.164). **NOT used for authentication** — the admin surface has no SMS-OTP path. Surfaced in `/settings` Profile tab; editable by the admin themselves. |
+| `role` | Coarse-grained — fine-grained permissions live in a separate `admin_role_permissions` table not specified in this phase. **Never editable from `/settings`** — role transitions require out-of-band approval (super-admin can edit other admins' roles in a future admin-management surface; not in v1). |
 | `account_status` | `active` = can sign in. `disabled` = sign-in returns `AUTH_ACCOUNT_DISABLED` regardless of password correctness. `pending` = invited but not yet claimed (future flow). |
 | `failed_login_attempts` | Increments on `signin_failed_credentials`. Resets to 0 on `signin_success`. When ≥ threshold (5), `locked_until` is set to `now() + 15min`. |
 | `locked_until` | When > `now()`, every sign-in attempt for this email returns `AUTH_RATE_LIMITED`. |
+| `last_password_changed_at` | Set every time the admin rotates their password via `/settings` Security tab (or via out-of-band reset by a super-admin). Drives the "Last changed Nd ago" line in the Password card; ≥ 90 days surfaces in danger-tinted text as a soft staleness warning. |
+| `recovery_contact` | Out-of-band recovery channel — super-admin email or Anthropic-operator handle. **Read-only in v1** — populated at provisioning time; the `/settings` Recovery card displays a calm "not available in v1, contact a super-admin out-of-band" message rather than offering a self-service edit. Future v1.1 may allow self-edit with confirmation. |
 | `disabled_reason` | Required free-text when account_status flipped to disabled. Surfaces to the affected admin via support. |
 
 ### 10.3 Field reference — `admin_sessions`
@@ -815,3 +822,46 @@ See [`mermaid_schemas/admin_signin_flow.md`](./mermaid_schemas/admin_signin_flow
 - **Idle timeout is client + server.** Client-side idle timer fires the redirect; server-side also stamps `last_seen_at` and rejects expired sessions even if the client clock disagrees.
 - **TLS-only.** Sign-in requests over plain HTTP are rejected at the edge; the surface assumes HTTPS and surfaces a `Secure` chip where confidence is needed.
 - **Out-of-band password reset.** The "Forgot password?" affordance opens a modal directing the user to contact a super-admin — there is no self-service reset, by design (compliance posture).
+
+### 10.8 `admin_users.preferences` jsonb shape
+
+Cosmetic + locale + notification-subscription preferences for the `/settings` Preferences tab. Stored as a single jsonb column on `admin_users` (rather than a separate `admin_preferences` table) since rows are 1:1 with the admin and the schema is small.
+
+```jsonc
+{
+  "theme": "light" | "dark" | "system",            // default: "system"
+  "density": "compact" | "comfortable",            // default: "compact" (admin-density default)
+  "language": "uz" | "ru" | "en",                  // mirrors admin_users.preferred_language
+  "timezone": string,                               // IANA, e.g. "Asia/Tashkent" — default: browser-detected
+  "date_format": "iso" | "eu" | "us",              // iso=2026-04-28 / eu=28.04.2026 / us=Apr 28, 2026
+  "time_format": "12h" | "24h",                    // default per language (uz/ru → 24h; en → 12h)
+  "tabular_numerals": boolean,                      // default: true
+  "notification_subscriptions": {
+    "aml_critical":     boolean,  // critical AML flag opened — default: true
+    "sanctions_hit":    boolean,  // sanctions hit detected — default: true
+    "service_offline":  boolean,  // a service goes offline — default: true (ops/eng), false otherwise
+    "fx_stale":         boolean,  // FX rate goes stale — default: true (finance), false otherwise
+    "daily_digest":     boolean,  // daily ops summary email — default: false
+    "failed_signin":    boolean   // failed sign-in attempt against my account — default: true
+  }
+}
+```
+
+- **Theme + density apply live** — no save button; the Settings UI persists each change immediately and applies a CSS hook (`<html data-density="…">` + class on root) so the surface re-renders without a page reload.
+- **Language is `en`-only in v1** (per the i18n stub state); `uz` and `ru` render as "Coming soon" pills in the radio group.
+- **Date / time / timezone preferences are persisted in v1** but full rollout to date-formatting helpers across the app is staged — the Settings tab surfaces an inline note. Sessions tab + sign-in history table within Settings respect the prefs end-to-end as a contract demo.
+- **Notification subscriptions** are persisted but the actual delivery wiring (email / push to admin) is out-of-scope for v1 — the toggles document intent only.
+- **Preferences changes are NOT audited** (purely cosmetic; not security-relevant). All other Settings actions ARE audited — see §10.9.
+
+### 10.9 `/settings` audit events
+
+`/settings` actions write to **`admin_login_audit`** (not the central `mockAuditLog`) — preserving the Phase 20 separation between auth/identity events and entity-state-change events. Four new `admin_login_event` enum values cover the surface:
+
+| event_type | written when | context jsonb shape |
+|---|---|---|
+| `profile_changed` | Admin edits `display_name` and/or `phone` from Profile tab. | `{ fields: ["display_name" \| "phone", ...], previous: {…}, reason: string (≥10 chars) }` |
+| `password_changed` | Admin rotates their own password via Security tab → Change password. | `{ signed_out_other_sessions: number }` (count of other sessions revoked as a side-effect; `password_hash` and plaintext NEVER appear) |
+| `session_revoked` | Admin revokes a single non-current session from Sessions tab. | `{ session_id: uuid, ip_address: string, user_agent: string }` |
+| `session_revoked_all` | Admin revokes all non-current sessions via "Revoke all other sessions". | `{ count: number }` |
+
+**Why not the central audit log?** Auth/identity events would drown the entity-state-change signal compliance reviewers are scanning for in `/compliance/audit-log`. The "My audit" tab inside `/settings` reads from the central log filtered by `actor.id = current admin id` — surfacing entity-state-change actions the admin took (KYC approvals, transfer reversals, FX edits, etc.). Auth events stay in their own forensic stream.
