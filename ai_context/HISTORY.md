@@ -4,6 +4,71 @@
 
 ---
 
+### 2026-05-03 — Admin Stories (Phase 17) — `/content/stories` · drag-to-reorder card-grid CMS · 12-record uz/ru/en seed · schema cascade (`published_at` + per-locale CTA split + partial unique index) · `LocaleTabTextarea` lifted to shared · `@dnd-kit/*` added · 8-screen deep-link taxonomy · `Switch` + `Select` primitives added
+
+- **Summary**: Built the Stories CMS — first surface under `/content/*`. Card-grid w/ drag-to-reorder for the published group, multi-locale (uz/ru/en) titles + CTA labels, scheduled publish via `published_at`, optional `expires_at`, and a full-page editor with phone-mockup live preview. **`mockStories.ts` is single source of truth** — 12 deterministic records (4 published / 4 scheduled / 4 drafts) seeded from the spec's themes (Add card 30s · Lower fees · WeChat 30s · MyID · Navruz · Rate-lock · Save recipients · Refer a friend · Trader bulk-send · Welcome · Default card · Ramazan rates). Status is **derived**, not stored — 4-value enum (`draft / scheduled / published / expired`) computed from `is_published × published_at × expires_at`. `display_order` is **unique among published rows only** (matches the new partial unique index in §9.2). Per-locale fields hand-authored as natural translations rather than transliterations.
+
+  **Decision deviations from the literal spec** (each flagged in the proposal and confirmed before implementation):
+  - **D1 — Schema cascade applied** (`docs/models.md` §8 STORIES): added `published_at timestamptz` (was missing — schema only had `is_published` boolean), split singular `cta jsonb {label, deep_link}` into per-locale `cta_label_uz/ru/en` + `cta_deep_link jsonb {screen, params}` (mirrors §6 NOTIFICATIONS canonical deep-link shape + Phase 16 ErrorCodes per-locale split precedent). Indexing recs (§9.2) gained a partial unique index `(display_order) WHERE is_published=true` plus a listing index `(is_published, published_at DESC)`.
+  - **D4 — `@dnd-kit/*` added** to dashboard `package.json`: `@dnd-kit/core@^6.1.0` + `@dnd-kit/sortable@^8.0.0` + `@dnd-kit/utilities@^3.2.2`. Best-in-class accessible DnD lib with native keyboard support (space-to-grab + arrows) — required for spec-compliant reorder a11y.
+  - **D5 — Status derivation logic** lives as `getStatus(s, atTime)` helper in `mockStories.ts`. Filter chip + StatusChip + grouping all read off it. Real backend would mirror as a derived view or recompute per request.
+  - **D6 — Deep-link screens locked** in new `lib/deepLinkScreens.ts` constants module. 8 values per spec (`home / send_money / history / profile / kyc / transfer_detail / news / story`). Authoritative for Stories CTA today + future Notifications page. Helper `previewDeepLink(screen, params)` emits `zhipay://send-money?destination=wechat`-shaped URIs for the editor preview.
+  - **D7 — `LocaleTabTextarea` lift**: pre-emptively lifted `components/app-versions/modals/ReleaseNotesEditor` → `components/zhipay/LocaleTabTextarea` (3rd-consumer rule honored — App Versions had a 2nd consumer for the same shape and Stories was poised to be the 3rd). Generic-over-i18n-keys: `ariaLabelKey` / `localeLabelKey: Record<LocaleCode, string>` / `placeholderKeyPrefix` / `requiredErrorKey` / `hintKey` / `charCountKey` so each consumer keeps its own surface-scoped strings. App Versions Add + Edit dialogs repointed. Stories editor uses a **single-line analogue** `LocaleTabInputs` (Stories-internal under `editor/`) for short fields like titles + CTA labels — `<Input>` instead of autoresizing `<textarea>`. Lifts later if a 2nd consumer appears.
+  - **D8 — Phone-mockup primitive** stays Stories-internal (`components/stories/PhoneMockup.tsx`) for v1 — promotes to `zhipay/` if Notifications preview lands. 9:16 frame w/ notch + minimal status-bar chrome via SVG glyphs only (no sub-13px text per LESSON 2026-04-29 — earlier draft used `text-[10px]` "9:41" which violated the floor; replaced with illustrative SVG icons only).
+  - **D9 — `cta.params` editor** is a small mono `<textarea>` with `JSON.parse` blur validation + per-screen hint copy. No syntax-highlighter library — the params surface is small (~1-3 keys typically) and a textarea with mono font + JSON-shape validation is sufficient.
+  - **D10 — Mobile preview** uses `<Sheet side="bottom">` from existing UI primitives. Floating fixed-bottom-right `<Eye>` button on `<lg` opens the sheet w/ same `<StoryPhonePreview>` + locale switcher.
+  - **D11 — Drag-to-reorder UX** restricted to the published group: SortableContext is given only `publishedIds`, non-published cards skip `useSortable`. On drop, **ReorderConfirmDialog** opens showing old→new slot visual + ≥20-char reason note. Cancel reverts (no optimistic mutation), confirm calls `reorderStory()` which shifts conflicting rows by ±1 to satisfy the partial unique index. Keyboard-accessible drag via dnd-kit's native space + arrow handling.
+  - **D12 — `g+y` global hotkey** (since `s` and `t` are taken; `y` is closest mnemonic for "stories"). Page-scoped: `n` new · `j/k/Enter` per spec.
+  - **D13 — Hard-delete with audit snapshot** included (spec was silent). Stories are CMS — no financial-history concern (unlike FX/Commissions which are version-history-only). DeleteStoryDialog 2-step (Dialog: ≥20-char reason + danger-tinted warning banner → AlertDialog "Are you sure?" before commit). Audit row preserves snapshot of `{titleEn, type, isPublished, displayOrder, publishedAt, expiresAt}` so the row reads cleanly after the live entry is gone.
+  - **D14 — Routing**: first `/content/*` segment in the codebase. `/content/stories` (list) + `/content/stories/new` + `/content/stories/:id` (editor branched on `:id`). Back-compat: `/stories` → `/content/stories` + `/stories/new` + `/stories/:id` via plain `<Navigate>`. Removed `/stories` from `PLACEHOLDER_ROUTES`. Sidebar entry repointed; TopBar `ROUTE_TITLES` repointed; CommandPalette gained "Stories" entry under Navigate w/ `g y` shortcut hint; `useKeyboardShortcuts` `g+y` chord wired.
+  - **D15 — Seed count** = 12 records exactly (4/4/4) per the explicit spec line — not the illustrative "12 / 4 / 8" in the header copy. The header chip reflects the live count (currently 4/4/4/0).
+
+  **Save-as-draft on a previously-published story** triggers `unpublishStory()` mutator alongside `editStory()` — mock-only flow that produces two audit rows (one `edit`, one `unpublish`) so the draft-transition is auditable. New stories created via `addStory({ isPublished: true })` from the publish CTA emit one `add` audit row tagged `is_published=true`.
+
+  **`AuditEntityType` += `'story'`**; entity-type chip + label key added to AuditLog filter (12 entity types now); `ENTITY_LINK['story']` wired to `/content/stories/:id` in `AuditRowExpanded`. `bridgeStoryAudit` maps the 6 granular Stories actions (`add / edit / publish / unpublish / reorder / delete`) onto the spec's 12-value central enum (`add → created · edit/reorder → updated · publish/unpublish → status_changed · delete → deleted`); granular verb stays in `context.kind`; `from_status`/`to_status` set for publish/unpublish transitions.
+
+  **New `Switch` + `Select` ui primitives** added under `components/ui/` based on existing `@radix-ui/react-switch` + `@radix-ui/react-select` deps (radix packages were already in `package.json` but no shadcn wrappers existed — this build added them as the second / first consumers respectively).
+
+  **i18n** — ~135 new keys: `admin.stories.*` (page chrome / count subtitle ICU `{published} {scheduled} {draft} {expired}` / 3 sort labels / 4 status labels / 2 type labels / 3 filter chips / card kebab + drag-handle aria + meta phrases / 4 dialog bundles (reorder + delete + publish-now + edit-confirm) / editor section headers + 6 form sections / 8 deep-link screen labels + 8 params hints / validation messages / 6 toast variants / empty states / phone-preview chrome) + `admin.deep-link.screen.*` + `admin.deep-link.params-hint.*` (8 each) + `common.actions.copy` / `common.actions.copied` + `admin.audit-log.entity-type.story`.
+
+  **Hotkeys** — list: `n` new story · `j/k` card focus · `Enter` open editor. Editor: Cmd/Ctrl+1/2/3 cycle locale tabs (also flips preview), Cmd/Ctrl+S save draft, Cmd/Ctrl+Enter publish. Global: `g+y` routes to `/content/stories`.
+
+- **Files created**:
+  - `dashboard/src/data/mockStories.ts`
+  - `dashboard/src/lib/deepLinkScreens.ts`
+  - `dashboard/src/components/zhipay/LocaleTabTextarea.tsx` (lifted from app-versions)
+  - `dashboard/src/components/ui/switch.tsx` (new shadcn wrapper for existing `@radix-ui/react-switch`)
+  - `dashboard/src/components/ui/select.tsx` (new shadcn wrapper for existing `@radix-ui/react-select`)
+  - `dashboard/src/components/stories/{types,filterState,StatusChip,TypeChip,MediaPreview,StoryCard,StoriesFilterBar,SortDropdown,StoryGrid,PhoneMockup,StoryPhonePreview,ReorderConfirmDialog,DeleteStoryDialog,PublishNowDialog,EmptyState}.tsx`
+  - `dashboard/src/components/stories/editor/{LocaleTabInputs,DeepLinkBuilder,ParamsEditor,FormSections,EditorFooter,MobilePreviewSheet,PublishConfirmDialog,types}.tsx`
+  - `dashboard/src/pages/Stories.tsx`
+  - `dashboard/src/pages/StoryEditor.tsx`
+
+- **Files moved (lift)**:
+  - `dashboard/src/components/app-versions/modals/ReleaseNotesEditor.tsx` → `dashboard/src/components/zhipay/LocaleTabTextarea.tsx` (now generic over i18n keys)
+
+- **Files modified**:
+  - `dashboard/package.json` (+package-lock.json) — added `@dnd-kit/core@^6.1.0` + `@dnd-kit/sortable@^8.0.0` + `@dnd-kit/utilities@^3.2.2`
+  - `dashboard/src/router.tsx` — added `/content/stories` + `/content/stories/new` + `/content/stories/:id` routes; back-compat redirects from flat `/stories` paths; dropped `/stories` from `PLACEHOLDER_ROUTES`
+  - `dashboard/src/components/layout/Sidebar.tsx` — Stories nav entry `to: '/stories'` → `'/content/stories'`
+  - `dashboard/src/components/layout/TopBar.tsx` — `ROUTE_TITLES['/stories']` → `'/content/stories'`
+  - `dashboard/src/components/layout/CommandPalette.tsx` — added Stories Navigate entry w/ `Image` icon + `g y` shortcut hint
+  - `dashboard/src/hooks/useKeyboardShortcuts.ts` — `g+y` chord → `/content/stories`
+  - `dashboard/src/components/app-versions/modals/AddVersionDialog.tsx` + `EditVersionDialog.tsx` — repointed `ReleaseNotesEditor` import to lifted `LocaleTabTextarea` w/ surface-scoped i18n key props (also added `LOCALE_LABEL_KEY` import)
+  - `dashboard/src/data/mockAuditLog.ts` — added `STORY_ACTION_MAP` + `bridgeStoryAudit` + `'story'` to `AuditEntityType` enum + listStoriesAudit() merge into central
+  - `dashboard/src/components/audit-log/AuditFilterBar.tsx` — `'story'` added to `ENTITY_TYPE_OPTIONS`
+  - `dashboard/src/components/audit-log/AuditRowExpanded.tsx` — `ENTITY_LINK['story']` → `/content/stories/:id`
+  - `dashboard/src/lib/i18n.ts` — ~135 new keys (admin.stories.* + admin.deep-link.screen.* + admin.deep-link.params-hint.* + common.actions.copy/copied + admin.audit-log.entity-type.story)
+
+- **Files deleted**:
+  - `dashboard/src/components/app-versions/modals/ReleaseNotesEditor.tsx` (replaced by lifted shared component)
+
+- **Docs updated**: `docs/models.md` §8 (cascade: STORIES schema split + `published_at` added; §9.2 added partial unique index + listing index for `stories`) · `docs/product_states.md` (Stories row flipped Done; route updated to `/content/stories`) · `ai_context/AI_CONTEXT.md` (current-phase paragraph + 1 new workstreams entry) · `ai_context/HISTORY.md`. **No** PRD / mermaid change.
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npx vite build` (exit 0; chunk size warning is pre-existing, not Stories-related) · lessons-compliance grep clean: no sub-13px hardcoded text in Stories pattern + page files (initial PhoneMockup `text-[10px]` "9:41" caught + replaced with SVG-only chrome) · no `sticky top-0` on detail headers · no `← ` literal back-link prefixes · no Visa/Mastercard mentions in Stories mock · canonical `fixed inset-x-0 bottom-0 md:left-[var(--sidebar-width,4rem)]` action bar pattern in EditorFooter. Browser eyeballing deferred — please spot-check: `/content/stories` loads with 12 cards (4 published + 4 scheduled + 4 drafts), filter chips work, drag handle on published cards opens reorder confirm with old→new visual, kebab Publish-now / Delete dialogs work, `n` opens editor, `g+y` global hotkey routes here, editor preview pane updates live as you type/switch locales, deep-link builder shows preview URI, mobile preview sheet opens via fixed-bottom-right Eye button on `<lg`, save-as-draft on a published story emits an unpublish audit row visible at `/compliance/audit-log?entity=story`.
+
+---
+
 ### 2026-05-03 — Admin Error Codes (Phase 16) — `/system/error-codes` · read-only catalog · 15-row uz/ru/en seed · per-code observability cache · `LocaleFlag` lifted to shared
 
 - **Summary**: Built the Error Codes catalog — read-only reference surface for ops to look up what users see for a given failure code. Single-column page: header with Export CSV → ReadOnlyBanner → canonical filter bar (search + 6-category multi + retryable single) → desktop sortable table on `lg+` / mobile card stack on `<lg` → click-to-expand inline RowExpanded. **`mockErrorCodes.ts` is single source of truth** — 15 codes spanning all 6 categories (kyc / acquiring / fx / provider / compliance / system), uz/ru/en authored as natural locale-appropriate translations (uz concise · ru formal-respectful · en direct). Schema cascade flagged at sign-off and applied: `docs/models.md` §7 splits singular `suggested_action` into per-locale `suggested_action_uz/ru/en` to parallel `message_*`; `.claude/rules/error-ux.md` updated to the plural form. Per-code "Last triggered + 24h/7d/30d daily counts + 7-day sparkline" rendered from a **mock-only synthetic observability cache** (deterministic FNV-1a seed per code-string into a Mulberry32 PRNG; sparse-series variant for `SANCTIONS_HIT`) — same precedent as Services & Health's observability cache. NOT derived from `mockTransfers` so the catalog stats stay coherent for codes that don't create transfer rows (KYC_REQUIRED etc.).
