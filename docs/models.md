@@ -650,6 +650,9 @@ erDiagram
 | `aml_severity`      | `info`, `warning`, `critical`                                           | `aml_flags`                            |
 | `language`          | `uz`, `ru`, `en`                                                        | `users.preferred_language`             |
 | `platform`          | `ios`, `android`                                                        | `user_devices`, `app_versions`         |
+| `admin_role`        | `super_admin`, `ops`, `compliance`, `finance`, `engineering`            | `admin_users`                          |
+| `admin_account_status` | `active`, `disabled`, `pending`                                      | `admin_users`                          |
+| `admin_login_event` | `signin_success`, `signin_failed_credentials`, `signin_rate_limited`, `signin_account_disabled`, `session_expired`, `signout` | `admin_login_audit` |
 
 ### 9.2 Indexing recommendations
 
@@ -672,6 +675,13 @@ erDiagram
 | `notifications`    | `(status, sent_at DESC)` PARTIAL where status='sent'  | admin Sent tab listing — newest first      |
 | `notifications`    | `(composed_by, sent_at DESC)`                         | per-admin audit-log filter                 |
 | `notifications`    | `(user_id, sent_at DESC)` PARTIAL where user_id is not null | per-user inbox listing (mobile)      |
+| `admin_users`      | `(email)` UNIQUE                                     | sign-in lookup                              |
+| `admin_users`      | `(account_status)` PARTIAL where account_status='active' | active-roster scans                     |
+| `admin_sessions`   | `(admin_user_id, expires_at DESC)`                   | "my active sessions" listing                |
+| `admin_sessions`   | `(expires_at)` PARTIAL where revoked_at is null      | reaper sweeps for expired-but-not-revoked   |
+| `admin_login_audit`| `(email_attempted, created_at DESC)`                 | rate-limit window scan + per-email forensics |
+| `admin_login_audit`| `(ip_address, created_at DESC)`                      | per-IP rate-limit + forensics                |
+| `admin_login_audit`| `(admin_user_id, created_at DESC)` PARTIAL where admin_user_id is not null | per-admin sign-in history    |
 
 ### 9.3 Money-handling rules
 
@@ -691,3 +701,117 @@ erDiagram
 | `kyc_verifications` | never delete (regulatory retention) |
 | `wallet_ledger`     | append-only, never delete           |
 | `aml_flags`         | never delete (regulatory retention) |
+| `admin_users`       | soft (`account_status = 'disabled'`) — never hard-deleted (audit chain depends on FK) |
+| `admin_sessions`    | hard delete after retention window (30d after `expires_at`) |
+| `admin_login_audit` | append-only, never delete (regulatory retention) |
+
+---
+
+## 10. Admin & Auth
+
+Admin / ops / compliance / finance / engineering accounts that authenticate into the internal dashboard. **End-user accounts are in `users`** (§2) — `admin_users` is a separate identity space with its own auth, session, and audit tables.
+
+> **No self-signup.** Admin accounts are provisioned out-of-band by an existing super-admin (or via an Anthropic-style invite-and-claim flow when one is built). The sign-in surface (`/sign-in`) only authenticates pre-provisioned accounts.
+>
+> **Email + password only.** The admin sign-in surface does NOT use 2FA / TOTP / SMS-OTP — those belong to the mobile end-user surface (phone OTP under the MyID flow, see §2). If 2FA is reintroduced for admin accounts later, this section will grow `totp_secret` / `backup_codes` columns and a separate setup flow; for now they are intentionally absent from the schema to keep the surface honest about what ships.
+>
+> **Passwords are never persisted.** `password_hash` is bcrypt/argon2 of the password — the plaintext password is never logged, never echoed in audit, never sent over a non-TLS channel.
+
+### 10.1 ER diagram
+
+```mermaid
+erDiagram
+  ADMIN_USERS ||--o{ ADMIN_SESSIONS : "creates"
+  ADMIN_USERS ||--o{ ADMIN_LOGIN_AUDIT : "produces"
+
+  ADMIN_USERS {
+    uuid id PK
+    string email UK "case-insensitive uniqueness"
+    string password_hash "bcrypt or argon2 — NEVER plaintext"
+    string display_name "shown in TopBar / audit-log actor cells"
+    enum role "super_admin|ops|compliance|finance|engineering"
+    enum account_status "active|disabled|pending"
+    integer failed_login_attempts "rolling counter; reset on success"
+    timestamp locked_until "nullable — drives AUTH_RATE_LIMITED while > now()"
+    timestamp last_signed_in_at "nullable until first success"
+    string preferred_language "uz|ru|en — drives admin-surface locale"
+    timestamp created_at
+    timestamp disabled_at "nullable; set when account_status moved to disabled"
+    string disabled_reason "nullable; required when account_status=disabled"
+  }
+
+  ADMIN_SESSIONS {
+    uuid id PK
+    uuid admin_user_id FK
+    timestamp created_at
+    timestamp last_seen_at "bumped on every authenticated request — drives idle-timeout"
+    timestamp expires_at "absolute expiry; default created_at + 12h"
+    timestamp revoked_at "nullable; set on signout / forced revocation / password change"
+    string ip_address "captured at session creation"
+    string user_agent "raw UA string"
+    string device_fingerprint "client-derived hash; nullable"
+  }
+
+  ADMIN_LOGIN_AUDIT {
+    uuid id PK
+    string email_attempted "lowercased; populated even when email is unknown"
+    uuid admin_user_id FK "nullable — null when email is unknown OR audit is for a system-level event"
+    enum event_type "see admin_login_event enum"
+    string failure_code "nullable — error_codes.code on failure events"
+    string ip_address
+    string user_agent
+    jsonb context "free-form per event type — e.g. {attempts_in_window: 6} for rate-limited"
+    timestamp created_at
+  }
+```
+
+### 10.2 Field reference — `admin_users`
+
+| field | semantic |
+|---|---|
+| `email` | Lowercase-canonical and unique. Sign-in form normalizes to lowercase before lookup. |
+| `password_hash` | argon2id (preferred) or bcrypt cost ≥ 12. The verifier rejects empty, NULL, or any value < 60 chars. |
+| `role` | Coarse-grained — fine-grained permissions live in a separate `admin_role_permissions` table not specified in this phase. |
+| `account_status` | `active` = can sign in. `disabled` = sign-in returns `AUTH_ACCOUNT_DISABLED` regardless of password correctness. `pending` = invited but not yet claimed (future flow). |
+| `failed_login_attempts` | Increments on `signin_failed_credentials`. Resets to 0 on `signin_success`. When ≥ threshold (5), `locked_until` is set to `now() + 15min`. |
+| `locked_until` | When > `now()`, every sign-in attempt for this email returns `AUTH_RATE_LIMITED`. |
+| `disabled_reason` | Required free-text when account_status flipped to disabled. Surfaces to the affected admin via support. |
+
+### 10.3 Field reference — `admin_sessions`
+
+| field | semantic |
+|---|---|
+| `expires_at` | Absolute expiry — even with continuous activity, the session is force-closed at this point. Default `created_at + 12h`. |
+| `last_seen_at` | Updated on every authenticated request. Idle window = `now() - last_seen_at`. When idle > 30 min (configurable), the client redirects to `/sign-in?expired=1&next=<path>`. The server may also revoke server-side. |
+| `revoked_at` | Set on explicit signout, password change, role change, or super-admin forced-revoke. Once set, the session is invalid regardless of `expires_at`. |
+
+### 10.4 Field reference — `admin_login_audit`
+
+Append-only. Every sign-in attempt — successful or failed, known-email or not — produces exactly one row. Powers per-email and per-IP rate limiting as well as forensic review.
+
+| field | semantic |
+|---|---|
+| `email_attempted` | Lowercased, captured even when no `admin_users` row matches (so attacks against unknown emails are auditable). |
+| `admin_user_id` | NULL when the email did not match a known account, OR when the event is a system-level signout / session-expiry. |
+| `event_type` | One of `admin_login_event` enum values. |
+| `failure_code` | Canonical short identifier for the failure cause. One of: `AUTH_INVALID_CREDENTIALS`, `AUTH_RATE_LIMITED`, `AUTH_ACCOUNT_DISABLED`, `AUTH_NETWORK`, `AUTH_SERVER_ERROR`. **These are intentionally NOT rows in the user-facing `error_codes` table** (§7) — auth errors are surface-scoped via `admin.sign-in.error.*` i18n keys per the security baseline (generic copy, no field-level reveal). The audit table uses these as opaque identifiers for forensics. |
+| `context` | Per-event jsonb — e.g. for `signin_rate_limited`: `{attempts_in_window: 6, window_seconds: 900}`. **Never contains the password.** |
+
+### 10.5 Sign-in flow & state machine
+
+See [`mermaid_schemas/admin_signin_flow.md`](./mermaid_schemas/admin_signin_flow.md) for the sequence diagram and [`mermaid_schemas/admin_session_state_machine.md`](./mermaid_schemas/admin_session_state_machine.md) for session-state transitions.
+
+### 10.6 Rate-limiting rules
+
+| dimension | window | threshold | action |
+|---|---|---:|---|
+| per email | 15 min | 5 failed credentials attempts | `locked_until = now() + 15min`; subsequent attempts return `AUTH_RATE_LIMITED` |
+| per IP | 15 min | 20 failed attempts (any email) | reject all sign-in attempts from this IP for the remainder of the window |
+
+### 10.7 Privacy & security baseline
+
+- **Generic credential errors.** The sign-in surface NEVER reveals whether an email is registered. `AUTH_INVALID_CREDENTIALS` is returned for both unknown email and wrong password — the form never says "user not found".
+- **No password echo.** Audit `context` jsonb never contains the password. Verification happens at the API boundary; the value is discarded before the audit row is written.
+- **Idle timeout is client + server.** Client-side idle timer fires the redirect; server-side also stamps `last_seen_at` and rejects expired sessions even if the client clock disagrees.
+- **TLS-only.** Sign-in requests over plain HTTP are rejected at the edge; the surface assumes HTTPS and surfaces a `Secure` chip where confidence is needed.
+- **Out-of-band password reset.** The "Forgot password?" affordance opens a modal directing the user to contact a super-admin — there is no self-service reset, by design (compliance posture).
