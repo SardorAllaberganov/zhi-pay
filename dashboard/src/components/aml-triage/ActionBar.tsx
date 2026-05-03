@@ -1,5 +1,6 @@
 import { Check, ArrowUpRight, UserPlus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { WriteButton } from '@/components/zhipay/WriteButton';
 import {
   Tooltip,
   TooltipContent,
@@ -61,7 +62,7 @@ export function ActionBar({
         onClick={onClear}
       />
 
-      <Button
+      <WriteButton
         variant="destructive"
         onClick={onEscalate}
         disabled={escalateDisabled}
@@ -69,9 +70,9 @@ export function ActionBar({
       >
         <ArrowUpRight className="h-4 w-4 mr-1.5" aria-hidden="true" />
         {t('admin.aml-triage.action.escalate')}
-      </Button>
+      </WriteButton>
 
-      <Button
+      <WriteButton
         variant="outline"
         onClick={onAssignMe}
         disabled={isTerminal}
@@ -79,9 +80,9 @@ export function ActionBar({
       >
         <UserPlus className="h-4 w-4 mr-1.5" aria-hidden="true" />
         {t('admin.aml-triage.action.assign-me')}
-      </Button>
+      </WriteButton>
 
-      <Button
+      <WriteButton
         variant="outline"
         onClick={onReassign}
         disabled={isTerminal}
@@ -89,7 +90,7 @@ export function ActionBar({
       >
         <Users className="h-4 w-4 mr-1.5" aria-hidden="true" />
         {t('admin.aml-triage.action.reassign')}
-      </Button>
+      </WriteButton>
     </div>
   );
 }
@@ -101,21 +102,27 @@ interface ClearButtonProps {
 }
 
 function ClearButton({ disabled, disabledReason, onClick }: ClearButtonProps) {
-  const button = (
-    <Button onClick={onClick} disabled={disabled} className="w-full lg:w-auto">
-      <Check className="h-4 w-4 mr-1.5" aria-hidden="true" />
-      {t('admin.aml-triage.action.clear')}
-    </Button>
-  );
-
-  if (!disabled || !disabledReason) return button;
+  // Two render paths — see KYC ActionBar's ApproveButton for the same
+  // pattern. Online + enabled → WriteButton (offline gate); domain-
+  // disabled → existing Tooltip wrap surfacing the reason.
+  if (!disabled || !disabledReason) {
+    return (
+      <WriteButton onClick={onClick} disabled={disabled} className="w-full lg:w-auto">
+        <Check className="h-4 w-4 mr-1.5" aria-hidden="true" />
+        {t('admin.aml-triage.action.clear')}
+      </WriteButton>
+    );
+  }
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <span tabIndex={0} className="w-full lg:w-auto">
-            {button}
+            <Button onClick={onClick} disabled className="w-full lg:w-auto">
+              <Check className="h-4 w-4 mr-1.5" aria-hidden="true" />
+              {t('admin.aml-triage.action.clear')}
+            </Button>
           </span>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">

@@ -1,5 +1,5 @@
 import { Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { WriteButton } from '@/components/zhipay/WriteButton';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
@@ -33,7 +33,7 @@ export function RecipientActionBar({ onDelete }: RecipientActionBarProps) {
       )}
     >
       <div className="flex w-full items-center lg:justify-end">
-        <Button
+        <WriteButton
           variant="outline"
           size="sm"
           onClick={onDelete}
@@ -46,7 +46,7 @@ export function RecipientActionBar({ onDelete }: RecipientActionBarProps) {
         >
           <Trash2 className="h-4 w-4 mr-1.5" aria-hidden="true" />
           {t('admin.recipients.action.hard-delete')}
-        </Button>
+        </WriteButton>
       </div>
     </div>
   );

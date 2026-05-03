@@ -1,5 +1,6 @@
 import { Send, Clock, Megaphone, Filter, User as UserIcon, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { WriteButton } from '@/components/zhipay/WriteButton';
 import { cn, formatDateTime } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { ComposeForm } from '../types';
@@ -105,7 +106,7 @@ export function ComposeActionBar({
           >
             {t('admin.notifications.compose.action-bar.cancel')}
           </Button>
-          <Button
+          <WriteButton
             type="button"
             onClick={onSubmit}
             disabled={submitting}
@@ -115,7 +116,7 @@ export function ComposeActionBar({
             {isScheduled
               ? t('admin.notifications.compose.action.schedule')
               : t('admin.notifications.compose.action.send')}
-          </Button>
+          </WriteButton>
         </div>
       </div>
     </div>

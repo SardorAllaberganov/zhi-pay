@@ -1,5 +1,5 @@
 import { CalendarPlus, Pencil, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { WriteButton } from '@/components/zhipay/WriteButton';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
@@ -30,27 +30,27 @@ export function BlacklistActionBar({ onEditReason, onExtendExpiry, onRemove }: P
           'lg:flex lg:flex-row lg:items-center lg:gap-2',
         )}
       >
-        <Button
+        <WriteButton
           variant="outline"
           onClick={onEditReason}
           className="text-warning-700 hover:text-warning-700 dark:text-warning-600 border-warning-600/40"
         >
           <Pencil className="h-4 w-4 mr-2" aria-hidden="true" />
           {t('admin.blacklist.action.edit-reason')}
-        </Button>
-        <Button variant="outline" onClick={onExtendExpiry}>
+        </WriteButton>
+        <WriteButton variant="outline" onClick={onExtendExpiry}>
           <CalendarPlus className="h-4 w-4 mr-2" aria-hidden="true" />
           {t('admin.blacklist.action.extend')}
-        </Button>
+        </WriteButton>
         <div className="hidden lg:block lg:flex-1" aria-hidden="true" />
-        <Button
+        <WriteButton
           variant="destructive"
           onClick={onRemove}
           className="col-span-2 lg:col-span-1"
         >
           <Trash2 className="h-4 w-4 mr-2" aria-hidden="true" />
           {t('admin.blacklist.action.remove')}
-        </Button>
+        </WriteButton>
       </div>
     </div>
   );

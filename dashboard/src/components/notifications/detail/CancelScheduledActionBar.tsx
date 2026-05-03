@@ -1,5 +1,5 @@
 import { XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { WriteButton } from '@/components/zhipay/WriteButton';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
@@ -25,7 +25,7 @@ export function CancelScheduledActionBar({ onCancelClick }: Props) {
         <p className="text-sm text-muted-foreground">
           {t('admin.notifications.detail.cancel-scheduled.action-bar-hint')}
         </p>
-        <Button
+        <WriteButton
           type="button"
           variant="destructive"
           onClick={onCancelClick}
@@ -33,7 +33,7 @@ export function CancelScheduledActionBar({ onCancelClick }: Props) {
         >
           <XCircle className="mr-1.5 h-4 w-4" aria-hidden />
           {t('admin.notifications.detail.cancel-scheduled.button')}
-        </Button>
+        </WriteButton>
       </div>
     </div>
   );

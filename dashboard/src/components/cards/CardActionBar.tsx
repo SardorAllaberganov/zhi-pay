@@ -1,5 +1,6 @@
 import { ArrowUpRight, Copy, Lock, Unlock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { WriteButton } from '@/components/zhipay/WriteButton';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { CardEntry } from '@/data/mockCards';
@@ -67,7 +68,7 @@ export function CardActionBar({
         )}
       >
         {showStateButton && isActive && (
-          <Button
+          <WriteButton
             variant="outline"
             onClick={onFreeze}
             className={cn(
@@ -78,14 +79,14 @@ export function CardActionBar({
           >
             <Lock className="h-4 w-4 mr-1.5" aria-hidden="true" />
             {t('admin.cards.action.freeze')}
-          </Button>
+          </WriteButton>
         )}
 
         {showStateButton && isFrozen && (
-          <Button onClick={onUnfreeze} className="w-full lg:w-auto">
+          <WriteButton onClick={onUnfreeze} className="w-full lg:w-auto">
             <Unlock className="h-4 w-4 mr-1.5" aria-hidden="true" />
             {t('admin.cards.action.unfreeze')}
-          </Button>
+          </WriteButton>
         )}
 
         {/* Spacer (lg+) — pushes secondary cluster to the right edge.

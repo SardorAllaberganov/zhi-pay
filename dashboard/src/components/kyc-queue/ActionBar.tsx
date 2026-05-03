@@ -1,5 +1,6 @@
 import { Check, X, MessageSquarePlus, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { WriteButton } from '@/components/zhipay/WriteButton';
 import {
   Tooltip,
   TooltipContent,
@@ -67,7 +68,7 @@ export function ActionBar({
         onClick={onApprove}
       />
 
-      <Button
+      <WriteButton
         variant="destructive"
         onClick={onReject}
         disabled={rejectDisabled}
@@ -75,9 +76,9 @@ export function ActionBar({
       >
         <X className="h-4 w-4 mr-1.5" aria-hidden="true" />
         {t('admin.kyc-queue.action.reject')}
-      </Button>
+      </WriteButton>
 
-      <Button
+      <WriteButton
         variant="outline"
         onClick={onRequestInfo}
         disabled={infoDisabled}
@@ -85,9 +86,9 @@ export function ActionBar({
       >
         <MessageSquarePlus className="h-4 w-4 mr-1.5" aria-hidden="true" />
         {t('admin.kyc-queue.action.request-info')}
-      </Button>
+      </WriteButton>
 
-      <Button
+      <WriteButton
         variant="outline"
         onClick={onEscalate}
         disabled={escalateDisabled}
@@ -95,7 +96,7 @@ export function ActionBar({
       >
         <ArrowUpRight className="h-4 w-4 mr-1.5" aria-hidden="true" />
         {t('admin.kyc-queue.action.escalate')}
-      </Button>
+      </WriteButton>
     </div>
   );
 }
@@ -107,21 +108,29 @@ interface ApproveButtonProps {
 }
 
 function ApproveButton({ disabled, disabledReason, onClick }: ApproveButtonProps) {
-  const button = (
-    <Button onClick={onClick} disabled={disabled} className="w-full lg:w-auto">
-      <Check className="h-4 w-4 mr-1.5" aria-hidden="true" />
-      {t('admin.kyc-queue.action.approve')}
-    </Button>
-  );
-
-  if (!disabled || !disabledReason) return button;
+  // Two render paths:
+  //   - Not domain-disabled → `<WriteButton>` which gates on offline.
+  //   - Domain-disabled → existing Tooltip wrap surfacing the domain
+  //     reason. Offline gating is moot since the button is already
+  //     non-clickable.
+  if (!disabled || !disabledReason) {
+    return (
+      <WriteButton onClick={onClick} disabled={disabled} className="w-full lg:w-auto">
+        <Check className="h-4 w-4 mr-1.5" aria-hidden="true" />
+        {t('admin.kyc-queue.action.approve')}
+      </WriteButton>
+    );
+  }
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <span tabIndex={0} className="w-full lg:w-auto">
-            {button}
+            <Button onClick={onClick} disabled className="w-full lg:w-auto">
+              <Check className="h-4 w-4 mr-1.5" aria-hidden="true" />
+              {t('admin.kyc-queue.action.approve')}
+            </Button>
           </span>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
