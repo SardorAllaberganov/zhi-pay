@@ -500,7 +500,9 @@ erDiagram
     string message_ru
     string message_en
     boolean retryable
-    string suggested_action
+    string suggested_action_uz
+    string suggested_action_ru
+    string suggested_action_en
   }
   NOTIFICATIONS {
     uuid id PK
@@ -523,18 +525,27 @@ erDiagram
 
 ### 7.1 Error code examples
 
-| code                    | category   | retryable | suggested action                          |
-|-------------------------|------------|:---------:|--------------------------------------------|
-| `KYC_REQUIRED`          | kyc        | no        | Prompt MyID flow                            |
-| `KYC_EXPIRED`           | kyc        | no        | Re-run MyID                                 |
-| `LIMIT_DAILY_EXCEEDED`  | compliance | no        | Suggest waiting or upgrading tier           |
-| `LIMIT_PER_TX_EXCEEDED` | compliance | no        | Suggest splitting transfer                  |
-| `CARD_DECLINED`         | acquiring  | yes       | Try another card / retry                    |
-| `INSUFFICIENT_FUNDS`    | acquiring  | yes       | Top up card and retry                       |
-| `FX_STALE`              | fx         | yes       | Refetch rate and retry                      |
-| `PROVIDER_UNAVAILABLE`  | provider   | yes       | Backoff and retry                           |
-| `RECIPIENT_INVALID`     | provider   | no        | Verify Alipay/WeChat handle                 |
-| `SANCTIONS_HIT`         | compliance | no        | Escalate to manual review                   |
+The seed expands to **15 codes** in v1 (admin Error Codes catalog at `/system/error-codes`). Listed below, sorted alphabetically:
+
+| code                       | category   | retryable | suggested action (en, summary)                  |
+|----------------------------|------------|:---------:|--------------------------------------------------|
+| `3DS_TIMEOUT`              | acquiring  | yes       | Try again; check phone if bank app didn't open   |
+| `CARD_DECLINED`            | acquiring  | yes       | Try a different card or contact bank             |
+| `CARD_EXPIRED`             | acquiring  | no        | Add a new card                                   |
+| `FX_STALE`                 | fx         | yes       | Refresh quote and review the new rate            |
+| `INSUFFICIENT_FUNDS`       | acquiring  | yes       | Top up card or use another card                  |
+| `KYC_EXPIRED`              | kyc        | no        | Re-verify with MyID                              |
+| `KYC_REQUIRED`             | kyc        | no        | Verify with MyID                                 |
+| `LIMIT_DAILY_EXCEEDED`     | compliance | no        | Wait until tomorrow or upgrade tier              |
+| `LIMIT_MONTHLY_EXCEEDED`   | compliance | no        | Wait for next month or upgrade tier              |
+| `LIMIT_PER_TX_EXCEEDED`    | compliance | no        | Split the transfer or upgrade tier               |
+| `PROVIDER_UNAVAILABLE`     | provider   | yes       | Try again in a few minutes                       |
+| `RECIPIENT_INVALID`        | provider   | no        | Verify Alipay/WeChat handle and retry            |
+| `SANCTIONS_HIT`            | compliance | no        | Calm review pattern; notify within 24h           |
+| `SYSTEM_ERROR`             | system     | yes       | Try again; contact support if it persists        |
+| `THREE_DS_FAILED`          | acquiring  | yes       | Try again or use a different card                |
+
+> **Localization**: each row carries `message_{uz|ru|en}` + `suggested_action_{uz|ru|en}` per §7. The `suggested action` column above shows the English summary for reference — actual user-facing copy renders from the localized fields.
 
 ---
 

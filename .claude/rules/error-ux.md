@@ -11,7 +11,7 @@ Each code carries:
 - `category` — `kyc | acquiring | fx | provider | compliance | system`
 - `message_uz`, `message_ru`, `message_en`
 - `retryable` — boolean
-- `suggested_action` — string (localized via the same locale columns)
+- `suggested_action_uz`, `suggested_action_ru`, `suggested_action_en` — per-locale, parallel to `message_*` (split from singular `suggested_action` in Phase 16 to match the message/action authoring rhythm — see [`docs/models.md`](../../docs/models.md) §7)
 
 ## Error component contract
 
