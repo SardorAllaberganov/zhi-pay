@@ -4,6 +4,136 @@
 
 ---
 
+### 2026-05-03 — News follow-ups + filter-bar unification + segmented active-state contrast bump (Phase 18b)
+
+- **Summary**: Cluster of polish items landed after the Phase 18 News build. Five threads:
+  1. **News cover-image upload** — picker now supports both URL paste and file upload via `FileReader.readAsDataURL`. Always-visible 16:9 placeholder with mountain-and-sun glyph + caption "Here the uploaded image appears" when empty + clickable file-picker trigger; remove-X overlay when an image is loaded; URL input disables itself when a `data:` URL is in play and re-enables when cleared. 5 MB max; PNG / JPG / WebP / GIF accepted; toast errors for unsupported type / oversized / read-failure. Image-URL validator in `NewsEditor.tsx` extended to accept both `https?://...` and `data:image/(png|jpe?g|webp|gif);base64,...`. No schema change — `data:` URL flows through the existing `imageUrl: string | null` field. Real backend would replace it with a server-side upload + CDN URL on save.
+  2. **News body min reduced 200 → 50 plain-text characters** — `BODY_MIN_PLAIN` constant in `components/news/editor/types.ts`. The `{min}` placeholder in i18n strings (`admin.news.editor.body-counter`, `admin.news.editor.validation.body-required`, `admin.news.editor.validation.summary.bodies`) carries the live value so future tweaks need only a constant edit. Per user direction; original spec called for 200.
+  3. **News editor publish-button UX rework** — the validation-gated primary button was disabled with no feedback (classic "disabled button hides the reason it's disabled" trap). Fix: primary button stays clickable when validation fails. Click triggers `setShowErrors(true)` (red dots on locale tabs missing required fields) + a sonner toast naming exactly what's missing ("Title missing for en", "Body needs ≥ 50 characters for uz · ru", "Reason note ≥ 20 chars required", "Image URL must start with http(s):// or be an uploaded image"). Save-as-draft secondary keeps its empty-content gate but also raises a toast on click. Cmd/Ctrl+S and Cmd/Ctrl+Enter route through the same handlers. New `summarizeMissing()` helper composes the toast string from the live `errors` set.
+  4. **News date-range filter bug fix** — the popover never opened. Root cause: `<DateRangeChip>` was a function component that didn't forward `onClick` + `ref` from Radix's `<PopoverTrigger asChild>` slot. Inlined the trigger button directly inside `<DateRangePicker>` (matches AuditFilterBar precedent). Drafts are excluded when the date-range filter is active (since they have no `publishedAt`).
+  5. **Filter-bar style unification across the 8 standard list pages** — survey identified two camps that were each internally consistent but disagreed cross-page: 4 carded (AuditLog / Stories / ErrorCodes / Blacklist) and 4 naked (Users / Cards / Recipients / News). Locked the carded variant as canonical: `rounded-md border border-border bg-card px-3 py-3 space-y-3` wrapper · search input `type="search"` (native X clear) on `bg-background pl-9 h-10 text-sm shadow-sm` (well-in-card) · chip row `flex flex-wrap items-center gap-2`. Updated 4 filter bars (Users / Cards / Recipients / News): added carded wrapper, flipped search input from `bg-card` → `bg-background` (since the wrapper is now the `bg-card` surface). Specialized layouts (Transfers multi-row sticky + bulk-action bar, KYC Queue + AML Triage master-detail context) flagged as out-of-scope for this unification.
+  6. **Segmented active-state contrast bump (two-step)** — first pass bumped active filter chips + locale tab pills + RTE toolbar buttons from `bg-brand-50` → `bg-brand-100` for visibility against the new carded `bg-card` wrapper (low contrast was the trigger). User redirected to "white" — second pass replaced `bg-brand-100` with `bg-card` + added `shadow-sm` for elevation, keeping the brand-tinted text + border (or ring on locale tabs / RTE toolbar). Final active-state styling: chip triggers `border-brand-600 bg-card text-brand-700 dark:text-brand-300 shadow-sm font-medium` · locale tabs / RTE toolbar `bg-card text-brand-700 dark:text-brand-300 ring-1 ring-brand-300 dark:ring-brand-700/40 shadow-sm`. Also flipped shadcn `<TabsTrigger>` primitive's `data-[state=active]:bg-background` → `data-[state=active]:bg-card` (one-token change in `components/ui/tabs.tsx`) so all segmented controls (Personal/Corporate · iOS/Android · any future tabs) get clear contrast in light mode — the old `bg-background` (slate-50) was barely distinguishable from the `bg-muted` (slate-100) container. Popover-row checked state inside chip dropdowns deliberately kept at `bg-brand-100` (different visual context — inside a white popover, white-on-white would be invisible).
+
+- **Files modified**:
+  - `dashboard/src/components/news/editor/FormSections.tsx` — `CoverImageSection` rewrite (file picker + always-visible placeholder + caption + remove-X overlay); `BodiesSection` red-dot indicator already present, no change needed
+  - `dashboard/src/components/news/editor/types.ts` — `BODY_MIN_PLAIN` 200 → 50
+  - `dashboard/src/components/news/editor/RichTextEditor.tsx` — doc-comment updated to refer to `BODY_MIN_PLAIN` instead of hardcoded 200
+  - `dashboard/src/components/news/editor/Toolbar.tsx` — active button state to `bg-card` + ring + shadow
+  - `dashboard/src/pages/NewsEditor.tsx` — image-URL validator regex extended to accept `data:` URLs · `summarizeMissing()` helper + `flagAndToast()` wrapper · primary button always-clickable
+  - `dashboard/src/components/news/NewsFilterBar.tsx` — search bar style aligned to peers (full rewrite); `<DateRangeChip>` inlined into `<DateRangePicker>`; later wrapped in carded shell + input bg-card → bg-background
+  - `dashboard/src/components/users/UsersFilterBar.tsx` — carded wrapper + input bg-card → bg-background
+  - `dashboard/src/components/cards/CardsFilterBar.tsx` — same
+  - `dashboard/src/components/recipients/RecipientsFilterBar.tsx` — same
+  - All 11 filter-bar files (`{kyc-queue,cards,audit-log,recipients,transfers,stories,news,blacklist,error-codes,users,aml-triage}/{Kyc,Cards,Audit,Recipients,Transfers,Stories,News,Blacklist,ErrorCodes,Users,Aml}FilterBar.tsx`) — chip-trigger active-state bumped via `perl -i -pe '... if /border-brand/'` (only lines with `border-brand` got changed, popover rows untouched)
+  - 5 locale-tab files (`zhipay/{LocaleTabInputs,LocaleTabTextarea}.tsx`, `news/editor/{FormSections,NewsPhonePreview}.tsx`, `stories/editor/MobilePreviewSheet.tsx`) — locale tab active-state bumped (ring + bg + shadow)
+  - `dashboard/src/components/ui/tabs.tsx` — `data-[state=active]:bg-background` → `data-[state=active]:bg-card` (one-token change; affects every TabsTrigger consumer in the app)
+  - `dashboard/src/lib/i18n.ts` — ~10 new `admin.news.editor.image-upload.*` keys + 5 `admin.news.editor.validation.summary.*` keys (toast summary strings) + `admin.news.editor.image-url-uploaded` placeholder
+  - `ai_context/AI_CONTEXT.md` — News paragraph extended w/ follow-ups; 5 new "Decisions made" rows (Filter-bar pattern · Segmented active-state styling · News body min · News cover image · Publish-button validation UX)
+  - `ai_context/HISTORY.md` — this entry
+
+- **Files unchanged but referenced** (intentional non-targets for the segmentation contrast bump): transfer-detail tinted cards (Sender/InternalNotes/AdminActionHistory) · `<Alert variant="info">` · UserAvatar fallback · Services RecentActivityCard + ServiceTile · Sidebar nav (uses 2px brand bar indicator + intentionally subtler fill). These keep `bg-brand-50` / `bg-brand-100` on purpose — they're tinted information surfaces or special nav-active patterns, not "active among options" segmentation.
+
+- **Docs updated**: `ai_context/AI_CONTEXT.md` · `ai_context/HISTORY.md`. **No** `docs/models.md` / PRD / mermaid / `docs/product_states.md` change — News row already at ✅, no schema/route/state-machine drift.
+
+- **Verified**: `npx tsc --noEmit` (exit 0 after each step) · `npx vite build` (exit 0; chunk size warning is pre-existing) · `npx vite --port 5180` boots; `curl /` HTTP 200. Lessons-compliance greps clean: no sub-13px text, no sticky thead, no `← ` literal, no Visa/MC mentions in `mockNews.ts` (caught + cleaned during initial Phase 18 build). Browser eyeballing deferred — please spot-check: cover image upload + URL paste both work; placeholder caption visible when empty; remove-X clears; publish button on empty form raises toast naming what's missing + red dots appear on locale tabs; date-range filter popover opens and applies; all 8 standard list pages show carded filter bars with the same shape; active filter chips read clearly white-on-card with subtle shadow; Personal/Corporate + iOS/Android tab triggers have clear contrast in light mode.
+
+---
+
+### 2026-05-03 — Admin News (Phase 18) — `/content/news` · TipTap rich-text composer · 27-record uz/ru/en seed · schema cascade (rich-text body clarification + `image_url` nullable + listing index) · `PhoneMockup` + `LocaleTabInputs` lifted to shared · TipTap deps added · `g+n` rebound from notifications
+
+- **Summary**: Built the News CMS — second `/content/*` surface after Stories. Article-list with multi-locale rich-text composer at `/content/news/new` and `/content/news/:id`. **`mockNews.ts` is single source of truth** — 27 deterministic records (23 published + 4 drafts) covering realistic press-release themes per spec (rates / Navruz / faster transfers / MyID / UZ-CN trade / Eid / NY discounts / app release / CB rate / Labour Day / saved recipients / 24/7 support / awards / rate-lock / Ramadan / Independence Day / business tier / partner banks / Yiwu trader / students / language settings / security / 1-yr anniversary; drafts: KZ corridor preview / new recipients screen beta / referral program / audit-reports announcement). Bodies authored as natural locale-appropriate translations (uz concise / ru formal-respectful / en direct), 2-4 paragraphs each. Mock-only audit-trail surrogates `createdBy / lastEditedAt / lastEditedBy` follow the FX/Commissions/Blacklist/AppVersions/Stories precedent. Status is **derived** from `is_published` (2 values: `published` / `draft`) — simpler than Stories' 4-value enum since News has no scheduled/expired semantics.
+
+  **Decision deviations from the literal spec** (each flagged in the proposal and confirmed before implementation):
+  - **D1 — `body_*` storage = HTML strings**. Schema's existing `string` type was kept; a one-line clarification added to §8 NEWS that body fields are HTML produced by the dashboard's TipTap RTE and sanitized server-side. More portable across RTE libraries than jsonb; better for SSR and full-text indexing. The dashboard renders via `dangerouslySetInnerHTML` only inside the trusted preview pane and editor (HTML is not user-supplied; the RTE produces it).
+  - **D2 — `image_url` marked nullable** in §8. Spec says optional; original schema didn't say nullable. Tiny cascade.
+  - **D3 — `(is_published, published_at DESC NULLS LAST)` listing index** added to §9.2 so the list-page sort with drafts-on-top is index-friendly.
+  - **D4 — TipTap as the RTE** (the only meaningful net-new dependency this phase). 6 packages added: `@tiptap/react` + `@tiptap/starter-kit` + `@tiptap/extension-link` + `@tiptap/extension-image` + `@tiptap/extension-underline` + `@tiptap/extension-placeholder`. ~30KB gzipped. Headless, ProseMirror-based, native keyboard (Cmd+B/I/U work out of the box). Alternatives (`contenteditable`+execCommand / markdown-textarea like App Versions Phase 15) wouldn't honor the spec's WYSIWYG toolbar (H2/H3/lists/quote/divider/inline-image/link with active-state).
+  - **D6 — `g+n` rebound** from former `/notifications` placeholder to `/content/news`. Mnemonic-perfect for News. Notifications will get a different chord when its phase lands (`g+i` for Inbox is free).
+  - **D7 — `PhoneMockup` lifted** from `components/stories/` → `components/zhipay/`. Stories' source comment explicitly anticipated this — News-editor preview is the 2nd consumer. Stories' `StoryPhonePreview.tsx` repointed.
+  - **D8 — `LocaleTabInputs` lifted** from `components/stories/editor/` → `components/zhipay/`. News titles = 2nd consumer; Stories' `FormSections.tsx` repointed. Component already generic over i18n keys (`ariaLabelKey` / `localeLabelKey: Record<LocaleCode, string>` / `placeholderKeyPrefix` / `requiredErrorKey`) so each surface keeps its own `admin.<surface>.*` keys.
+  - **D9 — Status enum is 2 values** (`published` / `draft`) — derived from `is_published`. No "scheduled" or "expired" like Stories.
+  - **D10 — Default sort logic**: drafts first by `createdAt DESC`, then published by `publishedAt DESC`. Three sort options (Default / Published date / Created date).
+  - **D11 — Edit-on-published reason note**: ≥20-char reason required when editing an already-published article (App Versions + Stories precedent). Plain edits to drafts don't require reason.
+  - **D14 — Inline image in RTE toolbar = URL-input dialog** (no real upload backend in mock). Same pragmatism as Stories' cover-image URL.
+  - **D15 — Unpublish action**: spec didn't list one explicitly, but the row kebab and editor save-as-draft on a published article both surface "Move to drafts" via `unpublishNews()` mutator + 1 audit row.
+
+  **Lessons-compliance**:
+  - During verification, two articles initially mentioned Visa/Mastercard in editorial body copy. Per LESSON 2026-04-30 spirit (Visa/MC scope-out applies to all dashboard-rendered content, not just filter chips), **rewrote `news_004`** to drop V/MC reference (now talks about saved-recipient list expansion) and **replaced `news_006` entirely** ("Visa/Mastercard support" → "Eid al-Adha / Qurbon Hayit"). Final `mockNews.ts` has zero V/MC mentions.
+  - During TS verification, caught a `DateTimeInput` API mismatch: the prop is `onValueChange`, not `onChange`. Fixed in `FormSections.tsx`. Logged here as a sub-pattern for future consumers of the lifted primitive.
+  - Initial PhoneMockup-from-Stories was already-clean (no sub-13px text — uses SVG glyphs only per LESSON 2026-04-29). Lifted as-is.
+
+  **Pattern layer** (`dashboard/src/components/news/`):
+  - `types.ts` — `NewsFilters` + `NewsSort` + `applyNewsFilters` (search across uz/ru/en titles, status multi, date-range against `publishedAt`) + `applyNewsSort` (3 sort keys) + `countActiveFilters` + `NEWS_STATUS_LABEL_KEY` + `NEWS_SORT_LABEL_KEY`
+  - `filterState.ts` — module-level UI cache (filters / sort / focusedId)
+  - `StatusChip.tsx` — 2-tone palette (success-tinted Published / muted-slate Draft)
+  - `LocaleFillIndicator.tsx` — 3 small flag chips at full opacity (filled) or `opacity-30 grayscale` (missing); `computeLocaleFilled()` helper checks both title + plain-text body
+  - `ImagePreview.tsx` — 60×40 thumb (table) or 88×64 rail (mobile cards) w/ slate-placeholder + ImageIcon fallback on missing/error
+  - `SortDropdown.tsx` — 3-option dropdown (matches `SortableHeader` styling)
+  - `NewsFilterBar.tsx` — 2-row bar: full-width search input (Search-icon left + inline X clear, debounced 300ms, page-scoped `/` focus, `aria-label`) + chip row (StatusChipMulti popover + `<DateRangePicker>` chip + Clear-all when active)
+  - `NewsTable.tsx` — sortable desktop table on `lg+`, non-sticky thead per LESSON 2026-04-30, click-to-edit row + kebab actions, 8-row skeleton
+  - `NewsMobileCardStack.tsx` — `<lg` mirror with same expand/kebab pattern (16:9 left rail image + title + status + locale-fill chips)
+  - `DeleteNewsDialog.tsx` — 2-step (Dialog: ≥20-char reason + danger-tinted warning banner → AlertDialog "Are you sure?" before hard-delete)
+  - `PublishNowDialog.tsx` — single-step AlertDialog
+  - `UnpublishDialog.tsx` — Dialog w/ ≥20-char reason
+  - `EmptyState.tsx` — 2 variants (no-records w/ Plus CTA, no-matches w/ Clear-all CTA)
+
+  **Editor pattern layer** (`dashboard/src/components/news/editor/`):
+  - `types.ts` — `NewsEditorValues` + `NewsEditorErrors` + constants (`TITLE_MAX=120`, `TITLE_WARN=100`, `BODY_MIN_PLAIN=200`, `REASON_MIN=20`)
+  - `RichTextEditor.tsx` — TipTap wrapper. `useEditor` w/ StarterKit (h2/h3 only) + Underline + Link (no autoplay open, opens in new tab) + Image (lazy-load) + Placeholder. Editor is uncontrolled — `value` consumed only on mount; locale-flip remounts via `keyById` prop. `plainTextLength()` helper strips HTML tags + collapses whitespace for the 200-char min check. `NEWS_EDITOR_PROSE_CLASSES` exported so the preview pane reuses the same prose styling
+  - `Toolbar.tsx` — 11 buttons (Bold / Italic / Underline + H2 / H3 + Bullet / Numbered + Link / Quote / Divider / Image), active-state highlight, mnemonic shortcuts in `title=` attribute, opens `LinkDialog` and `InlineImageDialog`
+  - `LinkDialog.tsx` — URL input w/ `https?://` validation, Apply / Remove buttons (Remove only when existing link)
+  - `InlineImageDialog.tsx` — URL + alt-text inputs, validates URL
+  - `FormSections.tsx` — 5 sections (`CoverImageSection` / `TitlesSection` / `BodiesSection` / `PublishSection` / `ReasonSection`) + `FormSections` wrapper. Title length warning at >100 chars (warning tone). Body plain-text counter w/ red-when-below-min styling
+  - `NewsPhonePreview.tsx` — 9:16 PhoneMockup + faux app top bar (back chevron + "News" eyebrow + share) + cover image strip + title + meta line + body rendered via `dangerouslySetInnerHTML` with `NEWS_EDITOR_PROSE_CLASSES` so preview matches editor exactly. Locale switcher above preview drives `previewLocale`
+  - `MobilePreviewSheet.tsx` — Floating fixed-bottom-right Eye button (`<lg`) opens Sheet with same preview body
+  - `EditorFooter.tsx` — Canonical `fixed inset-x-0 bottom-0 md:left-[var(--sidebar-width,4rem)]` pattern w/ Back (left) + Save-as-draft + Publish/Update (right). Primary label adapts: "Update" when editing already-published; "Publish" when form `isPublished=true`; "Save draft" otherwise
+  - `PublishConfirmDialog.tsx` — AlertDialog w/ adaptive copy (Publish vs Update intent + interpolates `formatDateTime` for the publish stamp)
+
+  **Pages**:
+  - `pages/News.tsx` — list orchestrator. 350ms initial-mount skeleton. Module-cached state via `filterState`. 5 page-scoped hotkeys (`/` focus search · `f` focus first chip · `j/k` row focus · `Enter` open editor · `n` new). `formatDateTime` + `formatRelative` for column display. Toast notifications for delete/publish/unpublish. Adapts to mobile by switching desktop table → mobile card stack at `<lg`
+  - `pages/NewsEditor.tsx` — `:id`-driven (new + edit branched). 404 state when `:id` doesn't resolve. Two-column layout w/ sticky preview right pane on `lg+`, mobile = floating Eye button → `MobilePreviewSheet`. 4-rule validation (titles all 3 locales · bodies all 3 locales ≥200 plain chars · image URL valid if non-empty · reason ≥20 if edit-on-published). Cmd/Ctrl+1/2/3 cycles locale tabs (also flips preview), Cmd/Ctrl+S save draft, Cmd/Ctrl+Enter primary action
+
+  **Audit bridge** (`mockAuditLog.ts`): `'news'` added to `AuditEntityType` (now 13 types). `NEWS_ACTION_MAP` maps 5 granular actions (`add` / `edit` / `publish` / `unpublish` / `delete`) to the central enum (`add → created` / `edit → updated` / `publish/unpublish → status_changed` / `delete → deleted`). `bridgeNewsAudit` preserves granular verb in `context.kind`, snapshot of `{titleEn, isPublished, publishedAt, hasImage}` always included, per-field `previous` populated only for changed fields on edits, `from_status` / `to_status` set for publish/unpublish. `listNewsAudit()` merged into the central audit feed. `AuditFilterBar` + `AuditRowExpanded` updated. New i18n key `admin.audit-log.entity-type.news`.
+
+  **Routing**: `/content/news` + `/content/news/new` + `/content/news/:id`. Back-compat redirects from `/news` / `/news/new` / `/news/:id` via plain `<Navigate>`. Removed `/news` from `PLACEHOLDER_ROUTES`. Sidebar entry repointed (`/news` → `/content/news`). TopBar `ROUTE_TITLES` repointed. CommandPalette gained "News" entry (Newspaper icon + `g n` shortcut hint). `useKeyboardShortcuts` `g+n` chord rebound from `/notifications` to `/content/news`.
+
+  **i18n** — ~85 new `admin.news.*` keys (page chrome + count subtitle ICU `{published}` + `{draft}` / 3 sort labels / 2 status labels / 8 column labels + row kebab actions / 3 dialog bundles (Delete + Publish-now + Unpublish) / editor sections + fields + 12 toolbar tooltips + Link/Image dialogs + publish + reason + validation + preview pane + footer actions + 2 confirm-dialog bundles + not-found state) + 1 audit-log entity-type key.
+
+  **Hotkeys** — list: `/` (focus search) · `f` (focus first chip) · `j`/`k` (row focus) · `Enter` (open editor) · `n` (new article). Editor: Cmd/Ctrl+1/2/3 cycle locale tabs (also flips preview), Cmd/Ctrl+S save draft, Cmd/Ctrl+Enter primary action. Global: `g+n` routes to `/content/news` (rebound from former `/notifications` placeholder).
+
+- **Files created**:
+  - `dashboard/src/data/mockNews.ts`
+  - `dashboard/src/components/zhipay/PhoneMockup.tsx` (lifted from `stories/`)
+  - `dashboard/src/components/zhipay/LocaleTabInputs.tsx` (lifted from `stories/editor/`)
+  - `dashboard/src/components/news/{types,filterState,StatusChip,ImagePreview,LocaleFillIndicator,SortDropdown,NewsFilterBar,NewsTable,NewsMobileCardStack,DeleteNewsDialog,PublishNowDialog,UnpublishDialog,EmptyState}.tsx`
+  - `dashboard/src/components/news/editor/{types,RichTextEditor,Toolbar,LinkDialog,InlineImageDialog,FormSections,NewsPhonePreview,MobilePreviewSheet,EditorFooter,PublishConfirmDialog}.tsx`
+  - `dashboard/src/pages/News.tsx`
+  - `dashboard/src/pages/NewsEditor.tsx`
+
+- **Files deleted**:
+  - `dashboard/src/components/stories/PhoneMockup.tsx` (lifted to `zhipay/`)
+  - `dashboard/src/components/stories/editor/LocaleTabInputs.tsx` (lifted to `zhipay/`)
+
+- **Files modified**:
+  - `dashboard/package.json` (+ lockfile) — added 6 TipTap packages (@tiptap/react + @tiptap/starter-kit + @tiptap/extension-link + @tiptap/extension-image + @tiptap/extension-underline + @tiptap/extension-placeholder)
+  - `dashboard/src/router.tsx` — added `/content/news` + `/content/news/new` + `/content/news/:id`; back-compat redirects from `/news`, `/news/new`, `/news/:id`; dropped `/news` from `PLACEHOLDER_ROUTES`
+  - `dashboard/src/components/layout/Sidebar.tsx` — `/news` → `/content/news`
+  - `dashboard/src/components/layout/TopBar.tsx` — `ROUTE_TITLES['/news']` → `ROUTE_TITLES['/content/news']`
+  - `dashboard/src/components/layout/CommandPalette.tsx` — added News Navigate entry w/ `Newspaper` icon + `g n` shortcut hint
+  - `dashboard/src/hooks/useKeyboardShortcuts.ts` — `g+n` rebound from `/notifications` to `/content/news`
+  - `dashboard/src/components/stories/StoryPhonePreview.tsx` — repointed `PhoneMockup` import to `@/components/zhipay/PhoneMockup`
+  - `dashboard/src/components/stories/editor/FormSections.tsx` — repointed `LocaleTabInputs` import to `@/components/zhipay/LocaleTabInputs`
+  - `dashboard/src/data/mockAuditLog.ts` — added `NEWS_ACTION_MAP` + `bridgeNewsAudit` + `'news'` to `AuditEntityType` enum + `listNewsAudit()` merge into central
+  - `dashboard/src/components/audit-log/AuditFilterBar.tsx` — `'news'` added to `ENTITY_TYPE_OPTIONS`
+  - `dashboard/src/components/audit-log/AuditRowExpanded.tsx` — `ENTITY_LINK['news']` → `/content/news/:id`
+  - `dashboard/src/lib/i18n.ts` — ~85 new `admin.news.*` keys + `admin.audit-log.entity-type.news`
+
+- **Docs updated**: `docs/models.md` §8 NEWS (rich-text body clarification + nullable image_url + nullable-until-publish for published_at) · §9.2 (added `(is_published, published_at DESC NULLS LAST)` listing index for `news`) · `docs/product_states.md` (News row flipped Done; route updated to `/content/news`) · `ai_context/AI_CONTEXT.md` (current-phase paragraph + 1 new workstream entry) · `ai_context/HISTORY.md`. **No** PRD / mermaid change.
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npx vite build` (exit 0; chunk size warning is pre-existing, not News-related) · `npx vite --port 5180` boots; `curl /` → HTTP 200 (HashRouter — `/content/news` resolves under the hash). Lessons-compliance greps clean: no sub-13px hardcoded text in news pattern + page files · no `sticky top-0` on detail headers · no `← ` literal back-link prefixes · no Visa/Mastercard mentions in `mockNews.ts` (initial draft had 2 articles editorial-mentioning V/MC — `news_004` rewrote to drop reference, `news_006` replaced entirely with Eid al-Adha holiday theme) · canonical `fixed inset-x-0 bottom-0 md:left-[var(--sidebar-width,4rem)]` action bar pattern in EditorFooter · no `text-xs` in news flowing-meta or buttons. Browser eyeballing deferred — please spot-check: `/content/news` loads with 27 articles (23 published + 4 drafts), filter chips work, debounced title search filters across uz/ru/en, sort dropdown re-orders rows, click row → editor, RTE toolbar formats text, link/image dialogs work, locale tabs cycle via ⌘1/2/3 (also flips preview), Cmd/Ctrl+S saves draft, Cmd/Ctrl+Enter publishes, edit-on-published article requires reason note, delete is 2-step, mobile card stack renders at `<lg`, `g+n` global hotkey routes here, audit-log entries appear at `/compliance/audit-log?entity=news`.
+
+---
+
 ### 2026-05-03 — Admin Stories (Phase 17) — `/content/stories` · drag-to-reorder card-grid CMS · 12-record uz/ru/en seed · schema cascade (`published_at` + per-locale CTA split + partial unique index) · `LocaleTabTextarea` lifted to shared · `@dnd-kit/*` added · 8-screen deep-link taxonomy · `Switch` + `Select` primitives added
 
 - **Summary**: Built the Stories CMS — first surface under `/content/*`. Card-grid w/ drag-to-reorder for the published group, multi-locale (uz/ru/en) titles + CTA labels, scheduled publish via `published_at`, optional `expires_at`, and a full-page editor with phone-mockup live preview. **`mockStories.ts` is single source of truth** — 12 deterministic records (4 published / 4 scheduled / 4 drafts) seeded from the spec's themes (Add card 30s · Lower fees · WeChat 30s · MyID · Navruz · Rate-lock · Save recipients · Refer a friend · Trader bulk-send · Welcome · Default card · Ramazan rates). Status is **derived**, not stored — 4-value enum (`draft / scheduled / published / expired`) computed from `is_published × published_at × expires_at`. `display_order` is **unique among published rows only** (matches the new partial unique index in §9.2). Per-locale fields hand-authored as natural translations rather than transliterations.
