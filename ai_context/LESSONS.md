@@ -31,6 +31,100 @@ Lead with the **rule itself**. The Why and How-to-apply lines exist so you can j
 
 ## Lessons
 
+### 2026-05-03 — Page-level tab strips on tabbed admin surfaces are NEVER sticky — title, tabs, and active-tab body scroll together as one unit
+
+**Why:** Phase 21 `/settings` shipped first-pass with the tab strip styled as `position: sticky; top: 0; z-20; bg-background/95 backdrop-blur`. User feedback came in two rounds:
+
+1. First pass: the `bg-background/95` semi-transparent backdrop let table rows + card borders bleed through the strip when scrolling under, which read as broken. I tried to fix by switching to solid `bg-background` + `top: -1px` border-crease trick.
+2. Second pass: user came back with "the tab bar stickyness is not gone" — direct correction. They wanted the stickiness REMOVED entirely, not made-prettier. The spec text said "Tabs (sticky):" but the user, having seen the rendered behaviour, decided sticky tabs felt like unnecessary chrome on a tabbed admin surface where the content is short enough to never need them, and confusing on tabs (Sessions / My audit) where it does need them — the tab band detaching from the page header reads as the surface "becoming an app" instead of staying a single page.
+
+This is the same root family as LESSON 2026-05-02 *"Detail-page headers flow inline (NEVER sticky); structure is back-link / identity / chips"*. **Tab strips on tabbed admin surfaces are content navigation, not chrome — they should scroll with the page rhythm so the title, tabs, and body all move together.** Sticky chrome is reserved for filter bars (list pages), bulk-action bars (multi-select states), and the right-rail action panel on Transfer Detail. Tab strips on settings-style surfaces (or any future tabbed admin page) are NOT chrome.
+
+**How to apply:** For any new tabbed admin surface (`/settings` is the canonical, but extends to any future `/account/*`, `/admin-users/*`, etc.):
+
+- **No `position: sticky` on the tab strip itself.** The strip flows inline in the page rhythm: page header → tab strip → active-tab body, all scrolling as one continuous unit.
+- **Edge-to-edge `border-b` separator stays.** Use negative horizontal margins (`-mx-4 md:-mx-6 px-4 md:px-6`) so the border spans the full main-content area visually, but the strip itself doesn't pin.
+- **No transparent backgrounds (`bg-background/95`, `backdrop-blur`).** Even if the tabs were sticky, transparent backgrounds let scrolled content bleed through and read as broken. Solid `bg-background` if a band is needed; otherwise none.
+- **Mobile horizontal-scroll on overflow** is fine and unrelated — that's tab-strip width handling, not stickiness.
+- **Spec text saying "Tabs (sticky):" is overridden by this rule.** Note the deviation in the implementation summary so the user can re-introduce sticky if they explicitly want it for a specific surface — but default to non-sticky.
+
+**Tab strips on EXISTING surfaces stay as-is** — User Detail's 8-tab strip (`/customers/users/:id`), Blacklist's type tabs (`/compliance/blacklist`), Commission Rules' Personal/Corporate tabs, App Versions' iOS/Android tabs all use the shadcn `<Tabs>` primitive's default (non-sticky) behaviour and were never sticky. This LESSON formalizes the existing convention rather than introducing it.
+
+**Quick grep to verify (any time you add a new tabbed admin page):**
+```
+# Sticky on tab-strip elements:
+grep -rE 'sticky.*top-0.*role="tablist"|<Tabs.*sticky|TabsList.*sticky' dashboard/src
+# (must return 0 hits)
+```
+
+**Context:** Phase 21 `/settings` (2026-05-03). Initial implementation had `sticky top-0 z-20` on `<SettingsTabs>` outer band per the spec line "Tabs (sticky):". Two iterations to land — first solid-bg + border-crease fix, then full removal of stickiness per user direction. `components/settings/SettingsTabs.tsx` final state: `-mx-4 md:-mx-6 px-4 md:px-6 border-b border-border bg-background` (no sticky positioning).
+
+---
+
+### 2026-05-03 — Don't half-override Card primitive padding for custom collapsibles — replace `<CardHeader>` + `<CardContent>` with plain `<button>` + `<div border-t>` when the body needs to be flush
+
+**Why:** Phase 21 `/settings` Sessions tab `<SignInHistoryCollapsible>` shipped first-pass using `<CardHeader className="pb-0">` (override) wrapping a clickable `<button>`, plus `<CardContent className="p-0 pt-4">` for the open body. Two visible problems:
+
+1. **Closed state was cramped.** `pb-0` overrides the Card primitive's `p-5` and removes the bottom 20px, pulling the title hard against the Card's bottom edge — looks like the title is about to fall off.
+2. **Open state had mismatched left edges.** Header retained `px-5` (20px sides) from CardHeader's defaults; body had `p-0` (0 sides) so the table flowed flush to the card edges. The visible left-edge step between header text (at 20px in) and the table's leftmost cell (at 0px in) read as a layout error.
+
+User feedback: "fix the sizing of paddings in sign-in history accordion". The root cause is **partial overrides of the Card primitive's contract**. `<CardHeader>` (`p-5`) and `<CardContent>` (`p-5 pt-0`) form a complete top-down padding rhythm — overriding pieces of either while keeping the components creates the mismatch.
+
+**How to apply:** For any custom collapsible (or click-to-expand) inside a Card:
+
+- **Don't override `<CardHeader>` padding** to make the click area different from the standard Card rhythm. If you need a clickable header that's a button, replace `<CardHeader>` with a plain `<button className="px-5 py-4 ...">` matching the Card's `p-5` rhythm. The button's `px-5` aligns with what `<CardHeader>` would have produced; `py-4` (16px) is slightly tighter than `p-5` (20px) so the chevron doesn't dominate. Add `hover:bg-muted/30 transition-colors` so the click target reads as interactive.
+- **Don't use `<CardContent>` for a flush body.** When the body needs to extend edge-to-edge (table cells provide their own internal padding via the Table primitive's `px-3`; mobile lists use `<li className="px-4 py-3">`), use a plain `<div className="border-t border-border">` instead of `<CardContent className="p-0">`. The `border-t` reads as a clean separator; `<CardContent>`'s `p-5 pt-0` default + `p-0` override is a fight you keep losing.
+- **Add `overflow-hidden` to the Card** so the body's `border-t` separator doesn't bleed past the Card's rounded corners. Without it, on close inspection the border extends slightly outside the radius.
+- **Switch focus rings to `focus-visible:ring-inset`** on the click-target button so the keyboard outline stays inside the card frame (the default outset ring breaks the card's edge).
+
+This generalizes: **Card primitive padding is a contract, not a buffet.** Either consume the primitives whole (`<CardHeader>` + `<CardContent>`) or replace them with raw elements that own their own padding. Mid-overrides of `pb-0` / `pt-0` / `p-0` are a smell.
+
+**Quick grep to verify (any time you add a Card-wrapped collapsible / accordion):**
+```
+# Half-overrides of Card primitive padding:
+grep -rE 'CardHeader.*className.*pb-0|CardContent.*className.*p-0' dashboard/src
+# (every hit needs review — likely should be a plain <button> + <div border-t>
+# instead of fighting the primitive)
+```
+
+**Context:** Phase 21 `/settings` Sessions tab (2026-05-03). `components/settings/sessions/SignInHistoryCollapsible.tsx` first pass used `<CardHeader className="pb-0">` + `<CardContent className="p-0 pt-4">`. Fix: replaced with `<button className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left hover:bg-muted/30 transition-colors focus-visible:ring-inset">` for the header and `<div id="..." className="border-t border-border">` for the body; added `<Card className="overflow-hidden">` so the separator clips to rounded corners.
+
+---
+
+### 2026-05-03 — Anything serialized to sessionStorage / localStorage loses `Date` semantics on rehydrate — re-hydrate Date fields explicitly inside the parser, never in consumers
+
+**Why:** Phase 21 `/settings` Profile tab crashed on the very first probe with `RangeError: Invalid time value` from `formatDate(profile.createdAt)`. The chain: `lib/auth.ts` puts `AdminProfile` (which carries `createdAt: Date` and `lastPasswordChangedAt: Date | null`) inside the in-tab `ActiveSession` written to `sessionStorage` via `JSON.stringify(s)`. On page refresh, `JSON.parse(raw)` returns the same shape but **every Date is now a string** (ISO format from `Date.prototype.toJSON()`). TypeScript's `as ActiveSession` cast hides the mismatch — the field is typed `Date` but its runtime value is `string`. The first consumer that calls `format(date, …)` (date-fns) crashes with `RangeError: Invalid time value`.
+
+This is the same root family as the Phase 20 `useSyncExternalStore` LESSON: **storage round-trips lose runtime semantics that the type system can't see.** Phase 20 was about reference identity (a parsed-on-every-call snapshot fooled React's caching guard). This is about constructor identity (a parsed-on-every-call Date is just a string until reconstructed).
+
+**How to apply:** Whenever you persist a structured object to `sessionStorage` / `localStorage` and parse it back via `JSON.parse`:
+
+- **Re-hydrate `Date` fields explicitly inside the parser, NEVER in consumers.** The parser is the single boundary where strings cross back into runtime Date semantics. If consumers re-hydrate, you have N fix points; if the parser re-hydrates, you have 1.
+- **Pattern:** `parsedField instanceof Date ? parsedField : new Date(parsedField)`. The instanceof check makes the helper safe to call on already-hydrated objects too (e.g. when the parser is reused on a fresh sign-in payload that hasn't been through storage yet).
+- **Handle nullable Date fields:** check `=== null || === undefined` before constructing — `new Date(null)` returns 1970, `new Date(undefined)` returns Invalid Date; both silently break downstream consumers.
+- **Same applies to `Map`, `Set`, `BigInt`, `URL`, and class instances** — they all get flattened to plain objects / strings / numbers by `JSON.stringify`. If you persist any of them, re-hydrate inside the parser.
+- **TypeScript will NOT catch this** — `as T` casts are unsafe when the runtime value can drift from the declared shape. Treat every `JSON.parse(raw) as T` as a fingers-crossed cast and write a re-hydrator helper.
+- **Better long-term**: don't persist Date objects at all — store as ISO strings or epoch numbers and convert at read time. But for compact session payloads where Date is in the natural shape (e.g. `AdminProfile.createdAt`), the parser-side re-hydrate is the path of least friction.
+
+**Quick grep to verify (any time you add a new field to a persisted store):**
+```
+# Find every parser that casts JSON.parse(raw) to a typed shape — each
+# one is a candidate re-hydrator site:
+grep -rE 'JSON\.parse\([^)]*\)\s*as\s+[A-Z]' dashboard/src/lib
+# (every hit needs an instanceof Date check for any Date-typed field
+# in the target type, or a confirmation that no Date fields exist.)
+```
+
+**Symptom-to-diagnosis shortcut:** `RangeError: Invalid time value` from `format(...)` (date-fns) or `Invalid Date` from `toLocaleString()` after a page refresh — go straight to the parser of whichever store holds the source object. The bug is a Date that survived the type system but not the storage round-trip.
+
+**Context:** Phase 21 `/settings` (2026-05-03). `AdminProfile` extended with `createdAt`, `lastPasswordChangedAt` (and `recoveryContact: string | null`, which is fine). First refresh on `/settings?tab=profile` crashed inside `IdentityCard.tsx:169` calling `formatDate(profile.createdAt)`. Fix: `lib/auth.ts` `parseStoredSession()` re-hydrates `profile.createdAt` and `profile.lastPasswordChangedAt` via `instanceof Date ? value : new Date(value)`. Other session fields (`lastSeenAt`, `expiresAt`) are already numbers (ms since epoch) so they were unaffected.
+
+**Schema-evolution corollary (same incident, surfaced separately).** Adding a new required field to a persisted shape between phases means stale storage payloads from an earlier phase will be missing it. After the Date-rehydrate fix landed, a follow-up "missing key" warning appeared in the /settings Sessions tab — the underlying cause was a Phase-20-era `ActiveSession` in sessionStorage that lacked the new Phase 21 `id` field. Downstream `<TableRow key={s.id}>` rendered with `key={undefined}`, tripping React's "each child in a list should have a unique key prop" warning. Fix in the same parser: mint defaults for missing fields (`if (!parsed.id) parsed.id = generateSessionId();`), default `phone` and `recoveryContact` to `null`, and write the upgraded shape back to storage (`sessionStorage.setItem(KEY, JSON.stringify(currentSession))`) so subsequent refreshes don't re-mint.
+
+**The general rule:** the parser is the single seam where stored data meets the current schema. It must handle three drift modes — runtime semantics (Date / Map / etc), missing optional fields (default to null/undefined cleanly), and missing required fields (mint a placeholder, OR force re-auth, OR clear storage — but never let an undefined slip through to consumers). Whenever you add a field to a persisted type, audit the parser in the same commit.
+
+---
+
 ### 2026-05-03 — `useSyncExternalStore`'s `getSnapshot` MUST return reference-equal values when state is unchanged — never re-parse from storage on every call
 
 **Why:** Phase 20 sign-in surface shipped with `lib/auth.ts` reading `sessionStorage` and JSON-parsing the session on every `getSnapshot()` call. Each call returned a fresh object (different reference) → React detected identity churn and emitted "Warning: The result of getSnapshot should be cached to avoid an infinite loop" → cascading "Maximum update depth exceeded" runtime error → blank screen on every authenticated route. The bell-icon-popover work happened to expose it because Popover's renders re-trigger `useSyncExternalStore` subscribers, but the bug was in the auth store contract, not the popover.
