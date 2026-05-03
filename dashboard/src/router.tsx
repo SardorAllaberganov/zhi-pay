@@ -34,6 +34,7 @@ import { NewsEditor } from '@/pages/NewsEditor';
 import { Notifications } from '@/pages/Notifications';
 import { NotificationsCompose } from '@/pages/NotificationsCompose';
 import { SentNotificationDetail } from '@/pages/SentNotificationDetail';
+import { Settings } from '@/pages/Settings';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES: string[] = [];
@@ -157,6 +158,9 @@ function AppRoutes() {
           path="/content/notifications/sent/:id"
           element={<SentNotificationDetail />}
         />
+
+        {/* Settings — Profile · Security · Sessions · Preferences · My audit */}
+        <Route path="/settings" element={<Settings />} />
 
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />

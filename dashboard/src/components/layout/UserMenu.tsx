@@ -1,4 +1,5 @@
-import { LogOut, Keyboard, User } from 'lucide-react';
+import { LogOut, Keyboard, Settings as SettingsIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +25,7 @@ function initialsFor(displayName: string): string {
 }
 
 export function UserMenu({ onShowHelp }: UserMenuProps) {
+  const navigate = useNavigate();
   const session = useSession();
   const displayName = session?.profile.displayName ?? 'Admin';
   const email = session?.profile.email ?? '';
@@ -53,9 +55,12 @@ export function UserMenu({ onShowHelp }: UserMenuProps) {
           ) : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="mr-2 h-4 w-4" />
-          Profile
+        <DropdownMenuItem onClick={() => navigate('/settings')}>
+          <SettingsIcon className="mr-2 h-4 w-4" />
+          {t('admin.settings.title')}
+          <kbd className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1.5 font-mono text-xs text-muted-foreground">
+            g ,
+          </kbd>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onShowHelp}>
           <Keyboard className="mr-2 h-4 w-4" />
