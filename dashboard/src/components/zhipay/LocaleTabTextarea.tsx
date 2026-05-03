@@ -1,56 +1,69 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
-import { LOCALE_LABEL_KEY, LOCALE_ORDER, type Locale } from '../types';
-import { LocaleFlag } from '@/components/zhipay/LocaleFlag';
+import { LocaleFlag, type LocaleCode } from '@/components/zhipay/LocaleFlag';
 
 /**
  * Locale tab strip + single autoresizing textarea for the active locale.
  *
- * Behavior:
- *   - Active locale switches via tab click OR Cmd/Ctrl+1/2/3
- *   - Textarea autoresizes from 6 rows minimum
- *   - Live char counter under the textarea
- *   - Empty-locale validation surfaces inline below the counter
- *   - Imperative focus(): ref-via-callback to the active textarea so the
- *     parent dialog can `focusActive()` after Cmd+N hotkey switching
- *
- * Mobile and desktop share the same UI — a single textarea per locale
- * with a tab strip above. This satisfies the spec's "accordion on mobile"
- * intent (one at a time) without splitting the codepath.
+ * 3rd-consumer lift from `components/app-versions/modals/ReleaseNotesEditor`
+ * (App Versions, Error Codes preview, now Stories editor). Generic over the
+ * i18n key set so each consumer keeps its own surface-scoped strings.
  */
 
-interface ReleaseNotesEditorProps {
-  values: Record<Locale, string>;
-  onChange: (locale: Locale, next: string) => void;
-  active: Locale;
-  onActiveChange: (loc: Locale) => void;
-  /** Invalid locales surface a per-locale error message. */
-  invalidLocales?: ReadonlySet<Locale>;
-  /** Required for `htmlFor` when a parent label exists. */
+export const LOCALE_ORDER: LocaleCode[] = ['uz', 'ru', 'en'];
+
+interface LocaleTabTextareaProps {
+  values: Record<LocaleCode, string>;
+  onChange: (locale: LocaleCode, next: string) => void;
+  active: LocaleCode;
+  onActiveChange: (loc: LocaleCode) => void;
+  /** Invalid locales surface a per-locale red dot + inline error message. */
+  invalidLocales?: ReadonlySet<LocaleCode>;
+  /** Required for `htmlFor` and aria-controls when nested in labeled forms. */
   idPrefix?: string;
+  /** i18n key for the tablist aria-label. */
+  ariaLabelKey: string;
+  /** i18n key map per locale for tab labels. */
+  localeLabelKey: Record<LocaleCode, string>;
+  /** i18n key prefix for placeholders — full key resolves as `${placeholderKeyPrefix}.${locale}`. */
+  placeholderKeyPrefix: string;
+  /** i18n key for the per-locale required-error message. */
+  requiredErrorKey: string;
+  /** i18n key for the hint text shown below textarea (when not error). */
+  hintKey: string;
+  /** i18n key for the char-count interpolation `{count}`. */
+  charCountKey: string;
+  /** Min height in px (default 144 — ~ 6 rows × 24px line-height). */
+  minHeightPx?: number;
+  /** Min rows on the textarea element (default 6). */
+  baseRows?: number;
 }
 
-const TEXTAREA_BASE_ROWS = 6;
-const TEXTAREA_MIN_HEIGHT_PX = 144; // ~ 6 rows × 24px line-height
-
-export function ReleaseNotesEditor({
+export function LocaleTabTextarea({
   values,
   onChange,
   active,
   onActiveChange,
   invalidLocales,
-  idPrefix = 'release-notes',
-}: ReleaseNotesEditorProps) {
+  idPrefix = 'locale-textarea',
+  ariaLabelKey,
+  localeLabelKey,
+  placeholderKeyPrefix,
+  requiredErrorKey,
+  hintKey,
+  charCountKey,
+  minHeightPx = 144,
+  baseRows = 6,
+}: LocaleTabTextareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Autoresize on value change.
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${Math.max(TEXTAREA_MIN_HEIGHT_PX, el.scrollHeight)}px`;
-  }, [active, values]);
+    el.style.height = `${Math.max(minHeightPx, el.scrollHeight)}px`;
+  }, [active, values, minHeightPx]);
 
   const value = values[active];
   const showError = invalidLocales?.has(active) ?? false;
@@ -58,7 +71,7 @@ export function ReleaseNotesEditor({
   return (
     <div className="space-y-3">
       {/* Locale tab strip */}
-      <div role="tablist" aria-label={t('admin.app-versions.editor.locale-strip')} className="flex items-center gap-2">
+      <div role="tablist" aria-label={t(ariaLabelKey)} className="flex items-center gap-2">
         {LOCALE_ORDER.map((loc, i) => {
           const isActive = loc === active;
           const isInvalid = invalidLocales?.has(loc) ?? false;
@@ -79,10 +92,10 @@ export function ReleaseNotesEditor({
               )}
             >
               <LocaleFlag locale={loc} size="sm" />
-              <span>{t(LOCALE_LABEL_KEY[loc])}</span>
+              <span>{t(localeLabelKey[loc])}</span>
               {isInvalid && (
                 <span
-                  aria-label={t('admin.app-versions.editor.locale-required')}
+                  aria-label={t(requiredErrorKey)}
                   className="inline-block h-1.5 w-1.5 rounded-full bg-danger-600"
                 />
               )}
@@ -93,24 +106,20 @@ export function ReleaseNotesEditor({
       </div>
 
       {/* Active locale textarea */}
-      <div
-        id={`${idPrefix}-${active}`}
-        role="tabpanel"
-        aria-labelledby={`${idPrefix}-tab-${active}`}
-      >
+      <div id={`${idPrefix}-${active}`} role="tabpanel">
         <textarea
           ref={textareaRef}
-          rows={TEXTAREA_BASE_ROWS}
+          rows={baseRows}
           value={value}
           onChange={(e) => onChange(active, e.target.value)}
-          placeholder={t(`admin.app-versions.editor.placeholder.${active}`)}
+          placeholder={t(`${placeholderKeyPrefix}.${active}`)}
           className={cn(
             'w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-relaxed',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             'placeholder:text-muted-foreground/70 resize-none',
             showError && 'border-danger-600 focus-visible:ring-danger-600',
           )}
-          style={{ minHeight: `${TEXTAREA_MIN_HEIGHT_PX}px` }}
+          style={{ minHeight: `${minHeightPx}px` }}
           aria-describedby={`${idPrefix}-${active}-counter`}
         />
         <div
@@ -122,12 +131,10 @@ export function ReleaseNotesEditor({
               showError ? 'text-danger-700 dark:text-danger-600' : 'text-muted-foreground',
             )}
           >
-            {showError
-              ? t('admin.app-versions.editor.locale-required')
-              : t('admin.app-versions.editor.markdown-hint')}
+            {showError ? t(requiredErrorKey) : t(hintKey)}
           </span>
           <span className="text-muted-foreground tabular">
-            {t('admin.app-versions.editor.char-count', { count: value.length })}
+            {t(charCountKey, { count: value.length })}
           </span>
         </div>
       </div>
@@ -135,7 +142,7 @@ export function ReleaseNotesEditor({
   );
 }
 
-/** Imperatively focus the textarea for the active locale (used by Cmd+N hotkey). */
+/** Imperative-focus helper for parent dialogs that switch locale via Cmd+N. */
 export function useFocusableTextarea(): {
   ref: (el: HTMLTextAreaElement | null) => void;
   focus: () => void;

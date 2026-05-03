@@ -28,9 +28,9 @@ import {
   compareSemver,
   findDuplicate,
 } from '@/data/mockAppVersions';
-import { LOCALE_ORDER, PLATFORM_LABEL_KEY, type Locale } from '../types';
+import { LOCALE_ORDER, LOCALE_LABEL_KEY, PLATFORM_LABEL_KEY, type Locale } from '../types';
 import { PlatformIcon } from '../PlatformIcon';
-import { ReleaseNotesEditor } from './ReleaseNotesEditor';
+import { LocaleTabTextarea } from '@/components/zhipay/LocaleTabTextarea';
 import { ReleaseNotesPreviewPane } from './ReleaseNotesPreviewPane';
 
 /**
@@ -366,13 +366,19 @@ export function AddVersionDialog({
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="edit" className="mt-3">
-                <ReleaseNotesEditor
+                <LocaleTabTextarea
                   values={form.notes}
                   onChange={setNotes}
                   active={activeLocale}
                   onActiveChange={setActiveLocale}
                   invalidLocales={invalidLocales}
                   idPrefix="add-notes"
+                  ariaLabelKey="admin.app-versions.editor.locale-strip"
+                  localeLabelKey={LOCALE_LABEL_KEY}
+                  placeholderKeyPrefix="admin.app-versions.editor.placeholder"
+                  requiredErrorKey="admin.app-versions.editor.locale-required"
+                  hintKey="admin.app-versions.editor.markdown-hint"
+                  charCountKey="admin.app-versions.editor.char-count"
                 />
               </TabsContent>
               <TabsContent value="preview" className="mt-3">
