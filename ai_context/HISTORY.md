@@ -4,6 +4,53 @@
 
 ---
 
+### 2026-05-03 — Admin KYC Tiers reference (Phase 13) — `/compliance/kyc-tiers` · read-only by design
+
+- **Summary**: Built a **read-only** reference page for the three KYC tier definitions at `/compliance/kyc-tiers`. The original spec asked for a full edit-creates-new-version surface (per-tier edit modal, diff preview, version history table, `kyc_tier_versions` schema cascade). Pushed back during planning: tier limits in a regulated remittance corridor are governed by the Central Bank of Uzbekistan + Compliance memos — they're not click-an-admin-button edits. Putting an "Edit tier" affordance behind a 50-char reason note implies a level of agency we don't actually have, and the blast radius (every user, every transfer) is exactly the kind of change that should require a code-review + migration + formal sign-off, not an admin UI. Proposed three options (read-only / full-edit / hybrid); user picked read-only.
+
+  **Resulting page** — three tier cards on top (`lg:grid-cols-3` desktop, single column mobile) + LiveImpactCard below. **Tier_2 card** carries the full stats grid (per-transaction · daily · monthly limits as `<Money currency="UZS">` + max linked cards integer) + a green "MyID required" chip in the top-right corner. **Tier_0 + tier_1 cards** carry no stats grid and no MyID chip — only a warning-toned gate note that says what's blocked at that tier. The user's two correctional rounds drove that shape:
+  - Round 1 — "if not myid identified no one can make transactions" → added a generic `myid-gate` note on tier_0 / tier_1 cards.
+  - Round 2 — "the limits no exists in tier 0 and 1 no operations can provided in these tiers" → removed the limits grid + MyID chip from tier_0 / tier_1 entirely; replaced the generic gate copy with **per-tier specific** copy: tier_0 = "Cannot access the app. Phone OTP verification is required before sign-in." · tier_1 = "View-only access — services and FX rates visible. No card linking, no recipients, no transfers until MyID verification."
+  - Banner removal — initial draft had a non-dismissible warning banner at the top reading "Placeholder values pending Compliance sign-off · governed by Compliance and the regulator". User asked to drop it ("remove warning placeholder block"). The page is now header → 3 tier cards → LiveImpactCard.
+
+  This re-framing matches the existing AI_CONTEXT decision "MyID is the hard gate for transfers" + the `_TIER_LIMITS_TIYINS` block in `mockUsers.ts` that already shows tier_0 + tier_1 = `0n / 0n` daily / monthly. The placeholder values from `kyc-tiers-and-limits.md` (tier_1 = 5M / 5M / 20M / 2 cards) are the **regulatory aspiration / future state** — they live on disk in the rule file as canonical reference, but the dashboard now reflects **live operational reality**: tier_2 is the only tier where operations happen. No divergence to flag — both views co-exist (rule file = future state, dashboard = current state).
+
+  **LiveImpactCard** — derived from existing mocks. Title row carries `Total users` label + count on the right. 3-cell tier-count grid (count + % share). Meta strip below the divider with "Active transfers right now" count + "Avg per-tx amount" via `<Money>`. When no transfers in flight, drops the avg-amount cell and shows "No transfers in flight." italic.
+
+  **Data layer** — `mockKycTiers.ts` is a **constants-only** module. Just 3 `TierConfig` records, the canonical regulatory values from `.claude/rules/kyc-tiers-and-limits.md` (tier_0 zeros, tier_1 5M / 5M / 20M / 2 cards / no MyID, tier_2 50M / 50M / 200M / 5 cards / MyID required). Helpers: `listKycTiers / getKycTier / getUserCountsByTier / getActiveTransferStats`. The last two derive from `listUsers()` and `TRANSFERS_FULL` so the page stays consistent with every other surface that reads from those stores. **No mutator, no audit-log store, no version history, no schema cascade** — the read-only shape is enforced by the data layer's API surface.
+
+  **Pages** — `pages/KycTiers.tsx` orchestrates the page with a 350ms initial-mount skeleton (matches the FX Config / Commission Rules cadence). No back-compat redirect needed for `/kyc-tiers/:id` (no detail page exists).
+
+  **Routing** — `/compliance/kyc-tiers`. Back-compat: `/kyc-tiers` → `/compliance/kyc-tiers` via plain `<Navigate>`. Removed `/kyc-tiers` from `PLACEHOLDER_ROUTES`. Sidebar entry repointed.
+
+  **i18n** — 19 new `admin.kyc-tiers.*` keys (title / subtitle · 4 stat labels · MyID-required chip · 3 tier names + 3 tier descriptions + 2 tier-specific gate notes · LiveImpactCard title + subtitle + total-users + active-transfers + avg-amount + no-active fallback).
+
+  **Hotkeys** — none page-scoped (read-only surface, no actions to wire). Existing `g+t` global hotkey would land here once added; not implemented this phase.
+
+- **Files created**:
+  - `dashboard/src/data/mockKycTiers.ts`
+  - `dashboard/src/pages/KycTiers.tsx`
+  - `dashboard/src/components/kyc-tiers/TierCard.tsx`
+  - `dashboard/src/components/kyc-tiers/LiveImpactCard.tsx`
+
+- **Files modified**:
+  - `dashboard/src/router.tsx` — added `<KycTiers>` import + `/compliance/kyc-tiers` route + `/kyc-tiers` flat redirect; dropped `/kyc-tiers` from `PLACEHOLDER_ROUTES`
+  - `dashboard/src/components/layout/Sidebar.tsx` — Compliance section's KYC Tiers nav `to` updated `/kyc-tiers` → `/compliance/kyc-tiers`
+  - `dashboard/src/lib/i18n.ts` — 19 new `admin.kyc-tiers.*` keys
+
+- **Docs updated**: `docs/product_states.md` (KYC Tiers row flipped from `❌ Placeholder` to `✅ Read-only reference`), `ai_context/AI_CONTEXT.md`, `ai_context/HISTORY.md`. **No** schema / PRD / mermaid change — `models.md` §2.2 was already accurate (the canonical regulatory placeholder values match what we render on tier_2; the operational gating we surfaced was already captured by AI_CONTEXT's "MyID is the hard gate for transfers" decision).
+
+- **Decision deviations from the literal spec** (each flagged in the proposal and confirmed before implementation):
+  - **Edit affordance** → dropped entirely. Per-tier "Edit →" button, edit modal/full-page form, diff preview, ImpactPreviewCard, SaveTierConfirmDialog, version history table + filter, useCopyFeedback lift, `kyc_tier_versions` schema cascade — none of it built. The user picked option A (read-only) over option B (full-spec) and option C (hybrid) during planning.
+  - **Stats grid on tier_0 / tier_1** → not rendered. Round-2 user feedback was that limits don't exist on those tiers because no operations happen there.
+  - **MyID chip on tier_0 / tier_1** → not rendered. The gate note carries the operational message; a "No MyID" chip alongside "MyID required for operations" copy was contradictory.
+  - **Placeholder banner** → not rendered. Initial draft had a non-dismissible warning banner at the top; user asked to drop it.
+  - **Schema cascade** (`kyc_tier_versions`) → not authored. Read-only surface = nothing to version.
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npm run build` (exit 0). Browser verification deferred — the visual rhythm of the tier-card grid + LiveImpactCard against the page bg should still be eyeballed before sign-off.
+
+---
+
 ### 2026-05-03 — Blacklist polish — segmented-control pill restored · "Add entry" CTA tone correction
 
 - **Summary**: Two same-day fixes to the freshly-shipped Blacklist surface, both driven by user feedback on the prototype.
