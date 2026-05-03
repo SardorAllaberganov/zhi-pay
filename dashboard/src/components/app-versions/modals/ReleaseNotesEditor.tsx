@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { LOCALE_LABEL_KEY, LOCALE_ORDER, type Locale } from '../types';
-import { LocaleFlag } from '../LocaleFlag';
+import { LocaleFlag } from '@/components/zhipay/LocaleFlag';
 
 /**
  * Locale tab strip + single autoresizing textarea for the active locale.

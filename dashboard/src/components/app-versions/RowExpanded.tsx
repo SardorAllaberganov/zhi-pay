@@ -2,7 +2,7 @@ import { formatDateTime, formatRelative } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { AppVersion } from '@/data/mockAppVersions';
 import { LOCALE_ORDER, LOCALE_LABEL_KEY } from './types';
-import { LocaleFlag } from './LocaleFlag';
+import { LocaleFlag } from '@/components/zhipay/LocaleFlag';
 import { MarkdownView } from './MarkdownView';
 
 /**

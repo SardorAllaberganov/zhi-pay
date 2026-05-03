@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { LOCALE_ORDER } from './types';
-import { LocaleFlag } from './LocaleFlag';
+import { LocaleFlag } from '@/components/zhipay/LocaleFlag';
 
 /**
  * Truncate to roughly N characters at a word boundary, append `…` when cut.

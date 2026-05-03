@@ -7,7 +7,7 @@ import {
   LOCALE_ORDER,
   type Locale,
 } from '../types';
-import { LocaleFlag } from '../LocaleFlag';
+import { LocaleFlag } from '@/components/zhipay/LocaleFlag';
 import { PlatformIcon } from '../PlatformIcon';
 import { MarkdownView } from '../MarkdownView';
 
