@@ -415,6 +415,26 @@ export function signOut(options: SignOutOptions = {}): void {
   writeSession(null);
 }
 
+/**
+ * Tear down the session and redirect to /sign-in with the
+ * session-lost banner. Called by future fetch interceptors when the
+ * backend returns 401 mid-app.
+ *
+ * Today: enabling-only — there's no real backend in v1 mock. The signed
+ * audit verb stays `session_expired` (the existing enum value); the
+ * URL flag `?reason=session-lost` distinguishes the post-event banner
+ * copy from the idle-timeout copy if/when they diverge.
+ */
+export function triggerSessionLost(currentPath: string): void {
+  signOut({ reason: 'session_expired' });
+  if (typeof window === 'undefined') return;
+  const params = new URLSearchParams();
+  if (currentPath && currentPath !== '/') params.set('next', currentPath);
+  params.set('reason', 'session-lost');
+  // HashRouter — full reload so the redirect lands on a clean state.
+  window.location.assign(`${window.location.pathname}#/sign-in?${params.toString()}`);
+}
+
 // =====================================================================
 // Activity tracking + getters
 // =====================================================================

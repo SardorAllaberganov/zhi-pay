@@ -35,7 +35,70 @@ import { Notifications } from '@/pages/Notifications';
 import { NotificationsCompose } from '@/pages/NotificationsCompose';
 import { SentNotificationDetail } from '@/pages/SentNotificationDetail';
 import { Settings } from '@/pages/Settings';
+import { NotFound } from '@/pages/NotFound';
+import { Forbidden } from '@/pages/Forbidden';
+import { Maintenance } from '@/pages/Maintenance';
+import { ShortcutsPrint } from '@/pages/ShortcutsPrint';
+import {
+  SystemPreviewIndex,
+  SystemPreview404,
+  SystemPreview500,
+  SystemPreview403,
+  SystemPreviewOffline,
+  SystemPreviewMaintenance,
+  SystemPreviewShortcuts,
+} from '@/pages/SystemPreview';
 import { Placeholder } from '@/pages/Placeholder';
+import { SystemErrorBoundary } from '@/components/system/SystemErrorBoundary';
+import { NotFoundState } from '@/components/system/NotFoundState';
+import { useMaintenanceState } from '@/lib/maintenanceState';
+
+/**
+ * Known top-level path prefixes. A signed-out request to a path NOT
+ * matching any of these renders the full-bleed 404 directly — without
+ * the `<AuthGuard>` redirect to /sign-in. This honors the spec's
+ * "Outside shell (deep link before sign-in)" variant: a malformed
+ * deep-link is communicated up-front rather than after the user
+ * authenticates.
+ *
+ * Keep in sync with the route list in `<AppRoutes>` (and the
+ * back-compat redirects). When a new top-level prefix is introduced,
+ * add it here too.
+ */
+const KNOWN_PATH_PREFIXES = [
+  '/operations/',
+  '/customers/',
+  '/finance/',
+  '/compliance/',
+  '/system/',
+  '/content/',
+  '/settings',
+  // Back-compat flat routes that AppRoutes redirects to nested /:section/*
+  '/transfers',
+  '/kyc-queue',
+  '/aml-triage',
+  '/users',
+  '/cards',
+  '/recipients',
+  '/fx-config',
+  '/commission-rules',
+  '/audit-log',
+  '/blacklist',
+  '/kyc-tiers',
+  '/services',
+  '/app-versions',
+  '/error-codes',
+  '/stories',
+  '/news',
+  '/notifications',
+];
+
+function isKnownPath(pathname: string): boolean {
+  if (pathname === '/' || pathname === '/sign-in') return true;
+  return KNOWN_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
 
 const PLACEHOLDER_ROUTES: string[] = [];
 
@@ -48,6 +111,10 @@ function RedirectPreservingQuery({ to }: { to: string }) {
  * Wraps every authenticated route. Redirects to `/sign-in` when no
  * session exists, and to `/sign-in?expired=1&next=<path>` when the
  * idle-timeout fires while the user is on an authenticated surface.
+ *
+ * Signed-out + unknown-path lands on a full-bleed 404 BEFORE this
+ * guard fires (handled in `Router()` below) — that path never reaches
+ * AuthGuard.
  */
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const session = useSession();
@@ -70,20 +137,61 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
 }
 
+/**
+ * Top-level path-aware guard. Honors the spec's outside-shell 404
+ * variant: when the user is signed out AND the path doesn't match any
+ * known top-level prefix, render the full-bleed 404 directly. Otherwise
+ * fall through to AuthGuard's normal redirect-to-sign-in behavior.
+ *
+ * Signed-in users always fall through to AuthGuard — the in-shell 404
+ * inside `AppRoutes` handles unknown paths for them.
+ */
+function PathAwareAuthGuard({ children }: { children: React.ReactNode }) {
+  const session = useSession();
+  const location = useLocation();
+
+  if (!session && !isKnownPath(location.pathname)) {
+    return <NotFoundState fullBleed />;
+  }
+
+  return <AuthGuard>{children}</AuthGuard>;
+}
+
+/**
+ * Top-level gate. When `useMaintenanceState().active` is true, every
+ * route in the app — signed in or out — is replaced with the full-page
+ * `<Maintenance>` view. The maintenance preview route is excluded so
+ * designers can eyeball other states even while the flag is on.
+ */
+function MaintenanceGate({ children }: { children: React.ReactNode }) {
+  const maintenance = useMaintenanceState();
+  const location = useLocation();
+  const isPreview = location.pathname.startsWith('/system/preview');
+  if (maintenance.active && !isPreview) {
+    return <Maintenance />;
+  }
+  return <>{children}</>;
+}
+
 export function Router() {
   return (
-    <Routes>
-      {/* Auth surface — bare, outside <AppShell>. */}
-      <Route path="/sign-in" element={<SignIn />} />
+    <MaintenanceGate>
+      <Routes>
+        {/* Auth surface — bare, outside <AppShell>. */}
+        <Route path="/sign-in" element={<SignIn />} />
 
-      {/* Every other route is wrapped by <AuthGuard> + <AppShell>. */}
-      <Route path="*" element={<AuthGuard><AppRoutes /></AuthGuard>} />
-    </Routes>
+        {/* Every other route flows through <PathAwareAuthGuard> — which
+            renders the full-bleed 404 for signed-out + unknown paths,
+            or falls through to <AuthGuard> + <AppShell> otherwise. */}
+        <Route path="*" element={<PathAwareAuthGuard><AppRoutes /></PathAwareAuthGuard>} />
+      </Routes>
+    </MaintenanceGate>
   );
 }
 
 function AppRoutes() {
   return (
+    <SystemErrorBoundary>
       <Routes>
         <Route path="/" element={<Overview />} />
 
@@ -199,10 +307,27 @@ function AppRoutes() {
           element={<RedirectPreservingQuery to="/content/notifications" />}
         />
 
+        {/* System — error & system state previews (dev tooling) */}
+        <Route path="/system/preview" element={<SystemPreviewIndex />} />
+        <Route path="/system/preview/404" element={<SystemPreview404 />} />
+        <Route path="/system/preview/500" element={<SystemPreview500 />} />
+        <Route path="/system/preview/403" element={<SystemPreview403 />} />
+        <Route path="/system/preview/offline" element={<SystemPreviewOffline />} />
+        <Route path="/system/preview/maintenance" element={<SystemPreviewMaintenance />} />
+        <Route path="/system/preview/shortcuts" element={<SystemPreviewShortcuts />} />
+
+        {/* System — 403 (defensive RBAC fallback; not in sidebar) */}
+        <Route path="/system/403" element={<Forbidden />} />
+
+        {/* System — print-friendly shortcuts view (opened in a new tab
+            from the HelpOverlay's "Print shortcuts" button) */}
+        <Route path="/system/shortcuts-print" element={<ShortcutsPrint />} />
+
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />
         ))}
-        <Route path="*" element={<Placeholder />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
+    </SystemErrorBoundary>
   );
 }

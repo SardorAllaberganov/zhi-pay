@@ -22,6 +22,8 @@ export function SignIn() {
 
   const next = params.get('next') ?? '/';
   const expired = params.get('expired') === '1';
+  const sessionLost = params.get('reason') === 'session-lost';
+  const showSessionBanner = expired || sessionLost;
 
   // If a valid session already exists when /sign-in is mounted, bounce
   // straight to `next`. Avoids a "Sign in again" pulse when an admin
@@ -46,7 +48,7 @@ export function SignIn() {
       <AuthCard
         title={t('admin.sign-in.title')}
         subtitle={t('admin.sign-in.subtitle')}
-        banner={expired ? <SessionExpiredBanner /> : null}
+        banner={showSessionBanner ? <SessionExpiredBanner /> : null}
       >
         <EmailPasswordStep
           defaultEmail="super.admin@zhipay.uz"

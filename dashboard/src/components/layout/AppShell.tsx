@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { OfflineBanner } from '@/components/system/OfflineBanner';
 import { cn } from '@/lib/utils';
+import { AppShellContext, type AppShellActions } from './AppShellContext';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { CommandPalette } from './CommandPalette';
@@ -50,8 +52,21 @@ export function AppShell({ children }: AppShellProps) {
   // is never read (the bar uses `inset-x-0` for full viewport width).
   const sidebarWidthPx = collapsed ? 64 : 240;
 
+  // Imperative handles handed to deep descendants via context — used by
+  // the in-shell 404 page's "Open command palette" secondary CTA, and
+  // by the `/system/preview/shortcuts` route. Memoized with useCallback
+  // so the context value is reference-stable across renders unless the
+  // setters identity changes (they don't).
+  const openCommandPalette = useCallback(() => setPaletteOpen(true), []);
+  const openHelp = useCallback(() => setHelpOpen(true), []);
+  const shellActions = useMemo<AppShellActions>(
+    () => ({ openCommandPalette, openHelp }),
+    [openCommandPalette, openHelp],
+  );
+
   return (
     <TooltipProvider delayDuration={200}>
+      <AppShellContext.Provider value={shellActions}>
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
@@ -82,6 +97,12 @@ export function AppShell({ children }: AppShellProps) {
             searchInputRef={searchRef}
           />
 
+          {/* Offline banner sits between TopBar and main content. Renders
+              only when `navigator.onLine` is `false`. Stale data stays
+              visible below; write actions across the app gate themselves
+              on `useNetworkState()`. */}
+          <OfflineBanner />
+
           <main
             id="main-content"
             tabIndex={-1}
@@ -94,6 +115,7 @@ export function AppShell({ children }: AppShellProps) {
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       <HelpOverlay open={helpOpen} onOpenChange={setHelpOpen} />
+      </AppShellContext.Provider>
     </TooltipProvider>
   );
 }
