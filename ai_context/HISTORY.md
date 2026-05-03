@@ -4,6 +4,125 @@
 
 ---
 
+### 2026-05-03 — `/doc_sync` checkpoint — Phase 20 follow-ups: auth UX polish + TopBar foundation enhancements + 2 new LESSONS
+
+- **Summary**: Captured the post-Phase-20 polish landed during browser probing — items that are too small for their own phase entry but worth pinning to product_states / LESSONS so future work doesn't re-discover them.
+
+  **UX polish** on the sign-in surface:
+  - `<EmailPasswordStep>` gained a `defaultPassword` prop; `pages/SignIn.tsx` passes `DEMO_PASSWORD` from `mockAdminAuth` so the password field pre-fills alongside the email — one Sign-in click lands on `/`.
+  - Email + password inputs use canonical `h-10` height matching the project's filter-bar / Select pattern (was rendering at the shadcn primitive default `h-9`); aligns with the `size="lg"` submit button.
+
+  **TopBar foundation enhancements**:
+  - `<UserMenu>` now subscribes to `useSession()` — display name + email + avatar initials reflect the signed-in admin (initials = first+last word of `displayName`, falling back to first 2 chars for single-word names). The Sign-out menu item gained `onClick={() => signOut({ reason: 'user' })}` — `<AuthGuard>` handles the redirect back to `/sign-in?next=...` automatically.
+  - `<HelpOverlay>` (keyboard shortcuts dialog) capped at `max-h-[85vh]` w/ flex-col + scrollable body so the 95-row shortcuts list reaches every viewport; header pinned at top w/ `border-b`. Was previously running off the bottom of the viewport with no scroll.
+  - New `<NotificationsBell>` component in `components/layout/` — wraps the TopBar Bell button in a Radix Popover. 360px-wide panel anchored under the bell with header / 3-item list / footer. 3 deterministic mock items (AML escalation → `/operations/aml-triage/aml_01` · FX rate update → `/compliance/audit-log?entity=fx_rate` · card frozen → `/customers/cards/c_01`) — each item closes the popover on click via controlled `useState` + `setOpen(false)`. Empty-state branch renders "You're all caught up" when items=0; red unread dot only when count > 0; footer link → `/compliance/audit-log`. Distinct from the `/content/notifications` composer surface (outbound pushes to mobile end-users) — naming distinction documented in the file header. Replaces the previous placeholder Bell button which had no `onClick` handler at all (clicking did nothing).
+
+  **2 new LESSONS** (both 2026-05-03):
+  - **`useSyncExternalStore`'s `getSnapshot` MUST return reference-equal values when state is unchanged** — `lib/auth.ts` initially had `getSnapshot()` calling `JSON.parse(sessionStorage.getItem(...))` per call → React panicked with "should be cached to avoid an infinite loop" → cascading "Maximum update depth exceeded" → blank screen on every authenticated route. Fix pattern documented: hold the parsed state in a module-level variable, only mutate from writer fn, init once at module load, cross-tab `storage` listener updates the variable before notifying.
+  - **Surfaces outside `<AppShell>` must own their own `<TooltipProvider>`** — `/sign-in` reused `<ThemeToggle>` from `components/layout/` which uses Radix Tooltip; the missing Provider ancestor crashed the very first mount with "Tooltip must be used within TooltipProvider". Fix: `<AuthLayout>` wraps its root in `<TooltipProvider delayDuration={200}>` matching AppShell's value.
+
+- **Files modified**:
+  - `dashboard/src/components/auth/EmailPasswordStep.tsx` — `defaultPassword` prop + `h-10` on inputs
+  - `dashboard/src/components/auth/AuthLayout.tsx` — wraps root in `<TooltipProvider>`
+  - `dashboard/src/lib/auth.ts` — module-level `currentSession` cache; `getSnapshot()` returns cached reference; `subscribe` `storage` listener updates the cache before notifying
+  - `dashboard/src/components/layout/UserMenu.tsx` — reads `useSession()`; sign-out wired
+  - `dashboard/src/components/layout/HelpOverlay.tsx` — `max-h-[85vh]` flex-col + scrollable body + pinned header
+  - `dashboard/src/components/layout/TopBar.tsx` — replaced placeholder Bell with `<NotificationsBell>` import
+  - `dashboard/src/pages/SignIn.tsx` — passes `defaultPassword={DEMO_PASSWORD}`
+  - `docs/product_states.md` — App shell row + Auth machinery row + Auth Sign-in row updated to reflect the additions
+  - `ai_context/LESSONS.md` — 2 new entries (useSyncExternalStore + TooltipProvider-outside-AppShell)
+  - `ai_context/HISTORY.md` — this entry
+
+- **Files added**:
+  - `dashboard/src/components/layout/NotificationsBell.tsx` — TopBar Popover w/ 3 mock items + close-on-click + empty-state branch + footer link
+
+- **Verified**: `npx tsc --noEmit` (exit 0) · `npx vite build` (exit 0) · cross-references resolve.
+
+---
+
+### 2026-05-03 — Admin Sign-in (Phase 20) — `/sign-in` · email + password only · `<AuthGuard>` wraps every other route · 30-min idle session-timeout · schema cascade in `models.md §10` (admin_users / admin_sessions / admin_login_audit) · 2FA scaffolding stripped mid-build per direction "the otp is for mobile auth"
+
+- **Summary**: Built the admin auth entry point at `/sign-in`. **Email + password only** — admin surface does NOT use 2FA / TOTP / SMS-OTP (those belong to the mobile end-user flow under MyID). Original spec proposed TOTP 2FA + first-time-2FA-setup branch (QR + manual secret + 6-digit confirm + 8 backup codes); shipped that scaffolding first, then stripped it mid-build per user direction. Kept `<OTPInput>` and `<QrPlaceholder>` primitives in `components/ui/` for future mobile reuse — they're currently unused on the admin surface but represent finished work that mobile signup will need.
+
+  **Routing refactor**:
+  - `dashboard/src/router.tsx` split into auth route + `<AuthGuard>`-wrapped `AppRoutes()`. The outer `<Routes>` has two cases: `/sign-in` renders bare (no `<AppShell>`); everything else hits the catch-all `<Route path="*">` which guards + wraps in shell.
+  - `<AuthGuard>` reads `useSession()` + `useIdleTimeout()`. No session → `<Navigate>` to `/sign-in?next=<encoded current path>`. Idle-timeout fires `signOut({ reason: 'session_expired' })` and `<Navigate>` to `/sign-in?expired=1&next=...` rendering `<SessionExpiredBanner>` above the auth card.
+  - Inner `<AppRoutes>` keeps every existing surface route + redirects unchanged.
+
+  **Mock store** (`dashboard/src/lib/auth.ts`):
+  - Public API: `signIn(email, password)` · `signOut({ reason })` · `getSession()` · `useSession()` · `useIdleTimeout()` · `markActivity()`. All session state in `sessionStorage` so refresh doesn't kick out (real backend = HttpOnly cookie + server-side row).
+  - Idle hook listens to `mousemove`/`keydown`/`click`/`scroll`/`touchstart`; throttles `markActivity` to once per 30s; re-evaluates idleness on a 60s interval; force-reaps absolutely-expired sessions.
+  - Cross-tab sync via `storage` events on the SESSION_STORAGE_KEY.
+  - 12h absolute session lifetime (configurable per `admin_session_state_machine.md`); 30 min idle timeout.
+
+  **`mockAdminAuth.ts`** = single source of truth for admin pool + login audit:
+  - 2 seed accounts: `super.admin@zhipay.uz` (super_admin, Yulduz Otaboeva, lands on `/`) + `disabled.admin@zhipay.uz` (finance, Adel Ortiqova, surfaces `AUTH_ACCOUNT_DISABLED`). Shared password `zhipay-demo-2026`.
+  - Per-email rate limit: 5 failed in 15 min → `locked_until = now() + 15min` → subsequent attempts return `AUTH_RATE_LIMITED`.
+  - `mockAdminLoginAudit` is a separate forensic-only store — intentionally NOT bridged into `mockAuditLog`. Central audit log is reserved for entity-state-change events (transfers / KYC / AML / cards / FX / services / content); auth events would drown the signal.
+
+  **Layered**:
+  - **Primitives** (new): `components/ui/otp-input.tsx` (6-digit OTP boxes, mono large, autofocus first, auto-advance, paste fills all 6, `onComplete` callback) · `components/ui/qr-placeholder.tsx` (deterministic SVG QR placeholder; real `qrcode` library can drop in later — same consumer API). Both kept despite the 2FA-strip — mobile signup will reuse OTPInput, and any future admin-2FA reintroduction will reuse both.
+  - **Patterns** (new): `components/auth/AuthLayout.tsx` (full-bleed radial-gradient bg `slate-50→brand-50` light / `slate-950→brand-950` dark + ZhiPay logo above card + ThemeToggle pinned top-right + footer chip "© 2026 ZhiPay · admin v0.1.0" pinned bottom-center; owns its own `<TooltipProvider>` since it lives outside `<AppShell>` — fixed runtime "Tooltip must be used within TooltipProvider" crash exposed during browser probe) · `AuthCard.tsx` (440px on `md+`, full-screen w/ `p-6` on `<md`, optional banner slot above title for the session-expired banner) · `EmailPasswordStep.tsx` (Email + Password fields w/ `h-10` height matching project filter-bar / Select pattern after design-system-consistency feedback; password field has eye/eye-off show/hide toggle inset on right; ForgotPasswordDialog opens out-of-band-reset modal — no self-service reset by compliance posture; submit button `size="lg"` brand-primary full-width) · `SessionExpiredBanner.tsx` · `ForgotPasswordDialog.tsx`.
+  - **Screen** (new): `pages/SignIn.tsx` orchestrator — single email + password step. Reads `?next=` and `?expired=` query params. On success: toast `admin.sign-in.toast.welcome` w/ `{name}` interpolation + `<Navigate to={next}>`.
+
+  **Auth errors** are surface-scoped under `admin.sign-in.error.*` keys — intentionally NOT in user-facing `error_codes` table per security baseline (generic "Email or password is incorrect", no field-level reveal). Documented as a deviation from `error-ux.md` since auth errors have a different security contract than transactional errors.
+
+  **i18n**: 9 new `admin.sign-in.*` keys (title / subtitle / field labels / show-hide labels / submit + submitting / link.forgot / 5 error variants / banner / toast / footer copyright + version + forgot-dialog title/body/ok). EN-only matching the project's i18n stub; uz/ru parallel deferred per existing convention.
+
+  **Schema cascade** (D1–D5):
+  - **D1** `docs/models.md §10 ADMIN & AUTH` (new section) — `admin_users` (id / email / password_hash / display_name / role / account_status / failed_login_attempts / locked_until / last_signed_in_at / preferred_language / created_at / disabled_at / disabled_reason), `admin_sessions` (id / admin_user_id / created_at / last_seen_at / expires_at / revoked_at / ip_address / user_agent / device_fingerprint), `admin_login_audit` (id / email_attempted / admin_user_id / event_type / failure_code / ip_address / user_agent / context / created_at). 2 new enums in §9.1: `admin_role` and `admin_account_status` and `admin_login_event` (6 values: `signin_success / signin_failed_credentials / signin_rate_limited / signin_account_disabled / session_expired / signout`). 7 new indexes in §9.2 covering email lookup / active-roster scans / per-admin sessions / reaper sweeps / per-email + per-IP rate-limit windows / per-admin sign-in history. Soft-delete entries added for the 3 new tables. §10.6 documents per-email + per-IP rate-limit windows; §10.7 documents the 5 privacy invariants (generic credential errors / no password echo / idle-timeout client + server / TLS-only / out-of-band password reset).
+  - **D2** `docs/mermaid_schemas/admin_signin_flow.md` (new) — sequence diagram covering credential / disabled / rate-limit / network / 5xx paths.
+  - **D3** `docs/mermaid_schemas/admin_session_state_machine.md` (new) — `active → idle → expired | revoked` with reaper retention. Configuration knobs documented.
+  - **D4** `docs/product_requirements_document.md` — §6.1 row 14 added "Admin sign-in (email + password)" P0 + Gherkin AC fragment covering wrong-creds genericity / rate-limit / disabled / session-expired / privacy invariants.
+  - **D5** `docs/product_states.md` — new "Auth — Sign-in" row in Surfaces table; new "Auth machinery (mock auth store · `<AuthGuard>` route wrapper · 30-min idle session-timeout hook · sessionStorage persistence)" row in Foundation table; last-updated timestamp bumped to "Phase 20 — Sign-in".
+
+  **Mid-build pivot**: original spec (and first-pass implementation) included TOTP 2FA challenge (`TwoFAStep`) + first-time-setup branch (`Setup2FAStep` with QR / manual secret / 6-digit confirm / 8 backup codes / Download .txt / acknowledge checkbox) + slide-left transition between steps. User direction "the otp is for mobile auth" landed mid-build — stripped 2FA scaffolding entirely:
+  - Deleted `components/auth/TwoFAStep.tsx`, `components/auth/Setup2FAStep.tsx`.
+  - Simplified `lib/auth.ts` (removed `verifyTotp` / `useBackupCode` / `confirmTotpSetup` / `acknowledgeBackupCodes` / `restartSignIn` / `getPendingSignIn` + the half-auth pending-signin sessionStorage handling).
+  - Simplified `mockAdminAuth.ts` (removed `totpSecret` / `totpSetupCompletedAt` / `backupCodes` / `BackupCode` / `DEMO_TOTP_CODE` / `consumeBackupCode` / `completeTotpSetup` / `generateTotpEnrollment` / `buildOtpauthUri` / `new.admin@zhipay.uz` first-time-setup demo account; dropped `signin_failed_2fa` and `2fa_setup_completed` from the event-type enum + `AUTH_INVALID_2FA_CODE` and `AUTH_2FA_TOO_MANY_ATTEMPTS` from the failure-code enum).
+  - Simplified `pages/SignIn.tsx` (single email+pw step; removed slide-track + step state machine + Setup2FAStep mount + Setup2FAStep props plumbing).
+  - Trimmed i18n: dropped 30 `admin.sign-in.2fa.*` and `admin.sign-in.setup-2fa.*` keys.
+  - Doc cascade rollback: removed 2FA fields + 2FA enum values from `models.md §10` + §9.1; rewrote `admin_signin_flow.md` without 2FA branches; simplified PRD AC (dropped 2FA Gherkin clauses); simplified product_states row + AI_CONTEXT description.
+
+  Kept `<OTPInput>` and `<QrPlaceholder>` primitives even though no consumer remains on the admin surface — they're general-purpose primitives that mobile signup will inevitably need (and re-deleting is cheap if mobile diverges).
+
+  **Design-system input fix** (mid-build feedback "the inputs in sign-in page should be consistent to our design system"): Email + Password `<Input>` were rendering at the shadcn primitive default `h-9` (36px). The canonical form-input height in this codebase is `h-10` (40px) — set on every filter-bar search input + Select primitive default + every other form across Users / Cards / News / Notifications / Blacklist. Bumped both auth inputs to `className="h-10"` so they visually align with the `size="lg"` (h-10) submit button.
+
+- **Files modified**:
+  - `docs/models.md` — new §10 ADMIN & AUTH (after 2FA strip) · §9.1 enum table (3 new enums) · §9.2 index table (7 new indexes) · §9.4 soft-delete table (3 new entries)
+  - `docs/product_requirements_document.md` — §6.1 row 14 + AC fragment
+  - `docs/product_states.md` — new Auth row + Auth-machinery foundation row + last-updated timestamp
+  - `dashboard/src/router.tsx` — split into auth route + `<AuthGuard>`-wrapped AppRoutes
+  - `dashboard/src/lib/i18n.ts` — 9 new `admin.sign-in.*` keys
+  - `ai_context/AI_CONTEXT.md` — Current phase paragraph + Routes (admin) decision row + Active workstreams entry
+  - `ai_context/HISTORY.md` — this entry
+
+- **Files added**:
+  - `docs/mermaid_schemas/admin_signin_flow.md`
+  - `docs/mermaid_schemas/admin_session_state_machine.md`
+  - `dashboard/src/lib/auth.ts`
+  - `dashboard/src/data/mockAdminAuth.ts`
+  - `dashboard/src/components/ui/otp-input.tsx`
+  - `dashboard/src/components/ui/qr-placeholder.tsx`
+  - `dashboard/src/components/auth/AuthLayout.tsx`
+  - `dashboard/src/components/auth/AuthCard.tsx`
+  - `dashboard/src/components/auth/EmailPasswordStep.tsx`
+  - `dashboard/src/components/auth/ForgotPasswordDialog.tsx`
+  - `dashboard/src/components/auth/SessionExpiredBanner.tsx`
+  - `dashboard/src/pages/SignIn.tsx`
+
+- **Files deleted (mid-build, after 2FA strip)**:
+  - `dashboard/src/components/auth/TwoFAStep.tsx`
+  - `dashboard/src/components/auth/Setup2FAStep.tsx`
+
+- **Runtime fixes during browser probe**:
+  - `<TooltipProvider>` missing on `/sign-in` (lives outside `<AppShell>` which normally provides it). Added `<TooltipProvider>` to `AuthLayout` so the embedded `<ThemeToggle>` doesn't crash with "Tooltip must be used within TooltipProvider".
+  - **`useSyncExternalStore` infinite-loop fix.** `getSnapshot()` was returning a fresh `JSON.parse` result on every call → React panicked with "The result of getSnapshot should be cached to avoid an infinite loop" → cascading "Maximum update depth exceeded". Restructured `lib/auth.ts` to hold the parsed session in a module-level `currentSession` variable that's only rewritten on actual mutation (writeSession) or cross-tab `storage` event. `getSnapshot()` returns the cached reference; reads are now reference-stable across calls when the session is unchanged. Module init reads from `sessionStorage` once at import.
+
+- **Verified**: `npx tsc --noEmit` (exit 0 — three times; initial / post-2FA-strip / post-cache-fix) · `npx vite build` (exit 0) · lessons-compliance grep sweep clean (sub-13px / Visa-Mastercard runtime usage / sticky-thead / `← ` prefix / uppercase-tracking-wider all 0 hits — Visa/Mastercard reference in `mockAdminAuth.ts` is a comment naming the lesson itself). Browser eyeballing deferred to user — please spot-check: signing in as `super.admin@zhipay.uz` w/ `zhipay-demo-2026` lands on `/` w/ welcome toast; signing in as `disabled.admin@zhipay.uz` surfaces "This account has been disabled" inline alert; entering wrong password 5x within 15 min trips `AUTH_RATE_LIMITED`; visiting any non-`/sign-in` route while signed-out redirects to `/sign-in?next=...` and back after auth; idle-timeout (30 min) redirects to `/sign-in?expired=1&next=...` with the amber session-expired banner; theme toggle works inside the auth layout (the TooltipProvider fix); `Forgot password?` opens the modal with the out-of-band-reset copy; password show/hide toggle works; inputs render at `h-10` matching the submit button height.
+
+---
+
 ### 2026-05-03 — `/doc_sync` checkpoint — flip Notifications row to ✅ in product_states.md
 
 - **Summary**: Caught one stale row in `docs/product_states.md` line 62 — Notifications was still listed at `/notifications` ❌ Placeholder. Flipped to `/content/notifications` (+ `/new` + `/sent/:id`) ✅ with the full Phase 19 + Phase 19a description (composer dedicated route, sent-history list, sent-detail, schema cascade, audit bridge, etc.). Other product_states rows already current. `docs/models.md` + `docs/product_requirements_document.md` + `docs/mermaid_schemas/notification_send_state_machine.md` + `ai_context/AI_CONTEXT.md` + `ai_context/HISTORY.md` were all updated inline during the Phase 19 + Phase 19a work — no further changes needed in this sync.

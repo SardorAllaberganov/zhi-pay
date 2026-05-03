@@ -31,6 +31,53 @@ Lead with the **rule itself**. The Why and How-to-apply lines exist so you can j
 
 ## Lessons
 
+### 2026-05-03 — `useSyncExternalStore`'s `getSnapshot` MUST return reference-equal values when state is unchanged — never re-parse from storage on every call
+
+**Why:** Phase 20 sign-in surface shipped with `lib/auth.ts` reading `sessionStorage` and JSON-parsing the session on every `getSnapshot()` call. Each call returned a fresh object (different reference) → React detected identity churn and emitted "Warning: The result of getSnapshot should be cached to avoid an infinite loop" → cascading "Maximum update depth exceeded" runtime error → blank screen on every authenticated route. The bell-icon-popover work happened to expose it because Popover's renders re-trigger `useSyncExternalStore` subscribers, but the bug was in the auth store contract, not the popover.
+
+**How to apply:** When implementing any `useSyncExternalStore`-backed store:
+
+- **Hold the parsed state in a module-level variable.** Read from the variable in `getSnapshot()` (cheap, reference-stable). Only mutate the variable from the writer fn (`writeSession` / equivalent) — same code path that calls `notify()`.
+- **Initialize once at module load** (e.g. `initFromStorage()` reads `sessionStorage` exactly once). Subsequent reads come from the cached variable.
+- **Cross-tab sync via `storage` events** updates the cached variable inside the listener BEFORE calling the subscriber, so `getSnapshot()` returns the new reference on the next React tick.
+- **Guard for SSR / pre-mount.** Reference `sessionStorage` / `window` only inside `typeof === 'undefined'` checks so module load doesn't crash in non-browser contexts (build-time tsc, future SSR experiments).
+- **`getServerSnapshot()` returns `null`** for SPA-only stores — the third arg to `useSyncExternalStore` is required even when SSR isn't a target.
+
+**Symptom-to-diagnosis shortcut:** If you see "The result of getSnapshot should be cached" followed by "Maximum update depth exceeded" — go straight to your store's `getSnapshot`. The bug is almost always a fresh-object-on-every-call (JSON.parse, `.map`, `Object.assign`, spread). Don't chase the rendering component.
+
+**Quick grep to verify (any time you add a new external store):**
+```
+# getSnapshot or readSnapshot that calls JSON.parse / spread / .map every call:
+grep -rE 'function getSnapshot|getSnapshot\s*=\s*\(\)' dashboard/src/lib | xargs -I{} grep -l "JSON.parse\|\.map\|\.\.\." {}
+# (every hit needs a module-level cache; reads should NOT recompute)
+```
+
+**Context:** Phase 20 sign-in (2026-05-03). First implementation of `useSyncExternalStore` in the dashboard. Initial `lib/auth.ts` had `function getSnapshot() { return readSession(); }` where `readSession()` re-parsed sessionStorage. Fix: introduced `let currentSession: ActiveSession | null = null;` at module level + `initFromStorage()` once + `parseStoredSession(raw)` helper; `writeSession` updates the cached variable + storage + notifies; `subscribe`'s `storage` listener updates the cached variable before notifying.
+
+---
+
+### 2026-05-03 — Surfaces that live OUTSIDE `<AppShell>` must own their own `<TooltipProvider>` — every shared layout primitive that uses Radix Tooltip will crash without one
+
+**Why:** Phase 20 `/sign-in` lives outside `<AppShell>` (full-bleed auth layout, no sidebar / topbar). The reused `<ThemeToggle>` from `components/layout/` uses `<Tooltip>`/`<TooltipTrigger>`/`<TooltipContent>`, which require a `<TooltipProvider>` ancestor. AppShell wraps its children in `<TooltipProvider delayDuration={200}>`; sign-in didn't, so the very first mount crashed with "Tooltip must be used within TooltipProvider" — full red screen, nothing rendered.
+
+**How to apply:** For any new top-level surface that lives **outside `<AppShell>`** (auth surfaces, error pages, marketing pages, embed/iframe wrappers):
+
+- **Wrap the layout's root in `<TooltipProvider delayDuration={200}>`** — same constant AppShell uses, so tooltip behaviour is uniform across the app.
+- **Audit every imported component for Radix Tooltip usage** before wiring it into the new surface. `ThemeToggle`, `UserMenu`, `KeyboardHint`, `<Tooltip>`-decorated buttons in patterns — any of these will crash without a Provider.
+- **The Provider lives at the layout level**, not at the leaf. AppShell wraps children once. Auth surfaces wrap their layout root once. Don't sprinkle Providers per-component.
+- **TooltipProvider is the only Radix Provider with this hard requirement in the current codebase** — Dialog / Popover / DropdownMenu / Select all create their own context internally. But this rule generalizes: when adopting a new Radix component, check its docs for required Provider ancestors.
+
+**Quick grep to verify (any time you add a new top-level layout):**
+```
+# Layouts that aren't wrapped in TooltipProvider but render components using <Tooltip>:
+grep -rL "TooltipProvider" dashboard/src/components/auth dashboard/src/components/<your-new-layout-dir>
+# (every layout that imports <ThemeToggle> or any tooltip-using component should carry the Provider)
+```
+
+**Context:** Phase 20 sign-in (2026-05-03). Initial `AuthLayout` rendered `<ThemeToggle />` directly without a Provider; runtime crash was the very first browser probe. Fixed by wrapping `AuthLayout`'s root in `<TooltipProvider delayDuration={200}>` matching AppShell's value.
+
+---
+
 ### 2026-05-03 — Fixed-bottom mobile action bars: every row spans the same edge-to-edge width — never mix a centered content-sized control with full-width siblings
 
 **Why:** Phase 14 (Services & Health) mobile `<ActionBar variant="mobile">` shipped first-pass with the 3-segment `<StatusToggleGroup>` rendered as `inline-flex` (content-sized, centered via `self-center`) above a `flex w-full gap-2` row of two `flex-1` buttons. Result: the toggle row read ~240px wide centered, the button row spanned edge-to-edge — visibly inconsistent. User feedback: "the bottom segmentation in fix bar in mobile view should be consistent full width with below buttons." The root cause: a content-sized control and a full-width control stacked together always read as a layout error, even when each is internally well-formed. Fixed-bottom action bars are read as a single chrome surface; every row inside should hit the same left + right edges.
