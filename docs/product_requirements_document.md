@@ -128,6 +128,7 @@ The v1 feature surface, grouped by domain:
 | 11| Stories / news feed              | P1       | —                  |
 | 12| Transfer receipt PDF export      | P2       | tier_1+            |
 | 13| Admin push notification composer | P0       | — (admin surface)  |
+| 14| Admin sign-in (email + password) | P0       | — (admin surface)  |
 
 > Feature 13 is the admin-side surface at `/content/notifications` that authors push notifications targeting users (broadcast / segment / single). Multi-locale (uz/ru/en), schedulable, audit-trailed. Compliance-typed sends require typed-confirm and bypass user notification preferences. See [`docs/mermaid_schemas/notification_send_state_machine.md`](./mermaid_schemas/notification_send_state_machine.md) for the send lifecycle. Acceptance criteria:
 >
@@ -154,6 +155,47 @@ The v1 feature surface, grouped by domain:
 >
 > GIVEN status='sent'
 > THEN  no admin action mutates the row — push notifications are non-recallable
+> ```
+
+> Feature 14 is the admin sign-in surface at `/sign-in` — the entry point for every admin / ops / compliance / finance / engineering account. **No self-signup**: accounts are provisioned out-of-band by an existing super-admin. **Email + password only** — the admin surface does NOT use 2FA / TOTP / SMS-OTP (those belong to the mobile end-user flow under MyID). If 2FA is reintroduced for admin accounts later, this row + `models.md §10` grow accordingly. The surface lives outside `<AppShell>` (no sidebar / topbar — full-bleed auth layout) and is the only route accessible without an active session. See [`docs/mermaid_schemas/admin_signin_flow.md`](./mermaid_schemas/admin_signin_flow.md) for the canonical sequence and [`docs/mermaid_schemas/admin_session_state_machine.md`](./mermaid_schemas/admin_session_state_machine.md) for the session lifecycle. Acceptance criteria:
+>
+> ```
+> GIVEN admin_users.account_status = 'active' AND password matches password_hash
+> WHEN  admin submits valid email + password
+> THEN  one row inserted into admin_sessions WITH expires_at = now() + 12h
+> AND   admin_users.last_signed_in_at = now(), failed_login_attempts = 0, locked_until = NULL
+> AND   admin_login_audit row written WITH event_type='signin_success'
+> AND   client navigates to ?next=<path> (or / if no next)
+> AND   toast surfaces "Signed in. Welcome back, {display_name}." (admin.sign-in.toast.welcome)
+>
+> GIVEN admin submits wrong email OR wrong password
+> THEN  reject with failure_code = AUTH_INVALID_CREDENTIALS
+> AND   inline alert "Email or password is incorrect" (admin.sign-in.error.invalid)
+> AND   NEVER reveal which field was wrong (security baseline)
+> AND   admin_users.failed_login_attempts incremented (when email is known)
+> AND   admin_login_audit row written WITH event_type='signin_failed_credentials'
+>
+> GIVEN admin_users.failed_login_attempts ≥ 5 within 15-min window
+> WHEN  admin submits any sign-in attempt for that email
+> THEN  reject with failure_code = AUTH_RATE_LIMITED
+> AND   inline alert "Too many attempts. Try again in 15 minutes." (admin.sign-in.error.rate-limited)
+> AND   admin_users.locked_until = now() + 15min
+> AND   admin_login_audit row written WITH event_type='signin_rate_limited', context.attempts_in_window = N
+>
+> GIVEN admin_users.account_status = 'disabled'
+> WHEN  admin submits any sign-in attempt
+> THEN  reject with failure_code = AUTH_ACCOUNT_DISABLED
+> AND   inline alert "This account has been disabled. Contact your administrator." (admin.sign-in.error.disabled)
+> AND   NEVER reveal whether the password was correct
+> AND   admin_login_audit row written WITH event_type='signin_account_disabled'
+>
+> GIVEN active session AND idle ≥ 30 min (configurable)
+> THEN  client redirects to /sign-in?expired=1&next=<current_path>
+> AND   <SessionExpiredBanner> renders above the auth card with admin.sign-in.banner.session-expired copy
+> AND   admin_login_audit row written WITH event_type='session_expired'
+>
+> GIVEN passwords
+> THEN  these MUST NEVER appear in admin_login_audit.context, server logs, or client console
 > ```
 
 ---
