@@ -348,10 +348,6 @@ const EN: Record<string, string> = {
   'admin.empty.queue.title': 'Queue is clear',
   'admin.empty.queue.body': 'No items waiting for review.',
 
-  // help overlay
-  'admin.help.title': 'Keyboard shortcuts',
-  'admin.help.subtitle': 'Move faster — every action has a key.',
-
   // placeholder
   'admin.placeholder.title': 'Coming in next phase',
   'admin.placeholder.body': 'This page will be designed in a future phase.',
@@ -3573,6 +3569,70 @@ const EN: Record<string, string> = {
   'admin.settings.my-audit.row.entity-prefix': 'on',
   'admin.settings.my-audit.empty': "You haven't taken any actions yet.",
   'admin.settings.my-audit.load-more': 'Load {n} more',
+
+  // ────────────────────────────────────────────────────────────────────
+  // Error & system states (Phase 22)
+  // ────────────────────────────────────────────────────────────────────
+
+  // 404 — Not found
+  'admin.error.404.title': 'Page not found',
+  'admin.error.404.body': "The page you tried to open doesn't exist or has moved.",
+  'admin.error.404.action.home': 'Back to Overview',
+  'admin.error.404.action.command-palette': 'Open command palette (⌘K)',
+  'admin.error.404.action.sign-in': 'Sign in',
+  'admin.error.404.requested': 'requested:',
+
+  // 500 / 503 — Server error
+  'admin.error.500.title': 'Something went wrong',
+  'admin.error.500.body': "We couldn't load this page. Our team has been notified.",
+  'admin.error.500.action.retry': 'Try again',
+  'admin.error.500.action.home': 'Back to Overview',
+  'admin.error.500.reference-id': 'req-id:',
+  'admin.error.500.reference-id-copy': 'Copy reference id',
+
+  // 403 — Forbidden
+  'admin.error.403.title': "You don't have access to this",
+  'admin.error.403.body':
+    "Your account doesn't have permission to view this page. If you think this is wrong, contact your administrator.",
+  'admin.error.403.action.home': 'Back to Overview',
+
+  // Offline banner
+  'admin.system.offline.banner.title': "You're offline.",
+  'admin.system.offline.banner.cached-from': 'Showing cached data from {time}.',
+  'admin.system.offline.banner.retry': 'Retry',
+  'admin.system.offline.action.disabled-tooltip': 'Reconnect to perform this action.',
+  'admin.system.offline.toast.synced': 'Synced {n} actions.',
+  'admin.system.offline.toast.queued':
+    "You're offline. Action queued — we'll sync it when you reconnect.",
+
+  // Maintenance
+  'admin.system.maintenance.title': 'ZhiPay Admin is in maintenance',
+  'admin.system.maintenance.body': "We're upgrading the system. Estimated back at {time}.",
+  'admin.system.maintenance.body-unknown':
+    "We're upgrading the system. We'll be back as soon as we can.",
+  'admin.system.maintenance.started-at': 'Started at',
+  'admin.system.maintenance.estimated-end': 'Estimated end',
+  'admin.system.maintenance.action.refresh': 'Refresh status',
+  'admin.system.maintenance.draft-saved':
+    "We saved your draft locally — it'll be available when maintenance ends.",
+
+  // Session lost (uses the same banner shape as session-expired today)
+  'admin.system.session-lost.banner': 'Session expired. Sign in again to continue.',
+
+  // Shortcuts overlay (HelpOverlay) — replaces admin.help.*
+  'admin.shortcuts.title': 'Keyboard shortcuts',
+  'admin.shortcuts.subtitle': 'Press ? anywhere to open this. Press Esc to close.',
+  'admin.shortcuts.group.global': 'Global',
+  'admin.shortcuts.group.navigation': 'Navigation',
+  'admin.shortcuts.group.lists': 'Lists & queues',
+  'admin.shortcuts.group.review-queues': 'Review queues',
+  'admin.shortcuts.group.detail-sheets': 'Detail sheets',
+  'admin.shortcuts.action.print': 'Print shortcuts',
+  'admin.shortcuts.print.subtitle':
+    'Every keyboard chord across the dashboard, organized by surface.',
+
+  // System state previews (dev tooling)
+  'admin.system.preview.back-to-index': 'Back to system previews',
 };
 
 /**
