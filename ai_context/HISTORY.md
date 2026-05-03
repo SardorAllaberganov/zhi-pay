@@ -4,6 +4,79 @@
 
 ---
 
+### 2026-05-03 — Admin Error Codes (Phase 16) — `/system/error-codes` · read-only catalog · 15-row uz/ru/en seed · per-code observability cache · `LocaleFlag` lifted to shared
+
+- **Summary**: Built the Error Codes catalog — read-only reference surface for ops to look up what users see for a given failure code. Single-column page: header with Export CSV → ReadOnlyBanner → canonical filter bar (search + 6-category multi + retryable single) → desktop sortable table on `lg+` / mobile card stack on `<lg` → click-to-expand inline RowExpanded. **`mockErrorCodes.ts` is single source of truth** — 15 codes spanning all 6 categories (kyc / acquiring / fx / provider / compliance / system), uz/ru/en authored as natural locale-appropriate translations (uz concise · ru formal-respectful · en direct). Schema cascade flagged at sign-off and applied: `docs/models.md` §7 splits singular `suggested_action` into per-locale `suggested_action_uz/ru/en` to parallel `message_*`; `.claude/rules/error-ux.md` updated to the plural form. Per-code "Last triggered + 24h/7d/30d daily counts + 7-day sparkline" rendered from a **mock-only synthetic observability cache** (deterministic FNV-1a seed per code-string into a Mulberry32 PRNG; sparse-series variant for `SANCTIONS_HIT`) — same precedent as Services & Health's observability cache. NOT derived from `mockTransfers` so the catalog stats stay coherent for codes that don't create transfer rows (KYC_REQUIRED etc.).
+
+  **Decision deviations from the literal spec** (each flagged in the proposal and confirmed before implementation):
+  - **Per-locale `suggested_action`** (D1) — schema literal in `docs/models.md` §7 had a singular `suggested_action`, but `.claude/rules/error-ux.md` already said *"localized via the same locale columns"*. Cascaded the schema to match the rule's intent (split into `suggested_action_uz/ru/en`) and updated the rule's bullet to the plural form. Mock + UI carry all three; row-expanded renders a 3-card row of suggested actions parallel to the 3-card row of localized messages.
+  - **Last-triggered observability is mock-only** (D2) — schema doesn't carry temporal/volume fields and shouldn't (those live in metrics stores). Synthesized 30-day per-day count series + lastTriggeredAt per code with realistic frequency hints from spec: `LIMIT_DAILY_EXCEEDED` ~50/day base · `CARD_DECLINED` ~30 · `SANCTIONS_HIT` sparse 18% hit-prob · `SYSTEM_ERROR` ~7. **Dropped the planned `mockTransfers` backfill task** during execution since per-code stats live independently — the deep-link from Error Codes to Transfers list still works for the 6 codes in the existing `FAILURE_CODE_LIST` (CARD_DECLINED / RECIPIENT_INVALID / INSUFFICIENT_FUNDS / PROVIDER_UNAVAILABLE / LIMIT_DAILY_EXCEEDED / SANCTIONS_HIT) and lands on Transfers' canonical empty-results state for codes that don't create transfer rows (accurate behavior for KYC_REQUIRED etc.).
+  - **WhereReferencedLinks scoped per-code** (D3) — always renders `/operations/transfers?failure_code=...` deep-link; renders `/compliance/aml-triage?type=sanctions` deep-link **only on `SANCTIONS_HIT`** since other compliance codes (LIMIT_*, KYC_*) have no clean correlation to a typed AML flag.
+  - **`failure_code` filter dimension on Transfers** (D4) — added `failureCode?: string` to `TransferFilters` and wired it through `applyFilters` (literal match against `t.failureCode`). On mount, Transfers list reads `?failure_code=` URL param, seeds `filters.failureCode`, then strips the param (mirrors AuditLog's `?entity=` / `?id=` strip pattern). When active, a brand-tinted dismissable banner renders above the existing card / recipient context banners — clicking X clears `filters.failureCode`. Not exposed as a chip-row filter (kept off-keyboard since it's a deep-link only, not a faceted browse dimension).
+  - **`LocaleFlag` lifted to `components/zhipay/`** (D5) — was Pattern-internal under `app-versions/`. Error Codes is the second consumer, so per `design-system-layers.md` (Pattern→Pattern import forbidden) lifted to the shared layer. Renamed exported type from `Locale` to `LocaleCode` to avoid name conflict at consumer sites (app-versions still owns its own internal `Locale` alias for `LOCALE_ORDER` + `LOCALE_LABEL_KEY`). Updated 4 app-versions consumers' imports (`ReleaseNotesPreview`, `modals/ReleaseNotesEditor`, `modals/ReleaseNotesPreviewPane`, `RowExpanded`) — the 4th was missed in the initial sweep and surfaced via `tsc --noEmit` ("Cannot find module './LocaleFlag'"). Now all four import from `@/components/zhipay/LocaleFlag`. Same precedent as `StepperNumberInput` + `DateTimeInput` lifted in Phase 10 and `useCopyFeedback` lifted in Phase 14.
+  - **`g+e` global hotkey** (D6) — confirmed free in `useKeyboardShortcuts.ts` (`g+a` is AML, `g+v` is App Versions). Page-scoped: `/` focus search, `f` focus first chip, `j/k` row focus, `Enter` expand. Matches AuditLog's keyboard-driven read-only surface conventions.
+  - **No audit-log bridging** (D7) — read-only catalog with no mutators. Same precedent as KycTiers and AuditLog itself. `error_code` deliberately NOT added to `AuditEntityType` enum since there's nothing to record.
+  - **Message strings live on the mock record, not in i18n** (D8) — `message_uz/ru/en` and `suggested_action_uz/ru/en` are *data*, not UI strings, and live directly on the `ErrorCode` interface in `mockErrorCodes.ts` (mirrors schema). Existing 6 `common.errors.{CODE}.title/body` keys at `i18n.ts:360-374` left untouched (still consumed by Transfer Detail's failure rendering). Page chrome (column headers, banner copy, filter labels, locale labels, etc.) goes into `admin.error-codes.*` i18n keys per convention — ~38 new keys.
+  - **Category tone palette locked per spec D9** — kyc=brand · acquiring/fx/provider=warning · compliance=danger · system=slate. Three categories sharing warning tone reflects domain reality (card-side / fx / provider issues are all "transient or recoverable on the user side"). RetryableChip: yes=success-tinted · no=muted-slate.
+  - **Filter bar non-sticky** — followed AuditLog's final state (which removed `lg:sticky lg:top-0` per user feedback) over the spec's "(sticky)" line. Logged this deviation here for revisit if user wants the bar to stick.
+
+  **Mock dataset** — `dashboard/src/data/mockErrorCodes.ts`. Deterministic manual seed (no PRNG for the rows themselves; PRNG only for the synthetic stats series). 15 `ErrorCode` records:
+  - **kyc**: `KYC_REQUIRED` / `KYC_EXPIRED`
+  - **acquiring**: `CARD_DECLINED` / `INSUFFICIENT_FUNDS` / `CARD_EXPIRED` / `THREE_DS_FAILED` / `3DS_TIMEOUT`
+  - **fx**: `FX_STALE`
+  - **provider**: `PROVIDER_UNAVAILABLE` / `RECIPIENT_INVALID`
+  - **compliance**: `LIMIT_DAILY_EXCEEDED` / `LIMIT_MONTHLY_EXCEEDED` / `LIMIT_PER_TX_EXCEEDED` / `SANCTIONS_HIT`
+  - **system**: `SYSTEM_ERROR`
+  - Helpers: `listErrorCodes()` (sorted code ASC) / `getErrorCode(code)` / `countTriggersInWindow(code, hours)` (sum trailing day-aligned slice) / `getLastTriggeredAt(code)` / `getDailyCountsLast7d(code)` / `getMessage(ec, locale)` / `getSuggestedAction(ec, locale)`.
+  - Synthetic stats: `STATS_SEEDS` table per-code declares `{base, jitter, sparseProb?, lastTriggeredMinAgo}` → Mulberry32 generator with code-string FNV-1a seed produces a 30-element daily-counts array; `SANCTIONS_HIT` uses sparse generator (18% hit prob, 0/1 series). Last-triggered range from `8 minutes` (LIMIT_DAILY_EXCEEDED — high freq) to `~4 days` (SANCTIONS_HIT — sparse).
+
+  **Pattern layer** (`dashboard/src/components/error-codes/`):
+  - `types.ts` — `ErrorCodeFilters` shape (search · categories[] · retryable any/yes/no) · `ErrorCodeSort` · `applyErrorCodeFilters` (search across code + 3 message + 3 suggested-action fields) + `applyErrorCodeSort` + `countActiveFilters` · `CATEGORY_LABEL_KEY` map
+  - `filterState.ts` — module-level UI cache (filters · sort · expandedCode · focusedIndex)
+  - `CategoryChip.tsx` — 6-tone palette per D9
+  - `RetryableChip.tsx` — yes/no chip (success-tinted vs muted-slate)
+  - `ReadOnlyBanner.tsx` — slate-100 banner with Info icon, deployment-only edit copy
+  - `ErrorCodesFilterBar.tsx` — search input row (with inline X clear) + chip row (CategoryChipMulti popover with Checkbox per category + RetryableChipSingle popover with 3 radio options + Clear-all when active)
+  - `ErrorCodesTable.tsx` — sortable desktop table (code default ASC; non-sticky thead; chevron / Code mono / Category chip / Retryable chip / 80-char message_en preview; click-to-expand inline; 10-row skeleton)
+  - `ErrorCodesMobileCardStack.tsx` — `<lg` mirror with same expand-inline pattern (code mono + CategoryChip on left, RetryableChip + chevron on right, 100-char message_en preview)
+  - `RowExpanded.tsx` — 2 sections of 3-card grids (md+ side-by-side, single column on narrow): localized messages then suggested actions (each card = LocaleFlag header + locale name + text body) + 2-column footer: WhereReferencedLinks + LastTriggeredCard
+  - `WhereReferencedLinks.tsx` — Transfers deep-link always rendered; AML deep-link rendered only on `SANCTIONS_HIT`
+  - `LastTriggeredCard.tsx` — relative-time chip (top-right) + 3 stat tiles (24h / 7d / 30d) + conditional 7-day daily-count sparkline (hidden when total7=0; recharts mini LineChart, no axes, brand-600 stroke)
+
+  **Page** — `pages/ErrorCodes.tsx`. Single orchestrator, 350ms initial-mount skeleton matches KycTiers cadence. Persists `{filters, sort, expandedCode, focusedIndex}` to module-level cache via `filterState` so deep-link round-trips (Transfers ← back) restore state. Page-scoped hotkeys (`/` `f` `j` `k` `Enter`) ignore typing context. Export CSV emits 9-column CSV with all 15 codes.
+
+  **Routing** — `/system/error-codes`. **Third `/system/*` route in the codebase** (after Services, App Versions). No `:id` route — read-only catalog; row-expand is inline. Back-compat: `/error-codes` → `/system/error-codes` via `RedirectPreservingQuery`. Removed `/error-codes` from `PLACEHOLDER_ROUTES`. Sidebar entry repointed (`/error-codes` → `/system/error-codes`); TopBar `ROUTE_TITLES` repointed; CommandPalette gained a new "Error Codes" entry under Navigate w/ `g e` shortcut hint; `useKeyboardShortcuts` `g+e` chord wired.
+
+  **i18n** — ~38 new `admin.error-codes.*` keys (page header + subtitle / read-only banner / Export CSV button / search placeholder + aria + clear / clear-all / category labels for 6 cats / retryable yes/no/any / column headers / locale labels uz/ru/en / detail section headers / 24h/7d/30d window labels / sparkline label + meta interpolation / Transfers deep-link label / AML deep-link label / 2 empty-state title+body pairs). Plus 1 new `admin.transfers.context.failure-code-prefix` key for the dismissable failure-code banner on Transfers list.
+
+  **Hotkeys** — list: `/` (focus search) · `f` (focus first chip) · `j/k` (row focus) · `Enter` (expand). Global: `g+e` routes to `/system/error-codes`. None conflict with the existing `g+ ` chord set.
+
+- **Files created**:
+  - `dashboard/src/data/mockErrorCodes.ts`
+  - `dashboard/src/pages/ErrorCodes.tsx`
+  - `dashboard/src/components/error-codes/{types,filterState,CategoryChip,RetryableChip,ReadOnlyBanner,ErrorCodesFilterBar,ErrorCodesTable,ErrorCodesMobileCardStack,RowExpanded,WhereReferencedLinks,LastTriggeredCard}.tsx` (+ `types.ts`, `filterState.ts`)
+  - `dashboard/src/components/zhipay/LocaleFlag.tsx` (lifted from `components/app-versions/LocaleFlag.tsx`)
+
+- **Files moved (lift)**:
+  - `dashboard/src/components/app-versions/LocaleFlag.tsx` → `dashboard/src/components/zhipay/LocaleFlag.tsx` (now exports `LocaleCode` type alongside the component)
+
+- **Files modified**:
+  - `dashboard/src/router.tsx` — added `/system/error-codes` route; `RedirectPreservingQuery` back-compat from `/error-codes`; dropped `/error-codes` from `PLACEHOLDER_ROUTES`; new `<ErrorCodes>` import
+  - `dashboard/src/components/layout/Sidebar.tsx` — System section's Error Codes entry `to: '/error-codes'` → `'/system/error-codes'`
+  - `dashboard/src/components/layout/TopBar.tsx` — `ROUTE_TITLES['/error-codes']` → `'/system/error-codes'`
+  - `dashboard/src/components/layout/CommandPalette.tsx` — added "Error Codes" Navigate entry w/ AlertCircle icon + `g e` shortcut hint
+  - `dashboard/src/hooks/useKeyboardShortcuts.ts` — `g+e` chord → `/system/error-codes`
+  - `dashboard/src/components/transfers/types.ts` — added `failureCode?: string` to `TransferFilters` + wired into `applyFilters` + `countActiveFilters`
+  - `dashboard/src/pages/Transfers.tsx` — parses `?failure_code=` from URL on mount, seeds `filters.failureCode`, strips the param, renders dismissable brand-tinted banner (with `AlertCircle` icon + mono code + Clear button) above existing card/recipient context banners
+  - `dashboard/src/components/app-versions/{ReleaseNotesPreview,modals/ReleaseNotesEditor,modals/ReleaseNotesPreviewPane,RowExpanded}.tsx` — repointed `LocaleFlag` import path to `@/components/zhipay/LocaleFlag`
+  - `dashboard/src/lib/i18n.ts` — ~38 new `admin.error-codes.*` keys + 1 `admin.transfers.context.failure-code-prefix` key
+
+- **Docs updated**: `docs/models.md` §7 (cascade: split `suggested_action` → `suggested_action_uz/ru/en`; expanded §7.1 examples table from 10 to 15 rows) · `.claude/rules/error-ux.md` (plural `suggested_action_*`) · `docs/product_states.md` (Error Codes row flipped Done; route updated to `/system/error-codes`) · `ai_context/AI_CONTEXT.md` (current-phase paragraph + 1 new workstreams entry) · `ai_context/HISTORY.md`. **No** PRD / mermaid change.
+
+- **Verified**: `npx tsc --noEmit` (exit 0; surfaced one missed consumer at `app-versions/RowExpanded.tsx` during the LocaleFlag lift — fixed). Lessons-compliance grep results follow build verification step. Browser eyeballing deferred — please spot-check: `/system/error-codes` loads with 15 rows, search filters across all 3 locales, category multi-chip + retryable single-chip work, click-to-expand renders 3 locale message + 3 suggested-action cards + WhereReferencedLinks + LastTriggeredCard, "View transfers that failed with this code →" deep-link populates the failure-code banner on Transfers, banner X clears the filter, mobile card stack mirrors at `<lg`, `g+e` global hotkey + `j/k/Enter//f` page-scoped hotkeys work, Export CSV downloads `error-codes-YYYY-MM-DD.csv` with 15 rows × 9 columns.
+
+---
+
 ### 2026-05-03 — Admin App Versions (Phase 15) — `/system/app-versions` · two-tab list (iOS / Android) + responsive Add / Edit Dialogs
 
 - **Summary**: Built the App Versions surface — mobile-app release-management for iOS + Android binaries. Two-tab list with `?platform=` deep-link, ActiveVersionBanner per platform, sortable desktop VersionsTable + mobile card stack mirror, and responsive Add / Edit Dialogs that go full-screen on `<sm` and cap at 640 × 85vh from `sm+`. **`mockAppVersions.ts` is single source of truth** — 9 iOS + 9 Android deterministic seed (`NOW = 2026-04-29` matches every other store): 1.4.2 latest down to 1.2.0 force-update security release across the spec's 9-version histogram, dates spread over ~8 months at realistic cadence; uz/ru/en notes hand-authored as natural translations rather than transliterations (Pinyin/CJK convention same as Recipients). Schema reuses `docs/models.md` §8 verbatim plus mock-only audit-trail surrogates (`createdBy` / `lastEditedAt` / `lastEditedBy`) following the `mockFxRates` / `mockCommissionRules` / `mockBlacklist` precedent — **no schema cascade needed**. **Active version** derives as `MAX(released_at)` per platform (date-based, not version-string-based — a hotfix released after a major correctly outranks if dated later, matching release-mgmt norm).
