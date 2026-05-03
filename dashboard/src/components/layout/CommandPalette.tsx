@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   TrendingUp,
   Activity,
+  Smartphone,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -82,6 +83,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             <Activity className="mr-2" />
             <span>Services & Health</span>
             <CommandShortcut>g s</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => go('/system/app-versions')}>
+            <Smartphone className="mr-2" />
+            <span>App Versions</span>
+            <CommandShortcut>g v</CommandShortcut>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />

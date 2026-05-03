@@ -80,6 +80,11 @@ import {
   type ServiceAuditAction,
   type ServiceAuditEntry,
 } from './mockServices';
+import {
+  listAppVersionsAudit,
+  type AppVersionAuditAction,
+  type AppVersionAuditEntry,
+} from './mockAppVersions';
 
 // =====================================================================
 // Public types
@@ -955,6 +960,34 @@ function bridgeServiceAudit(e: ServiceAuditEntry): AuditEvent {
   };
 }
 
+const APP_VERSION_ACTION_MAP: Record<AppVersionAuditAction, AuditAction> = {
+  add:  'created',
+  edit: 'updated',
+};
+
+function bridgeAppVersionAudit(e: AppVersionAuditEntry): AuditEvent {
+  return {
+    id: `bridge_app_version_${e.id}`,
+    timestamp: e.createdAt,
+    actorType: 'admin',
+    actor: adminFromName(e.actorName, e.actorId),
+    action: APP_VERSION_ACTION_MAP[e.action],
+    entity: { type: 'app_version', id: e.versionId },
+    fromStatus: null,
+    toStatus: null,
+    reason: e.reason || undefined,
+    context: {
+      kind: e.action,
+      platform: e.platform,
+      version: e.version,
+      force_update: e.snapshot.forceUpdate,
+      min_supported: e.snapshot.minSupported,
+      released_at: e.snapshot.releasedAt.toISOString(),
+      ...(e.previous ? { previous: e.previous } : {}),
+    },
+  };
+}
+
 // Bridge the canonical TRANSFER_EVENTS_FULL set — these are the
 // state-machine rows for transfers (system / provider / user-driven).
 function bridgeTransferEvents(): AuditEvent[] {
@@ -1012,6 +1045,7 @@ export function listAuditEvents(): AuditEvent[] {
     ...listCommissionAudit().map(bridgeCommissionAudit),
     ...listBlacklistAudit().map(bridgeBlacklistAudit),
     ...listServicesAudit().map(bridgeServiceAudit),
+    ...listAppVersionsAudit().map(bridgeAppVersionAudit),
   ];
   merged.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   return merged;

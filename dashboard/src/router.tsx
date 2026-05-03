@@ -22,10 +22,10 @@ import { BlacklistNew } from '@/pages/BlacklistNew';
 import { BlacklistDetail } from '@/pages/BlacklistDetail';
 import { KycTiers } from '@/pages/KycTiers';
 import { Services } from '@/pages/Services';
+import { AppVersions } from '@/pages/AppVersions';
 import { Placeholder } from '@/pages/Placeholder';
 
 const PLACEHOLDER_ROUTES = [
-  '/app-versions',
   '/error-codes',
   '/stories',
   '/news',
@@ -91,6 +91,9 @@ export function Router() {
         <Route path="/system/services" element={<Services />} />
         <Route path="/system/services/:id" element={<Services />} />
 
+        {/* System — App Versions (nested) */}
+        <Route path="/system/app-versions" element={<AppVersions />} />
+
         {/* Back-compat redirects: anything that still links to /transfers/* lands on the nested route. */}
         <Route path="/transfers" element={<Navigate to="/operations/transfers" replace />} />
         <Route
@@ -115,6 +118,7 @@ export function Router() {
         <Route path="/kyc-tiers" element={<Navigate to="/compliance/kyc-tiers" replace />} />
         <Route path="/services" element={<Navigate to="/system/services" replace />} />
         <Route path="/services/:id" element={<Navigate to="/system/services" replace />} />
+        <Route path="/app-versions" element={<RedirectPreservingQuery to="/system/app-versions" />} />
 
         {PLACEHOLDER_ROUTES.map((path) => (
           <Route key={path} path={path} element={<Placeholder />} />

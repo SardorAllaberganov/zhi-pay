@@ -2369,6 +2369,135 @@ const EN: Record<string, string> = {
   'admin.services.not-found.title': 'Service not found',
   'admin.services.not-found.body': 'No service with id {id}.',
   'admin.services.not-found.cta': 'Back to services',
+
+  // ===== App Versions (/system/app-versions) =====
+
+  // Page header
+  'admin.app-versions.title': 'App Versions',
+  'admin.app-versions.subtitle': 'Release management for iOS and Android',
+  'admin.app-versions.action.add': 'Add version',
+  'admin.app-versions.action.edit': 'Edit',
+
+  // Tabs
+  'admin.app-versions.tab.ios': 'iOS',
+  'admin.app-versions.tab.android': 'Android',
+
+  // Locales (used by the editor / preview / row-expanded)
+  'admin.app-versions.locale.uz': 'Uzbek',
+  'admin.app-versions.locale.ru': 'Russian',
+  'admin.app-versions.locale.en': 'English',
+
+  // Active version banner
+  'admin.app-versions.banner.latest': 'Latest {platform} version',
+  'admin.app-versions.banner.released': 'Released {time}',
+  'admin.app-versions.banner.min-supported': 'Min supported v{version}',
+  'admin.app-versions.chip.force-update': 'Force update',
+
+  // Versions table
+  'admin.app-versions.column.version': 'Version',
+  'admin.app-versions.column.released-at': 'Released at',
+  'admin.app-versions.column.min-supported': 'Min supported',
+  'admin.app-versions.column.force-update': 'Force update',
+  'admin.app-versions.column.release-notes': 'Release notes',
+  'admin.app-versions.cell.force-update.yes': 'Yes',
+  'admin.app-versions.cell.force-update.no': 'No',
+  'admin.app-versions.row-actions.label': 'Row actions',
+  'admin.app-versions.row-actions.edit': 'Edit version',
+  'admin.app-versions.row-actions.audit': 'Open audit log entry',
+  'admin.app-versions.row-expanded.last-edited': 'Last edited {time}',
+
+  // Empty state
+  'admin.app-versions.empty.title': 'No {platform} versions published yet',
+  'admin.app-versions.empty.body': 'Add the first version to start the release history.',
+
+  // Add modal
+  'admin.app-versions.add.title': 'Add new app version',
+  'admin.app-versions.add.subtitle':
+    'Publishing a version makes its release notes visible to users on the App Store / Play Store.',
+  'admin.app-versions.add.platform': 'Platform',
+  'admin.app-versions.add.version': 'Version',
+  'admin.app-versions.add.min-supported': 'Min supported version',
+  'admin.app-versions.add.min-supported.hint':
+    'Leave blank if no users should be force-updated.',
+  'admin.app-versions.add.force-update': 'Force update',
+  'admin.app-versions.add.force-update.body':
+    'All users on previous versions will be required to update before opening the app.',
+  'admin.app-versions.add.force-update.warning':
+    'Force update will block app launch for users below v{minSupported} until they update.',
+  'admin.app-versions.add.force-update.warning.all': 'all earlier versions',
+  'admin.app-versions.add.released-at': 'Released at',
+  'admin.app-versions.add.release-notes.title': 'Release notes',
+  'admin.app-versions.add.tab.edit': 'Edit',
+  'admin.app-versions.add.tab.preview': 'Preview',
+  'admin.app-versions.add.cta': 'Save version',
+
+  // Validation
+  'admin.app-versions.add.validation.semver':
+    'Version must follow semver — major.minor.patch (e.g. 1.4.3).',
+  'admin.app-versions.add.validation.duplicate':
+    '{platform} v{version} already exists. Pick a different version number.',
+  'admin.app-versions.add.validation.min-supported':
+    'Min supported must be a valid semver and at most the version being created.',
+
+  // Release-notes editor
+  'admin.app-versions.editor.locale-strip': 'Release notes locale',
+  'admin.app-versions.editor.locale-required': 'Required for this locale',
+  'admin.app-versions.editor.markdown-hint':
+    'Markdown supported — `* item` for bullets, blank line for paragraph break.',
+  'admin.app-versions.editor.char-count': '{count} characters',
+  'admin.app-versions.editor.placeholder.uz':
+    "Faster send-money flow.\nNew rate-lock countdown.\nBug fixes for card linking on iOS 16…",
+  'admin.app-versions.editor.placeholder.ru':
+    'Ускоренный процесс отправки. Новый таймер фиксации курса. Исправления привязки карт…',
+  'admin.app-versions.editor.placeholder.en':
+    "Faster send-money flow.\nNew rate-lock countdown.\nBug fixes for card linking on iOS 16…",
+
+  // Preview pane
+  'admin.app-versions.preview.subtitle':
+    "What users on {platform} will see in the store update prompt for v{version}",
+  'admin.app-versions.preview.whats-new': "What's new",
+  'admin.app-versions.preview.empty-locale':
+    'No release notes for this locale yet. Add copy in the Edit tab.',
+
+  // Confirm-publish AlertDialog
+  'admin.app-versions.action.confirm-publish.title':
+    'Publish {platform} v{version} now?',
+  'admin.app-versions.action.confirm-publish.body':
+    'Users on the App Store / Play Store will see the new release notes the next time they check for updates.',
+  'admin.app-versions.action.confirm-publish.body-force':
+    'Users on versions below the supplied min-supported will be required to update before opening the app.',
+  'admin.app-versions.action.confirm-publish.cta': 'Publish version',
+  'admin.app-versions.action.publishing': 'Publishing…',
+
+  // Edit modal
+  'admin.app-versions.edit.title': 'Edit version',
+  'admin.app-versions.edit.subtitle':
+    'Platform and version cannot be changed. Edits are recorded in the audit log.',
+  'admin.app-versions.edit.cta': 'Save changes',
+  'admin.app-versions.edit.saving': 'Saving…',
+  'admin.app-versions.edit.reason-label': 'Reason for edit',
+  'admin.app-versions.edit.reason-placeholder':
+    'Why this edit (≥ {min} chars). Visible only in the audit log.',
+  'admin.app-versions.edit.reason-counter': '{count} / {min} chars',
+  'admin.app-versions.edit.no-version.title': 'Version not found',
+  'admin.app-versions.edit.no-version.body':
+    'This version is no longer available. Refresh the list and try again.',
+
+  // Toasts
+  'admin.app-versions.toast.added': 'Published {platform} v{version}.',
+  'admin.app-versions.toast.edited': 'Updated {platform} v{version}.',
+  'admin.app-versions.toast.error.semver':
+    'Version must follow semver — major.minor.patch.',
+  'admin.app-versions.toast.error.duplicate':
+    'A version with the same number already exists for this platform.',
+  'admin.app-versions.toast.error.min-supported':
+    'Min supported must be a valid semver and at most the version being created.',
+  'admin.app-versions.toast.error.missing-notes':
+    'Release notes for all three locales (uz / ru / en) are required.',
+  'admin.app-versions.toast.error.missing-reason':
+    'A reason note of at least 20 characters is required for edits.',
+  'admin.app-versions.toast.error.not-found':
+    'This version is no longer available.',
 };
 
 /**

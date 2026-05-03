@@ -76,7 +76,7 @@ const SECTIONS: NavSection[] = [
     titleKey: 'admin.nav.section.system',
     items: [
       { to: '/system/services', labelKey: 'admin.nav.services', icon: Activity },
-      { to: '/app-versions', labelKey: 'admin.nav.app-versions', icon: Smartphone },
+      { to: '/system/app-versions', labelKey: 'admin.nav.app-versions', icon: Smartphone },
       { to: '/error-codes', labelKey: 'admin.nav.error-codes', icon: AlertCircle },
     ],
   },
