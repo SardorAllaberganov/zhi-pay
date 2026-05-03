@@ -583,10 +583,14 @@ erDiagram
     string title_en
     string media_url
     enum type "image|video"
-    jsonb cta "{label, deep_link}"
+    string cta_label_uz "nullable"
+    string cta_label_ru "nullable"
+    string cta_label_en "nullable"
+    jsonb cta_deep_link "{screen, params}, nullable"
     integer display_order
     boolean is_published
-    timestamp expires_at
+    timestamp published_at "nullable until is_published flips true"
+    timestamp expires_at "nullable"
     timestamp created_at
   }
   NEWS {
@@ -640,6 +644,8 @@ erDiagram
 | `aml_flags`        | `(status)` PARTIAL where status in ('open','reviewing')| ops queue                                  |
 | `wallet_ledger`    | `(wallet_id, created_at DESC)`                       | balance reconstruction                       |
 | `fx_rates`         | `(pair, valid_from DESC)`                            | "latest live rate" lookup                    |
+| `stories`          | `(display_order)` UNIQUE PARTIAL where is_published=true | enforce unique slot among visible stories  |
+| `stories`          | `(is_published, published_at DESC)`                  | "live carousel" + "scheduled queue" scans    |
 
 ### 9.3 Money-handling rules
 
