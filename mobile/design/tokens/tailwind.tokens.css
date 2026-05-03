@@ -1,0 +1,308 @@
+/* ZhiPay Mobile — Foundation Tokens (CSS layer)
+ *
+ * Drop into the mobile prototype's global stylesheet. Import order:
+ *   @import './tokens/tailwind.tokens.css';   <-- this file
+ *   @tailwind base;
+ *   @tailwind components;
+ *   @tailwind utilities;
+ *
+ * HSL components (no `hsl(...)` wrap) so Tailwind's `hsl(var(--brand-600))`
+ * pattern works for arbitrary opacities: `bg-brand-600/40`.
+ *
+ * Inherits admin's brand + slate + semantic ramps verbatim
+ * (dashboard/src/styles/globals.css). Mobile additions:
+ *   - --shadow-hero (brand-tinted lift, home card-as-object + receipt)
+ *   - --radius-lg = 20px (admin's --radius-xl is 16px; mobile bumps for hero card)
+ *   - --duration-base = 220ms (admin: 180ms — mobile bump for hand interaction)
+ *
+ * Spec sources:
+ *   - colors.md       — palette + contrast verification
+ *   - typography.md   — type scale (mobile lifts display sizes)
+ *   - spacing.md      — 8pt base scale
+ *   - radii.md        — 4 stops + pill
+ *   - shadows.md      — 3 elevations × 2 modes + hero
+ *   - motion.md       — duration + easing + reserved patterns
+ */
+
+:root {
+  /* ────────────────────────────────────────────────────────────────────
+   * COLOR — Brand (11 stops)
+   * Anchor: brand-600 = #0a64bc (ZhiPay signature blue)
+   * ──────────────────────────────────────────────────────────────────── */
+  --brand-50:  210 80% 95%;
+  --brand-100: 210 78% 88%;
+  --brand-200: 210 76% 76%;
+  --brand-300: 210 70% 64%;
+  --brand-400: 210 66% 53%;
+  --brand-500: 209 77% 45%;
+  --brand-600: 209 90% 39%; /* anchor */
+  --brand-700: 211 91% 32%;
+  --brand-800: 213 89% 25%;
+  --brand-900: 215 86% 18%;
+  --brand-950: 217 92% 12%;
+
+  /* COLOR — Slate (11 stops) */
+  --slate-50:  210 40% 98%;
+  --slate-100: 210 40% 96%;
+  --slate-200: 214 32% 91%;
+  --slate-300: 213 27% 84%;
+  --slate-400: 215 20% 65%;
+  --slate-500: 215 16% 47%;
+  --slate-600: 215 19% 35%;
+  --slate-700: 215 25% 27%;
+  --slate-800: 217 33% 17%;
+  --slate-900: 222 47% 11%;
+  --slate-950: 229 84% 5%;
+
+  /* COLOR — Semantic (3 stops each) */
+  --success-50:  138 76% 97%;
+  --success-600: 142 71% 45%;
+  --success-700: 142 76% 36%;
+
+  --warning-50:  48 100% 96%;
+  --warning-600: 32 95% 44%;
+  --warning-700: 26 90% 37%;
+
+  /* danger — RESERVED, never primary accent. See colors.md. */
+  --danger-50:  0 86% 97%;
+  --danger-600: 0 72% 51%;
+  --danger-700: 0 74% 42%;
+
+  /* Pure white (for primary-foreground etc.) */
+  --white: 0 0% 100%;
+
+  /* ────────────────────────────────────────────────────────────────────
+   * COLOR — Semantic mappings (LIGHT mode)
+   * Use these in screens — not raw brand-600 — wherever a role exists.
+   * ──────────────────────────────────────────────────────────────────── */
+  --background:             var(--slate-50);
+  --foreground:             var(--slate-900);
+  --card:                   var(--white);
+  --card-foreground:        var(--slate-900);
+  --popover:                var(--white);
+  --popover-foreground:     var(--slate-900);
+  --primary:                var(--brand-600);
+  --primary-foreground:     var(--white);
+  --secondary:              var(--slate-100);
+  --secondary-foreground:   var(--slate-900);
+  --muted:                  var(--slate-100);
+  --muted-foreground:       var(--slate-500);
+  --accent:                 var(--slate-100);
+  --accent-foreground:      var(--slate-900);
+  --destructive:            var(--danger-600);
+  --destructive-foreground: var(--white);
+  --border:                 var(--slate-200);
+  --input:                  var(--slate-200);
+  --ring:                   var(--brand-600);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * RADIUS — 4 stops + pill
+   * ──────────────────────────────────────────────────────────────────── */
+  --radius-sm:   8px;   /* inputs, chips, toast */
+  --radius-md:   12px;  /* cards, buttons, banners */
+  --radius-lg:   20px;  /* sheets (top corners), hero card-as-object */
+  --radius-pill: 9999px;
+  /* shadcn alias for compat with primitives that read --radius */
+  --radius: var(--radius-md);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * SHADOW — Light mode (3 elevations + hero)
+   * Dark-mode overrides below in `.dark`.
+   * ──────────────────────────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-md:
+    0 4px 12px -2px rgb(0 0 0 / 0.08),
+    0 1px 3px -1px rgb(0 0 0 / 0.04);
+  --shadow-lg:
+    0 12px 32px -8px rgb(0 0 0 / 0.12),
+    0 4px 12px -2px rgb(0 0 0 / 0.06);
+  /* shadow-hero — brand-tinted lift; home card-as-object + receipt only */
+  --shadow-hero:
+    0 24px 48px -12px hsl(var(--brand-900) / 0.20),
+    0 8px 24px -4px hsl(var(--brand-800) / 0.12);
+  /* shadcn aliases */
+  --shadow: var(--shadow-md);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * MOTION — Duration + easing tokens
+   * Default duration bumps from admin's 180ms to 220ms (hand interaction).
+   * Easing curves inherit admin verbatim for cross-surface muscle memory.
+   * ──────────────────────────────────────────────────────────────────── */
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 320ms;
+
+  --ease-standard:   cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1.2);
+  --ease-exit:       cubic-bezier(0.4, 0, 1, 1);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * TYPOGRAPHY — Font families
+   * Mobile lifts display sizes via Tailwind config (see fontSize block in
+   * the consuming tailwind.config.ts), not via CSS vars.
+   * ──────────────────────────────────────────────────────────────────── */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * DARK MODE
+ * Toggled via `class="dark"` on <html> (Tailwind's `darkMode: ['class']`).
+ * Slate + brand ramps stay identical; only semantic mappings + shadows flip.
+ * ────────────────────────────────────────────────────────────────────── */
+.dark {
+  --background:             var(--slate-950);
+  --foreground:             var(--slate-100);
+  --card:                   var(--slate-900);
+  --card-foreground:        var(--slate-100);
+  --popover:                var(--slate-900);
+  --popover-foreground:     var(--slate-100);
+  --primary:                var(--brand-500);
+  --primary-foreground:     var(--white);
+  --secondary:              var(--slate-800);
+  --secondary-foreground:   var(--slate-100);
+  --muted:                  var(--slate-800);
+  --muted-foreground:       var(--slate-400);
+  --accent:                 var(--slate-800);
+  --accent-foreground:      var(--slate-100);
+  --destructive:            var(--danger-600);
+  --destructive-foreground: var(--white);
+  --border:                 var(--slate-800);
+  --input:                  var(--slate-800);
+  --ring:                   var(--brand-400);
+
+  /* Dark-mode shadows: same blur, ~2-3× alpha */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.40);
+  --shadow-md:
+    0 4px 12px -2px rgb(0 0 0 / 0.50),
+    0 1px 3px -1px rgb(0 0 0 / 0.30);
+  --shadow-lg:
+    0 12px 32px -8px rgb(0 0 0 / 0.60),
+    0 4px 12px -2px rgb(0 0 0 / 0.40);
+  --shadow-hero:
+    0 24px 48px -12px hsl(var(--brand-950) / 0.65),
+    0 8px 24px -4px hsl(var(--brand-900) / 0.45);
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * Reduced motion — collapse every transition to instantaneous.
+ * Live-region screen-reader updates for status changes still fire.
+ * ────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * Reduced transparency — drop the brand-tint from shadow-hero.
+ * Hue tints are ornament; the elevation cue is offset + blur.
+ * ────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --shadow-hero: var(--shadow-lg);
+  }
+  .dark {
+    --shadow-hero: var(--shadow-lg);
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ * Tabular-nums utility — opt-in via class on monetary / count / ID /
+ * timestamp values. Companion utility to the tokens above; mirrors admin's
+ * .tabular utility so screens that flip in from admin still work.
+ * ────────────────────────────────────────────────────────────────────── */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Body-level font-feature settings — Inter optimizations */
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+}
+
+/* Tailwind config block — paste-into snippet
+ * ──────────────────────────────────────────────────────────────────────
+ * Below is the matching `tailwind.config.ts` extend block, kept inline
+ * here as a comment so a designer reviewing tokens.css sees the binding
+ * shape. The actual config lives in the consuming project's tailwind.config.ts
+ * (mobile prototype scaffold — TBD).
+ *
+ * theme: {
+ *   extend: {
+ *     colors: {
+ *       border:     'hsl(var(--border))',
+ *       input:      'hsl(var(--input))',
+ *       ring:       'hsl(var(--ring))',
+ *       background: 'hsl(var(--background))',
+ *       foreground: 'hsl(var(--foreground))',
+ *       primary:     { DEFAULT: 'hsl(var(--primary))',     foreground: 'hsl(var(--primary-foreground))' },
+ *       secondary:   { DEFAULT: 'hsl(var(--secondary))',   foreground: 'hsl(var(--secondary-foreground))' },
+ *       muted:       { DEFAULT: 'hsl(var(--muted))',       foreground: 'hsl(var(--muted-foreground))' },
+ *       accent:      { DEFAULT: 'hsl(var(--accent))',      foreground: 'hsl(var(--accent-foreground))' },
+ *       popover:     { DEFAULT: 'hsl(var(--popover))',     foreground: 'hsl(var(--popover-foreground))' },
+ *       card:        { DEFAULT: 'hsl(var(--card))',        foreground: 'hsl(var(--card-foreground))' },
+ *       destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' },
+ *       brand:   { 50:'hsl(var(--brand-50))', 100:'hsl(var(--brand-100))', 200:'hsl(var(--brand-200))',
+ *                  300:'hsl(var(--brand-300))', 400:'hsl(var(--brand-400))', 500:'hsl(var(--brand-500))',
+ *                  600:'hsl(var(--brand-600))', 700:'hsl(var(--brand-700))', 800:'hsl(var(--brand-800))',
+ *                  900:'hsl(var(--brand-900))', 950:'hsl(var(--brand-950))' },
+ *       slate:   { 50:'hsl(var(--slate-50))', 100:'hsl(var(--slate-100))', 200:'hsl(var(--slate-200))',
+ *                  300:'hsl(var(--slate-300))', 400:'hsl(var(--slate-400))', 500:'hsl(var(--slate-500))',
+ *                  600:'hsl(var(--slate-600))', 700:'hsl(var(--slate-700))', 800:'hsl(var(--slate-800))',
+ *                  900:'hsl(var(--slate-900))', 950:'hsl(var(--slate-950))' },
+ *       success: { 50:'hsl(var(--success-50))', 600:'hsl(var(--success-600))', 700:'hsl(var(--success-700))' },
+ *       warning: { 50:'hsl(var(--warning-50))', 600:'hsl(var(--warning-600))', 700:'hsl(var(--warning-700))' },
+ *       danger:  { 50:'hsl(var(--danger-50))',  600:'hsl(var(--danger-600))',  700:'hsl(var(--danger-700))' },
+ *     },
+ *     borderRadius: {
+ *       sm:   'var(--radius-sm)',
+ *       md:   'var(--radius-md)',
+ *       lg:   'var(--radius-lg)',
+ *       full: 'var(--radius-pill)',
+ *       DEFAULT: 'var(--radius)',
+ *     },
+ *     boxShadow: {
+ *       sm:   'var(--shadow-sm)',
+ *       DEFAULT: 'var(--shadow-md)',
+ *       lg:   'var(--shadow-lg)',
+ *       hero: 'var(--shadow-hero)',
+ *     },
+ *     fontFamily: {
+ *       sans: ['var(--font-sans)'],
+ *       mono: ['var(--font-mono)'],
+ *     },
+ *     fontSize: {
+ *       // Mobile scale — 13px floor; display tier lifts higher than admin's web scale.
+ *       label:      ['13px', { lineHeight: '18px' }],
+ *       'body-sm':  ['14px', { lineHeight: '20px' }],
+ *       body:       ['16px', { lineHeight: '24px' }],
+ *       heading:    ['22px', { lineHeight: '28px', letterSpacing: '-0.01em' }],
+ *       'display-2':['32px', { lineHeight: '38px', letterSpacing: '-0.015em' }],
+ *       'display-1':['44px', { lineHeight: '48px', letterSpacing: '-0.02em' }],
+ *     },
+ *     fontWeight: {
+ *       regular: '400', medium: '500', semibold: '600', bold: '700',
+ *     },
+ *     transitionDuration: {
+ *       fast: '140ms', DEFAULT: '220ms', slow: '320ms',
+ *     },
+ *     transitionTimingFunction: {
+ *       standard:   'cubic-bezier(0.2, 0, 0, 1)',
+ *       emphasized: 'cubic-bezier(0.2, 0, 0, 1.2)',
+ *       exit:       'cubic-bezier(0.4, 0, 1, 1)',
+ *     },
+ *   },
+ * },
+ */
