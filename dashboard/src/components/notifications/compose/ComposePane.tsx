@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 import { t } from '@/lib/i18n';
 import type { LocaleCode } from '@/components/zhipay/LocaleFlag';
 import { getUserById } from '@/data/mockUsers';
+import { useDraftPreservation } from '@/hooks/useDraftPreservation';
 import {
   type CreateNotificationInput,
   createNotification,
@@ -56,6 +57,36 @@ export function ComposePane({ onCreated, onCancel, adminLocale }: ComposePanePro
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [paramsParseError, setParamsParseError] = useState<string | null>(null);
+
+  // Draft preservation — auto-save the compose form to localStorage so
+  // a maintenance flip mid-typing doesn't lose work, and a refresh
+  // restores the in-progress draft. Custom (de)serializer rehydrates
+  // the `scheduledFor: Date` field per LESSON 2026-05-03 (storage
+  // round-trips lose Date semantics that the type system can't see).
+  const serializeDraft = useCallback((f: ComposeForm): string => {
+    return JSON.stringify({
+      ...f,
+      scheduledFor: f.scheduledFor ? f.scheduledFor.toISOString() : null,
+    });
+  }, []);
+  const deserializeDraft = useCallback((raw: string): ComposeForm | null => {
+    try {
+      const parsed = JSON.parse(raw) as ComposeForm & { scheduledFor: string | null };
+      if (parsed.scheduledFor && typeof parsed.scheduledFor === 'string') {
+        return { ...parsed, scheduledFor: new Date(parsed.scheduledFor) };
+      }
+      return { ...parsed, scheduledFor: null };
+    } catch {
+      return null;
+    }
+  }, []);
+  const { clearDraft } = useDraftPreservation<ComposeForm>({
+    key: 'zhipay-admin-notifications-compose-draft',
+    value: form,
+    setValue: setForm,
+    serialize: serializeDraft,
+    deserialize: deserializeDraft,
+  });
 
   // Recipient count snapshot — recomputed when audience changes
   const recipientCount = useMemo(() => {
@@ -212,6 +243,9 @@ export function ComposePane({ onCreated, onCancel, adminLocale }: ComposePanePro
           ? 'admin.notifications.compose.toast.scheduled'
           : 'admin.notifications.compose.toast.sent';
       toast.success(t(successKey));
+      // Draft submitted successfully — wipe the saved draft so the
+      // next mount starts fresh.
+      clearDraft();
       setConfirmOpen(false);
       onCreated(created.id);
     } finally {
