@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ZhiPay · Pattern 1 — FX-quote breakdown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  html, body { margin: 0; padding: 0; background: #F4F4F1; font-family: Inter, system-ui, sans-serif; color: #0F172A; }
+  * { box-sizing: border-box; }
+  @keyframes zhipayPulse {
+    0%   { transform: scale(1);    opacity: 0.5; }
+    80%  { transform: scale(2.6);  opacity: 0;   }
+    100% { transform: scale(2.6);  opacity: 0;   }
+  }
+  @keyframes zhipayShimmer {
+    0%   { opacity: 0.7; }
+    50%  { opacity: 0.4; }
+    100% { opacity: 0.7; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+  .spec h2 { font-size: 13px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; margin: 0 0 12px; }
+  .spec h3 { font-size: 22px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .spec p, .spec li { font-size: 14px; line-height: 22px; color: #334155; }
+  .spec li code, .spec p code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 13px; background: rgba(15,23,42,0.06); padding: 1px 6px; border-radius: 4px; }
+  .spec ul { padding-left: 18px; margin: 8px 0 16px; }
+  .spec table { font-size: 13px; border-collapse: collapse; width: 100%; }
+  .spec table th, .spec table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #E2E8F0; }
+  .spec table th { color: #64748b; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; font-size: 11px; }
+  .kbd { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; background: #fff; border: 1px solid #E2E8F0; padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tokens.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="pattern-fx-quote.jsx"></script>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState } = React;
+
+// ─── i18n strings — uz first, ru/en marked where translation pending ───
+const STRINGS = {
+  uz: {
+    youSend:        "Siz jo'natasiz",
+    serviceFee:     "Xizmat haqi",
+    fxSpread:       "Valyuta farqi",
+    totalCharge:    "Jami yechiladi",
+    recipientGets:  "Qabul qiluvchi oladi",
+    rate:           "Kurs",
+    locked:         "Qulflangan",
+    stale:          "Yangilash kerak",
+    lockedFor:      "qulflangan",
+    alipayLabel:    "Alipay · Wang Lei",
+    intlCardNote:   "1.5% — xalqaro karta",
+    disclosure:     "Kurs tasdiqlash vaqtida qulflanadi va o'zgarmaydi.",
+    errorTitle:     "Kursni olib bo'lmadi",   // FX_STALE / SYSTEM_ERROR
+    errorBody:      "Aloqani tekshiring va qayta urinib ko'ring.",
+    retry:          "Qayta urinish",
+    offlineTitle:   "Internet yo'q",
+    offlineBody:    "Kurs onlayn rejimda yangilanadi. Hozirgi tarif faqat ko'rsatma uchun.",
+    rateMovedTitle: "Kurs yangilandi",
+    rateMovedBody:  "Yangi kursda 1 CNY = 1 408,42 UZS. Davom etishdan oldin tasdiqlang.",
+    staleTitle:     "Kurs eskirgan",          // FX_STALE
+    staleBody:      "Yangilash uchun kursni qayta yuklang.",
+  },
+  ru: { // [needs translation review]
+    youSend:        "Вы отправляете",
+    serviceFee:     "Сервисный сбор",
+    fxSpread:       "Валютный спред",
+    totalCharge:    "К списанию",
+    recipientGets:  "Получатель получит",
+    rate:           "Курс",
+    locked:         "Зафиксирован",
+    stale:          "Курс устарел",
+    lockedFor:      "зафиксирован",
+    alipayLabel:    "Alipay · Wang Lei",
+    intlCardNote:   "1,5% — международная карта",
+    disclosure:     "Курс фиксируется при подтверждении и не меняется.",
+    errorTitle:     "Не удалось получить курс",
+    errorBody:      "Проверьте соединение и попробуйте снова.",
+    retry:          "Повторить",
+    offlineTitle:   "Нет соединения",
+    offlineBody:    "Курс обновится при восстановлении сети. Указанная цена ориентировочная.",
+    rateMovedTitle: "Курс обновлён",
+    rateMovedBody:  "Новый курс 1 CNY = 1 408,42 UZS. Подтвердите перед продолжением.",
+    staleTitle:     "Курс устарел",
+    staleBody:      "Перезагрузите курс для продолжения.",
+  },
+  en: { // [needs translation review]
+    youSend:        "You send",
+    serviceFee:     "Service fee",
+    fxSpread:       "FX spread",
+    totalCharge:    "Total charge",
+    recipientGets:  "Recipient gets",
+    rate:           "Rate",
+    locked:         "Locked",
+    stale:          "Stale",
+    lockedFor:      "locked for",
+    alipayLabel:    "Alipay · Wang Lei",
+    intlCardNote:   "1.5% — international card",
+    disclosure:     "Rate is locked at confirmation and will not change mid-flight.",
+    errorTitle:     "Couldn't fetch the rate",
+    errorBody:      "Check your connection and try again.",
+    retry:          "Try again",
+    offlineTitle:   "You're offline",
+    offlineBody:    "Rate will refresh when you're back online. Quote shown is indicative.",
+    rateMovedTitle: "Rate refreshed",
+    rateMovedBody:  "New rate is 1 CNY = 1,408.42 UZS. Confirm before proceeding.",
+    staleTitle:     "Quote expired",
+    staleBody:      "Reload the quote to continue.",
+  },
+};
+
+// canonical sample numbers — exactly the breakdown from rules-pack §2
+const SAMPLE = {
+  amountUzs:       500000000,    // 5 000 000.00 UZS in tiyin
+  feeUzs:           5000000,     //    50 000.00 UZS
+  feeRatePct:       1.0,
+  fxSpreadUzs:      500000,      //     5 000.00 UZS
+  totalChargeUzs:  505500000,    // 5 055 000.00 UZS
+  amountCny:       360000,       //     3 600.00 CNY in fen
+  clientRate:     1404.17,
+};
+
+// internationale-card sample (Visa — 1.5% — for tier_2 Visa scenario)
+const SAMPLE_INTL = {
+  ...SAMPLE,
+  feeUzs:        7500000,         // 75 000.00 UZS
+  feeRatePct:    1.5,
+  totalChargeUzs:508000000,       // 5 080 000.00 UZS
+};
+
+// container that holds the breakdown + a sticky confirm button (so the pattern
+// reads as the body of a "review" screen — but the pattern itself is the Card)
+function ReviewBody({ children, dark, locale, ctaLabel, disabled }) {
+  const t = dark ? window.Tdark : window.T;
+  const T = window.T;
+  const bg = dark ? T.slate950 : T.slate50;
+  const fg = dark ? T.white    : T.slate900;
+  return (
+    <div style={{
+      background: bg, color: fg,
+      minHeight: '100%', display: 'flex', flexDirection: 'column',
+      paddingTop: 56, // status bar
+    }}>
+      {/* small screen header */}
+      <div style={{ padding: '12px 20px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ ...window.type.label, color: dark ? T.slate400 : T.slate500 }}>
+          {locale === 'en' ? 'REVIEW' : locale === 'ru' ? 'ПОДТВЕРЖДЕНИЕ' : 'TASDIQLASH'}
+        </span>
+        <span style={{ ...window.type.bodySmMed, color: dark ? T.slate400 : T.slate500 }}>
+          {locale === 'en' ? '3 of 4' : '3 / 4'}
+        </span>
+      </div>
+      <div style={{ ...window.type.heading, color: fg, padding: '4px 20px 20px' }}>
+        {locale === 'en' ? 'Confirm transfer' : locale === 'ru' ? 'Подтвердите перевод' : 'O\u02BBtkazmani tasdiqlang'}
+      </div>
+      <div style={{ flex: 1, padding: '0 20px 20px' }}>
+        {children}
+      </div>
+      <div style={{
+        padding: 20, borderTop: `1px solid ${dark ? t.slate200 : T.slate200}`,
+        background: dark ? T.slate950 : T.white,
+      }}>
+        <button disabled={disabled} style={{
+          width: '100%', height: 52, borderRadius: window.radius.md, border: 'none',
+          background: disabled ? (dark ? 'rgba(10,100,188,0.32)' : 'rgba(10,100,188,0.32)') : T.brand600,
+          color: '#fff', ...window.type.bodySemi,
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          boxShadow: disabled ? 'none' : '0 1px 2px rgba(10,100,188,0.4)',
+        }}>{ctaLabel}</button>
+      </div>
+    </div>
+  );
+}
+
+function Frame({ dark, locale, state, intl, dynamicType, ctaLabel }) {
+  const i18n = STRINGS[locale];
+  const sample = intl ? SAMPLE_INTL : SAMPLE;
+  return (
+    <div style={{
+      width: 393, height: 852,
+      fontSize: dynamicType ? '20px' : '16px',  // 200% root for spot-check
+    }}>
+      <window.IOSDevice width={393} height={852} dark={dark}>
+        <ReviewBody dark={dark} locale={locale} ctaLabel={ctaLabel} disabled={state === 'error' || state === 'offline' || state === 'stale'}>
+          <window.FxQuoteBreakdown
+            {...sample}
+            internationalCard={intl}
+            locale={locale}
+            dark={dark}
+            state={state}
+            ttlSeconds={state === 'rateMoved' ? 18 : 154}
+            i18n={i18n}
+          />
+        </ReviewBody>
+      </window.IOSDevice>
+    </div>
+  );
+}
+
+// ─── Spec MD as React ──────────────────────────────────────────────────
+function Spec() {
+  return (
+    <div className="spec" style={{
+      width: 720, padding: '40px 48px', background: '#fff',
+      borderRadius: 12, boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+      lineHeight: 1.55,
+    }}>
+      <div style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#64748b', marginBottom: 12 }}>
+        Pattern 1 · Spec
+      </div>
+      <h3 style={{ fontSize: 28, marginTop: 0, marginBottom: 8, letterSpacing: '-0.01em' }}>FX-quote breakdown</h3>
+      <p style={{ marginTop: 0, color: '#475569', fontSize: 15 }}>
+        The body of every send-money review screen. One focal point: the CNY the recipient receives.
+        Everything else is the audit trail that earns user trust before they commit.
+      </p>
+
+      <h2 style={{ marginTop: 28 }}>Composes</h2>
+      <table>
+        <thead><tr><th>Layer</th><th>Member</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td>Tokens</td><td>color/{`{background, foreground, muted-foreground, primary, border}`}</td><td>throughout</td></tr>
+          <tr><td>Tokens</td><td>radius/md (12), shadow-sm</td><td>card shell</td></tr>
+          <tr><td>Tokens</td><td>text/{`{label, body-sm, body-sm-semibold, mono/body, mono/body-sm, mono/label}`}</td><td>throughout</td></tr>
+          <tr><td>Components</td><td>Card / Header-Body</td><td>shell</td></tr>
+          <tr><td>Components</td><td>Headline Number / Hero</td><td>recipient amount (focal)</td></tr>
+          <tr><td>Components</td><td>List Row pattern</td><td>fee · spread · total · rate rows</td></tr>
+          <tr><td>Components</td><td>Banner / Info · Warning · Danger</td><td>rate-moved · stale · error · offline</td></tr>
+          <tr><td>Primitives</td><td>Chip / Status (Sm)</td><td>Locked · Stale</td></tr>
+          <tr><td>Icons</td><td>Lock · Info · AlertTriangle · AlertCircle · WifiOff · Clock</td><td>banners + chip</td></tr>
+        </tbody>
+      </table>
+
+      <h2 style={{ marginTop: 28 }}>Variant axes</h2>
+      <ul>
+        <li><b>State</b>: <code>default</code> · <code>loading</code> · <code>stale</code> · <code>rateMoved</code> · <code>error</code> · <code>offline</code></li>
+        <li><b>Card type</b>: <code>domestic</code> (UzCard / Humo, 1.0% fee) · <code>international</code> (Visa / MC, 1.5% — fee row carries warning-toned sublabel; v1 mock data hides this entirely, but the variant is wired)</li>
+        <li><b>Theme</b>: light · dark (Variables modes — same node)</li>
+        <li><b>Locale</b>: <code>uz</code> (default) · <code>ru</code> · <code>en</code> — drives separators, decimal char, and longest-translation pass</li>
+        <li><b>Dynamic type</b>: 100% · 200% (spot-checked)</li>
+      </ul>
+
+      <h2 style={{ marginTop: 28 }}>Variable bindings</h2>
+      <table>
+        <thead><tr><th>Prop</th><th>Schema source</th><th>Display rule</th></tr></thead>
+        <tbody>
+          <tr><td><code>amountUzs</code></td><td><code>transfers.amount_uzs</code> (bigint tiyin)</td><td>÷100 → locale fmt + " UZS" (NBSP)</td></tr>
+          <tr><td><code>feeUzs</code> + <code>feeRatePct</code></td><td><code>transfer_fees.fee_uzs</code> · derived %</td><td>row sublabel is the %</td></tr>
+          <tr><td><code>fxSpreadUzs</code></td><td><code>transfer_fees.fx_spread_uzs</code></td><td>same as above</td></tr>
+          <tr><td><code>totalChargeUzs</code></td><td><code>transfers.total_charge_uzs</code></td><td>emphasized — body-semi + larger mono</td></tr>
+          <tr><td><code>amountCny</code></td><td><code>transfers.amount_cny</code> (bigint fen)</td><td>÷100 → Hero, brand-600, focal point</td></tr>
+          <tr><td><code>clientRate</code></td><td><code>fx_rates.client_rate</code></td><td><code>1 CNY = 1 404,17 UZS</code> · 2dp</td></tr>
+          <tr><td><code>ttlSeconds</code></td><td><code>fx_rates.valid_to − now()</code></td><td>chip + <code>mm:ss</code> · pulse at ≤30s</td></tr>
+          <tr><td><code>internationalCard</code></td><td><code>linked_cards.scheme.international</code></td><td>fee row sublabel switches to warning tone</td></tr>
+        </tbody>
+      </table>
+
+      <h2 style={{ marginTop: 28 }}>States — what each renders</h2>
+      <table>
+        <thead><tr><th>State</th><th>Trigger</th><th>UI</th><th>CTA</th></tr></thead>
+        <tbody>
+          <tr><td><code>default</code></td><td>Quote returned, TTL &gt; 30s</td><td>Full breakdown + locked chip + countdown</td><td>Confirm enabled</td></tr>
+          <tr><td><code>loading</code></td><td>POST <code>/fx/quote</code> in flight</td><td>Skeleton rows · 7 cells</td><td>Confirm disabled</td></tr>
+          <tr><td><code>rateMoved</code></td><td>TTL=0, refetch returned diff &gt; threshold</td><td>Body shows new rate · Info banner</td><td>Confirm re-enabled w/ user re-acknowledge</td></tr>
+          <tr><td><code>stale</code></td><td><code>FX_STALE</code> from <code>error_codes</code></td><td>Chip → warning · banner with reload affordance</td><td>Confirm disabled until refresh</td></tr>
+          <tr><td><code>error</code></td><td>Network / <code>SYSTEM_ERROR</code></td><td>Danger banner + Retry · breakdown hidden</td><td>Confirm disabled</td></tr>
+          <tr><td><code>offline</code></td><td><code>navigator.onLine === false</code></td><td>Warning banner · indicative amount · CNY hidden</td><td>Confirm disabled</td></tr>
+        </tbody>
+      </table>
+
+      <h2 style={{ marginTop: 28 }}>i18n keys referenced</h2>
+      <ul>
+        <li><code>mobile.send-money.review.you-send</code></li>
+        <li><code>mobile.send-money.review.service-fee</code></li>
+        <li><code>mobile.send-money.review.fx-spread</code></li>
+        <li><code>mobile.send-money.review.total-charge</code></li>
+        <li><code>mobile.send-money.review.recipient-gets</code></li>
+        <li><code>mobile.send-money.review.rate</code></li>
+        <li><code>mobile.send-money.review.locked-chip</code></li>
+        <li><code>mobile.send-money.review.locked-for</code></li>
+        <li><code>mobile.send-money.review.intl-card-note</code></li>
+        <li><code>mobile.send-money.review.disclosure</code></li>
+        <li><code>mobile.send-money.review.rate-moved.{`{title,body}`}</code></li>
+        <li><code>common.errors.FX_STALE.{`{title,body}`}</code> · <code>common.errors.SYSTEM_ERROR.{`{title,body}`}</code></li>
+        <li><code>common.offline.{`{title,body}`}</code> · <code>common.cta.retry</code></li>
+      </ul>
+      <p>UZ locked. RU/EN drafted from UZ — marked <code>[needs translation review]</code> in the locale pack until copy review.</p>
+
+      <h2 style={{ marginTop: 28 }}>A11y notes</h2>
+      <ul>
+        <li>Recipient amount: <code>aria-label</code> reads "Recipient gets 3,600 yuan" — avoids the screen reader spelling out CNY.</li>
+        <li>Countdown: <code>aria-live="polite"</code>, announce only every 30s and at 0; not every tick.</li>
+        <li>Pulse dot: ornamental — purely decorative, gated by <code>prefers-reduced-motion</code>; the time string changes color at ≤30s so motion is not the only signal.</li>
+        <li>Locked chip pairs <code>Lock</code> icon + label + warning-toned color when stale → never color-only.</li>
+        <li>Tap targets — only the Confirm button is interactive within the breakdown; sized 52pt &gt; 44pt floor. The "i" indicator on the FX-spread row is non-interactive (label-only) — explanatory long-form lives in a sheet outside this pattern.</li>
+        <li>Focus order: heading → recipient amount → breakdown rows top-down → rate row → countdown → CTA.</li>
+        <li>Contrast: <code>brand-600</code> on white = 4.62:1 (AA body); <code>slate-500</code> on white = 4.65:1 (AA body); <code>warning-900</code> on <code>warning-50</code> = 7.2:1.</li>
+      </ul>
+
+      <h2 style={{ marginTop: 28 }}>Deviations from the rules</h2>
+      <ul>
+        <li><b>None.</b> The pattern composes only Tokens / Primitives / Components — Pattern→Pattern imports avoided. Rate-lock countdown is implemented inline here for v1; if Pattern 2 (Rate-lock countdown) needs the same logic on the receipt screen, the timer + chip combo will be lifted into a shared <i>Component</i> (one layer down per §10), not cross-imported.</li>
+        <li><b>Open question</b> for Compliance / Product: when <code>rateMoved</code> diff is below visible-threshold, do we silently swap or always require re-acknowledge? Drawn assuming always-re-acknowledge per the trust principle.</li>
+      </ul>
+    </div>
+  );
+}
+
+// ─── Canvas layout ─────────────────────────────────────────────────────
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="core" title="Core states · uz · light" subtitle="Default · loading · rate-moved · stale · error · offline">
+        <DCArtboard id="default-light-uz" label="Default — locked" width={393} height={852}>
+          <Frame dark={false} locale="uz" state="default" ctaLabel="O‘tkazishni tasdiqlash"/>
+        </DCArtboard>
+        <DCArtboard id="loading-light-uz" label="Loading" width={393} height={852}>
+          <Frame dark={false} locale="uz" state="loading" ctaLabel="O‘tkazishni tasdiqlash"/>
+        </DCArtboard>
+        <DCArtboard id="rate-moved-uz" label="Rate moved (re-acknowledge)" width={393} height={852}>
+          <Frame dark={false} locale="uz" state="rateMoved" ctaLabel="Yangi kursni tasdiqlash"/>
+        </DCArtboard>
+        <DCArtboard id="stale-uz" label="Stale (FX_STALE)" width={393} height={852}>
+          <Frame dark={false} locale="uz" state="stale" ctaLabel="Yangilash kerak"/>
+        </DCArtboard>
+        <DCArtboard id="error-uz" label="Error (SYSTEM_ERROR)" width={393} height={852}>
+          <Frame dark={false} locale="uz" state="error" ctaLabel="O‘tkazishni tasdiqlash"/>
+        </DCArtboard>
+        <DCArtboard id="offline-uz" label="Offline" width={393} height={852}>
+          <Frame dark={false} locale="uz" state="offline" ctaLabel="O‘tkazishni tasdiqlash"/>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="theme" title="Dark mode" subtitle="Same node, Variables mode flipped — uz default + ru longest-translation">
+        <DCArtboard id="default-dark-uz" label="Default — dark · uz" width={393} height={852}>
+          <Frame dark={true} locale="uz" state="default" ctaLabel="O‘tkazishni tasdiqlash"/>
+        </DCArtboard>
+        <DCArtboard id="rate-moved-dark-uz" label="Rate moved — dark · uz" width={393} height={852}>
+          <Frame dark={true} locale="uz" state="rateMoved" ctaLabel="Yangi kursni tasdiqlash"/>
+        </DCArtboard>
+        <DCArtboard id="default-dark-ru" label="Default — dark · ru (longest)" width={393} height={852}>
+          <Frame dark={true} locale="ru" state="default" ctaLabel="Подтвердить перевод"/>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="locale" title="Locale parity · light" subtitle="Number grouping · decimal char · NBSP · longest-translation pass">
+        <DCArtboard id="default-light-ru" label="Default — ru" width={393} height={852}>
+          <Frame dark={false} locale="ru" state="default" ctaLabel="Подтвердить перевод"/>
+        </DCArtboard>
+        <DCArtboard id="default-light-en" label="Default — en" width={393} height={852}>
+          <Frame dark={false} locale="en" state="default" ctaLabel="Confirm transfer"/>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="card-variant" title="Card-type variant — international" subtitle="Wired but absent from v1 mock data per rules-pack §6 / brief §4">
+        <DCArtboard id="intl-light-uz" label="Intl card (1.5%) — light" width={393} height={852}>
+          <Frame dark={false} locale="uz" state="default" intl={true} ctaLabel="O‘tkazishni tasdiqlash"/>
+        </DCArtboard>
+        <DCArtboard id="intl-dark-en" label="Intl card (1.5%) — dark · en" width={393} height={852}>
+          <Frame dark={true} locale="en" state="default" intl={true} ctaLabel="Confirm transfer"/>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="a11y" title="Dynamic type spot-check" subtitle="200% root font — content reflows, no clipping">
+        <DCArtboard id="dt-200-uz" label="200% — uz" width={393} height={852}>
+          <Frame dark={false} locale="uz" state="default" dynamicType={true} ctaLabel="O‘tkazishni tasdiqlash"/>
+        </DCArtboard>
+        <DCArtboard id="dt-200-ru" label="200% — ru (longest)" width={393} height={852}>
+          <Frame dark={false} locale="ru" state="default" dynamicType={true} ctaLabel="Подтвердить перевод"/>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="spec" title="Spec" subtitle="Composes · variants · variable bindings · states · a11y · deviations">
+        <DCArtboard id="spec-md" label="Spec MD" width={720} height={1840}>
+          <Spec/>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

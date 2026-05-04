@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ZhiPay — Home + Auth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  html, body { margin:0; padding:0; height:100%; font-family: Inter, system-ui, sans-serif; background:#F8FAFC; }
+  *, *::before, *::after { box-sizing: border-box; }
+  @keyframes blink { 0%,49% { opacity:1 } 50%,100% { opacity:0 } }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel" src="tokens.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="auth-screens.jsx"></script>
+<script type="text/babel" src="home-screens.jsx"></script>
+<script type="text/babel" src="transfer-screens.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel">
+const { IOSDevice, IOSStatusBar } = window;
+const {
+  SplashScreen, PhoneScreen, OtpScreen, PinScreen, OnboardingScreen, LockScreen,
+} = window;
+const { HomeSafe, HomeBold, TabBar, PlaceholderTab, ProfileTab, CardsScreen, HOME_STRINGS } = window;
+const {
+  RecipientSelectScreen, AddRecipientScreen, AmountEntryScreen, ReviewScreen, ProcessingScreen, SuccessScreen,
+} = window;
+const { TweaksPanel, TweakSection, TweakRadio, TweakSelect, TweakToggle, useTweaks } = window;
+
+// ─── Tweakable defaults ─────────────────────────────────────
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "step": "home",
+  "homeVariant": "safe",
+  "locale": "uz",
+  "dark": false,
+  "kycTier": "full",
+  "hasRecipients": true,
+  "hasActivity": true,
+  "activeTab": "home"
+}/*EDITMODE-END*/;
+
+const STEPS = ['splash', 'onboarding', 'phone', 'otp', 'pin', 'pinConfirm', 'home', 'lock'];
+
+function Frame({ tweaks, setTweak }) {
+  const { step, locale, dark, homeVariant, kycTier, hasRecipients, hasActivity, activeTab } = tweaks;
+
+  // ─── per-step state (resets when leaving the step) ─────────
+  const [phone, setPhone] = React.useState('901234567');
+  const [otp, setOtp] = React.useState('');
+  const [otpError, setOtpError] = React.useState(false);
+  const [resendSec, setResendSec] = React.useState(45);
+  const [pin, setPin] = React.useState('');
+  const [pin1, setPin1] = React.useState('');
+  const [profileSubpage, setProfileSubpage] = React.useState(null); // null | 'cards'
+  const [onbSlide, setOnbSlide] = React.useState(0);
+
+  // ─── transfer flow state ────────────────────────────────────
+  const [xferStep, setXferStep] = React.useState('addNew'); // addNew | amount | review | processing | success
+  const [xferRecipient, setXferRecipient] = React.useState(null);
+  const [xferCny, setXferCny] = React.useState(3600);
+  const startTransfer = () => {
+    setXferStep('addNew');
+    setXferRecipient(null);
+    setTweak('activeTab', 'transfer');
+  };
+
+  React.useEffect(() => {
+    if (step !== 'otp') return;
+    setResendSec(45);
+    const t = setInterval(() => setResendSec((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [step]);
+
+  const goto = (next) => setTweak('step', next);
+
+  let screen, title;
+  if (step === 'splash') {
+    title = 'Splash + language';
+    screen = <SplashScreen dark={dark} locale={locale} setLocale={(l) => setTweak('locale', l)} onContinue={() => goto('onboarding')}/>;
+  } else if (step === 'phone') {
+    title = 'Phone';
+    screen = <PhoneScreen dark={dark} locale={locale} phone={phone} setPhone={setPhone} onBack={() => goto('onboarding')} onContinue={() => goto('otp')}/>;
+  } else if (step === 'otp') {
+    title = 'OTP';
+    screen = <OtpScreen
+      dark={dark} locale={locale} phone={phone}
+      code={otp} setCode={(c) => { setOtp(c); setOtpError(false); }}
+      error={otpError}
+      resend={{ seconds: resendSec }}
+      onBack={() => goto('phone')}
+      onContinue={(submitted) => {
+        const code = submitted ?? otp;
+        if (code.length === 6) goto('pin');
+        else { setOtpError(true); }
+      }}
+    />;
+  } else if (step === 'pin') {
+    title = 'Create PIN';
+    screen = <PinScreen dark={dark} locale={locale} pin={pin1} setPin={setPin1} mode="create" onBack={() => goto('otp')} onContinue={() => goto('pinConfirm')}/>;
+  } else if (step === 'pinConfirm') {
+    title = 'Confirm PIN';
+    screen = <PinScreen dark={dark} locale={locale} pin={pin} setPin={setPin} mode="confirm" onBack={() => { setPin(''); goto('pin'); }} onContinue={() => goto('home')}/>;
+  } else if (step === 'onboarding') {
+    title = 'Onboarding';
+    screen = <OnboardingScreen dark={dark} locale={locale} slide={onbSlide} setSlide={setOnbSlide} onDone={() => goto('phone')}/>;
+  } else if (step === 'lock') {
+    title = 'Lock screen';
+    screen = <LockScreen dark={dark} locale={locale} pin={pin} setPin={setPin} displayName="Aziz" onContinue={() => { setPin(''); goto('home'); }} useFaceId={() => goto('home')}/>;
+  } else {
+    // home — bottom-tabbed
+    title = `Home — ${homeVariant}`;
+    let body;
+    if (activeTab === 'home') {
+      body = homeVariant === 'safe'
+        ? <HomeSafe dark={dark} locale={locale} hasRecipients={hasRecipients} hasActivity={hasActivity} kycTier={kycTier} onSend={startTransfer}/>
+        : <HomeBold dark={dark} locale={locale} hasRecipients={hasRecipients} hasActivity={hasActivity} kycTier={kycTier} onSend={startTransfer}/>;
+    } else if (activeTab === 'transfer') {
+      if (xferStep === 'amount' && xferRecipient) {
+        body = <AmountEntryScreen dark={dark} locale={locale} recipient={xferRecipient}
+          onBack={() => setXferStep('addNew')}
+          onContinue={(cny) => { setXferCny(cny); setXferStep('review'); }}
+        />;
+      } else if (xferStep === 'review' && xferRecipient) {
+        body = <ReviewScreen dark={dark} locale={locale} recipient={xferRecipient} cny={xferCny}
+          onBack={() => setXferStep('amount')}
+          onConfirm={() => setXferStep('processing')}
+        />;
+      } else if (xferStep === 'processing') {
+        body = <ProcessingScreen dark={dark} locale={locale} onDone={() => setXferStep('success')}/>;
+      } else if (xferStep === 'success' && xferRecipient) {
+        body = <SuccessScreen dark={dark} locale={locale} recipient={xferRecipient} cny={xferCny}
+          onHome={() => { setXferStep('addNew'); setTweak('activeTab', 'home'); }}
+          onSendAnother={() => { setXferStep('addNew'); setXferRecipient(null); }}
+        />;
+      } else {
+        body = <AddRecipientScreen dark={dark} locale={locale}
+          onBack={() => setTweak('activeTab', 'home')}
+          onDone={(r) => { setXferRecipient(r); setXferStep('amount'); }}
+        />;
+      }
+    } else if (activeTab === 'history') {
+      body = <PlaceholderTab dark={dark} label={HOME_STRINGS[locale].history} icon="≡"/>;
+    } else {
+      body = profileSubpage === 'cards'
+        ? <CardsScreen dark={dark} locale={locale} onBack={() => setProfileSubpage(null)}/>
+        : <ProfileTab dark={dark} locale={locale} onNavigate={(p) => setProfileSubpage(p)}/>;
+    }
+    const hideTabBar = (activeTab === 'transfer' && xferStep !== 'addNew') || (activeTab === 'profile' && profileSubpage);
+    const showTabBar = !hideTabBar;
+    screen = (
+      <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+        {body}
+        {showTabBar && <TabBar dark={dark} locale={locale} active={activeTab} setActive={(t) => setTweak('activeTab', t)}/>}
+      </div>
+    );
+  }
+
+  return (
+    <div data-screen-label={title} style={{
+      width: 393, height: 852, borderRadius: 48, overflow: 'hidden',
+      background: dark ? '#0F172A' : '#fff',
+      boxShadow: '0 32px 80px rgba(15,23,42,0.18), 0 8px 24px rgba(15,23,42,0.08)',
+      position: 'relative', display: 'flex', flexDirection: 'column',
+      border: `8px solid ${dark ? '#000' : '#1F2937'}`,
+    }}>
+      <IOSStatusBar dark={dark}/>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>{screen}</div>
+    </div>
+  );
+}
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  return (
+    <div style={{
+      minHeight: '100vh', background: tweaks.dark ? '#020617' : '#F1F5F9',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40,
+      transition: 'background 200ms',
+    }}>
+      <Frame tweaks={tweaks} setTweak={setTweak}/>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Auth flow stepper">
+          <TweakSelect
+            label="Step"
+            value={tweaks.step}
+            onChange={(v) => setTweak('step', v)}
+            options={[
+              { value: 'splash',      label: '1 · Splash + language' },
+              { value: 'onboarding',  label: '2 · Onboarding' },
+              { value: 'phone',       label: '3 · Phone' },
+              { value: 'otp',         label: '4 · OTP' },
+              { value: 'pin',         label: '5 · PIN — create' },
+              { value: 'pinConfirm',  label: '6 · PIN — confirm' },
+              { value: 'home',        label: '7 · Home (signed in)' },
+              { value: 'lock',        label: '↻  Returning-user lock' },
+            ]}
+          />
+        </TweakSection>
+
+        <TweakSection title="Home variant">
+          <TweakRadio
+            value={tweaks.homeVariant}
+            onChange={(v) => setTweak('homeVariant', v)}
+            options={[
+              { value: 'safe', label: 'Safe' },
+              { value: 'bold', label: 'Bold' },
+            ]}
+          />
+          <TweakSelect
+            label="Active tab"
+            value={tweaks.activeTab}
+            onChange={(v) => setTweak('activeTab', v)}
+            options={[
+              { value: 'home', label: 'Home' },
+              { value: 'transfer', label: 'Transfer' },
+              { value: 'history', label: 'History' },
+              { value: 'profile', label: 'Profile' },
+            ]}
+          />
+        </TweakSection>
+
+        <TweakSection title="Theme & locale">
+          <TweakToggle label="Dark mode" value={tweaks.dark} onChange={(v) => setTweak('dark', v)}/>
+          <TweakRadio
+            value={tweaks.locale}
+            onChange={(v) => setTweak('locale', v)}
+            options={[
+              { value: 'uz', label: 'O‘z' },
+              { value: 'ru', label: 'Ру' },
+              { value: 'en', label: 'EN' },
+            ]}
+          />
+        </TweakSection>
+
+        <TweakSection title="Home content states">
+          <TweakSelect
+            label="KYC tier"
+            value={tweaks.kycTier}
+            onChange={(v) => setTweak('kycTier', v)}
+            options={[
+              { value: 'none', label: 'Unverified — banner shown' },
+              { value: 'basic', label: 'Basic' },
+              { value: 'full', label: 'Full' },
+            ]}
+          />
+          <TweakToggle label="Has saved recipients" value={tweaks.hasRecipients} onChange={(v) => setTweak('hasRecipients', v)}/>
+          <TweakToggle label="Has activity" value={tweaks.hasActivity} onChange={(v) => setTweak('hasActivity', v)}/>
+        </TweakSection>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+
+</body>
+</html>
