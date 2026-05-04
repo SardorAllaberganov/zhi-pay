@@ -8,14 +8,15 @@ The lowest layer of the ZhiPay mobile design system. Every primitive, component,
 
 | File | Purpose |
 |---|---|
+| [`figma-setup.md`](./figma-setup.md) | **Canonical Figma setup guide** — Variables collections (Color w/ Light + Dark modes · Spacing · Radius · Duration), Text Styles, Effect Styles, naming convention, component-set conventions, setup-step ordering |
 | [`colors.md`](./colors.md) | 11-stop brand + slate ramps, 3-stop semantic ramps, semantic mappings (light + dark), WCAG contrast verification |
 | [`typography.md`](./typography.md) | 6-role scale (Display 1 / Display 2 / Heading / Body / Body small / Label), font stack, numerals, dynamic-type rules |
 | [`spacing.md`](./spacing.md) | 8pt base, `space-0` … `space-12`, page-gutter and component-padding presets, tap-target rule |
 | [`radii.md`](./radii.md) | 4 stops + pill, per-component spec, composition rules |
 | [`shadows.md`](./shadows.md) | 3 elevations × 2 modes + `shadow-hero` (brand-tinted, hero card-as-object only) |
 | [`motion.md`](./motion.md) | Duration + easing tokens, 8 reserved animated patterns, reduced-motion fallback |
-| [`tokens.json`](./tokens.json) | Tokens Studio / Style Dictionary export — drop into Figma via the "Tokens Studio" plugin or convert to Figma Variables via `style-dictionary build` |
-| [`tailwind.tokens.css`](./tailwind.tokens.css) | CSS vars block (HSL components, no `hsl()` wrap) ready for Tailwind's `hsl(var(--brand-600))` pattern; includes a paste-into `tailwind.config.ts` extend snippet |
+| [`tokens.json`](./tokens.json) | Tokens Studio / Style Dictionary export — optional sync path for Figma if you'd rather import than hand-author (see [`figma-setup.md`](./figma-setup.md) §"Optional sync path") |
+| [`tailwind.tokens.css`](./tailwind.tokens.css) | CSS vars block (HSL components, no `hsl()` wrap) ready for downstream code consumers (Tailwind's `hsl(var(--brand-600))` pattern); includes a paste-into `tailwind.config.ts` extend snippet |
 
 ## Layer rules (cross-cuts everything above)
 
@@ -60,13 +61,18 @@ const styles = {
 };
 ```
 
-### From a Figma file (designer)
+### From a Figma file (designer) — canonical path
 
-1. Install the **Tokens Studio for Figma** plugin.
-2. Import [`tokens.json`](./tokens.json) into the plugin (Settings → Import → JSON).
-3. Apply tokens to layers as Variables. Light + dark themes resolve via the `color.semantic.light` / `color.semantic.dark` groups.
+**Read [`figma-setup.md`](./figma-setup.md) end-to-end before authoring anything in Figma.** It specifies the Variables collections (Color w/ Light + Dark modes · Spacing · Radius · Duration), Text Styles (6 sans + 3 mono), Effect Styles (4 elevations × 2 modes = 8), and the slash-separated naming convention every primitive + component spec binds to.
 
-Alternatively, run `style-dictionary build` against `tokens.json` to generate native Figma Variables JSON, iOS Swift, Android Kotlin, or any other platform format.
+Two paths to wire the tokens into Figma:
+
+1. **Hand-author the Variables + Styles** per the step-by-step in [`figma-setup.md`](./figma-setup.md). More durable, exact control over naming and aliasing.
+2. **Sync via Tokens Studio for Figma plugin** — install plugin, import [`tokens.json`](./tokens.json), enable "Sync to Variables" mode (v2+). Faster, but you may need to manually consolidate the resulting collections to match the canonical naming.
+
+Light + dark themes flip via Figma's mode toggle on the Color collection. Effect Styles aren't mode-aware in Figma today, so designers swap shadow Style manually when designing dark frames (8 separate Effect Styles cover both modes).
+
+Alternatively for downstream code consumers: run `style-dictionary build` against `tokens.json` to generate iOS Swift, Android Kotlin, or any other platform format.
 
 ## Cross-surface parity rule
 
@@ -103,15 +109,17 @@ Don't add to the export files (`tokens.json`, `tailwind.tokens.css`) without upd
 
 ## What's next
 
-The Tokens layer is locked. Per the layer hierarchy, the next pass is **Primitives** — buttons, inputs, chips, badges, icons, avatars. Open the foundation brief for primitive specs:
+The Tokens layer is locked. The mobile design system is built and reviewed in **Figma** (this is the implementation surface) — set up Variables + Styles per [`figma-setup.md`](./figma-setup.md) before opening the Primitives or Components specs. Each primitive / component spec carries a **Figma component-set** section that binds layer fills / strokes / corner radius / Auto Layout values to the variable names defined in the setup guide.
 
-- [`mobile/prompts/01-foundation.md`](../../prompts/01-foundation.md) §"Primitive requirements"
-
-Subsequent passes follow the marquee path in [`mobile/README.md`](../../README.md):
+Layer ordering (the marquee path in [`mobile/README.md`](../../README.md)):
 
 ```
-Primitives → Components → Patterns → Onboarding → MyID → Home → ...
+Tokens → Primitives → Components → Patterns → Onboarding → MyID → Home → ...
 ```
+
+- [`mobile/design/primitives/`](../primitives/) — drafted, in review (Button / Input / Chip / Avatar / Icon)
+- [`mobile/design/components/`](../components/) — drafted, in review (11 components)
+- Foundation brief: [`mobile/prompts/01-foundation.md`](../../prompts/01-foundation.md) §"Primitive requirements"
 
 ## Cross-references
 
