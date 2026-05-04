@@ -2,7 +2,9 @@
 
 The canonical setup guide for wiring the mobile token layer into the Figma file. **Variables for everything Figma supports as Variables (color / number); Styles for everything Figma doesn't (text composition, effects).**
 
-> Status: locked `2026-05-04`. The mobile design system is built and reviewed in Figma (this is the implementation surface). The spec docs in [`mobile/design/`](../) describe **what** to build; this doc describes **how** the tokens land in Figma so primitives + components can bind to them.
+> Status: locked `2026-05-04`. **Foundation built in Figma 2026-05-04** — 5 Variable collections + 13 Text Styles + 8 Effect Styles all live in [the file](https://www.figma.com/design/p8pxXYApMNCpzQn0XkoIw9/ZhiPay---v0.1--Project-). The mobile design system is built and reviewed in Figma (this is the implementation surface). The spec docs in [`mobile/design/`](../) describe **what** to build; this doc describes **how** the tokens land in Figma so primitives + components can bind to them.
+
+> **Architecture refactor 2026-05-04 (post-build, user-driven)**: original draft used a single "Color" collection holding both primitives + semantics. Refactored mid-build to two collections — **Primitives** (raw color ramps, single mode) and **Color** (semantic aliases, Light + Dark modes). Semantics renamed `color/semantic/{role}` → `color/{role}` since the "Color" collection IS the semantic layer (prefix was redundant). `color/base/white` + `color/base/black` added so every semantic mode-value resolves through a primitive — no raw colors in the semantic layer. This is the **canonical, current** architecture; tables below reflect the post-refactor naming.
 
 ## Source of truth
 
@@ -16,9 +18,10 @@ If a value here disagrees with a token spec doc, **the spec doc wins** — fix t
 
 | Figma surface | What it holds | Why |
 |---|---|---|
-| **Variables** (Color collection, 2 modes) | All color values — primitive ramps + semantic role mappings | Native theme switching; aliasing makes ramp updates cascade |
-| **Variables** (Spacing / Radius / Duration collections, single mode) | Number primitives | Figma Number variables can drive Auto Layout gap, padding, corner radius, smart-animate duration |
-| **Text Styles** | 6 typography roles (font / size / weight / leading / tracking composed) | Figma Text Styles can't be themed via Variables (font-size isn't a Variable type in Figma yet); Text Styles are the unit of composition |
+| **Variables** (Primitives collection, single mode) | Raw color values — brand · slate · success / warning / danger ramps · base white + black | Single source of truth for colors; semantics alias to these. Single-mode keeps it clean — primitives are mode-agnostic |
+| **Variables** (Color collection, 2 modes — Light + Dark) | Semantic role aliases that flip per mode (`color/background` · `color/primary` · `color/ring` · etc.) | Native theme switching; every mode-value resolves through a Primitives variable, never a raw hex |
+| **Variables** (Spacing / Radius / Duration collections, single mode) | Number primitives | Figma Number variables drive Auto Layout gap, padding, corner radius, smart-animate duration |
+| **Text Styles** | 13 typography roles (font / size / weight / leading / tracking composed) | Figma Text Styles can't be themed via Variables (font-size isn't a Variable type in Figma yet); Text Styles are the unit of composition. Original 9 roles + 4 weighted body variants added during component builds (`body-medium` 16/500 · `body-semibold` 16/600 · `body-sm-medium` 14/500 · `body-sm-semibold` 14/600) |
 | **Effect Styles** | Shadows — `sm` / `md` / `lg` / `hero` × Light / Dark = 8 styles | Effect Styles aren't mode-aware in Figma today; we author one Effect Style per (elevation × mode) and swap manually when designing dark frames |
 | **Components / Component Sets** | Primitives + Components | Variant axes per primitive/component; bind Variables to fills / strokes / corner-radius / Auto Layout values |
 
@@ -29,25 +32,26 @@ Slash-separated paths group variables in Figma's panel cleanly. **Match these na
 | Layer | Pattern | Example |
 |---|---|---|
 | Primitive color ramp | `color/<family>/<stop>` | `color/brand/600`, `color/slate/100`, `color/success/700` |
-| Semantic color | `color/semantic/<role>` | `color/semantic/background`, `color/semantic/foreground`, `color/semantic/primary`, `color/semantic/ring` |
+| Primitive base color | `color/base/<name>` | `color/base/white`, `color/base/black` |
+| Semantic color | `color/<role>` | `color/background`, `color/foreground`, `color/primary`, `color/ring` |
 | Spacing | `space/<step>` | `space/0`, `space/4`, `space/12` |
 | Radius | `radius/<stop>` | `radius/sm`, `radius/md`, `radius/lg`, `radius/pill` |
 | Duration | `duration/<stop>` | `duration/fast`, `duration/base`, `duration/slow` |
-| Text Style | `text/<role>` | `text/display-1`, `text/heading`, `text/body`, `text/label` |
+| Text Style | `text/<role>` | `text/display-1`, `text/heading`, `text/body`, `text/body-semibold`, `text/label` |
 | Effect Style | `effect/shadow-<elevation>/<mode>` | `effect/shadow-sm/light`, `effect/shadow-hero/dark` |
 | Component / Set | `<Component>/<Variant>/<Size>/<State>/<Modifier>` | `Button/Primary/Md/Default/NoIcon`, `Card/Hero/Default` |
+
+> **Naming change 2026-05-04**: semantic colors no longer carry a `semantic/` segment. `color/semantic/primary` is now `color/primary`, `color/semantic/foreground` is now `color/foreground`, etc. The Color collection itself is the semantic layer, so the prefix was redundant. Primitives live in their own **Primitives** collection and keep `color/<family>/<stop>` naming. When a downstream spec doc still says `color/semantic/X`, treat it as the same thing as `color/X` — and surface the drift in your next pass.
 
 PascalCase for component / variant names; kebab-case inside variant values where multi-word (e.g. `Body small`, but `body-sm` in the variable name).
 
 ---
 
-## Variables — Color collection (2 modes: Light + Dark)
+## Variables — Primitives collection (single mode)
 
-Create **one Color collection** with two modes named exactly `Light` and `Dark`. Add primitive ramp variables first; semantic variables alias to the ramps via Figma's "Use existing variable" picker.
+Create **one Primitives collection** with a single mode named `Value`. Holds raw color values that the Color (semantic) collection aliases. **Primitives never flip per mode** — stop values are mode-agnostic.
 
-### Primitive ramps (same value in both modes)
-
-Brand, slate, and semantic 3-stop ramps are mode-agnostic — the stop value never flips. Author them with **identical Light + Dark values** so the semantic-role aliases below resolve cleanly per mode.
+### Primitive ramps
 
 #### `color/brand/*` (11 stops)
 
@@ -95,35 +99,50 @@ Brand, slate, and semantic 3-stop ramps are mode-agnostic — the stop value nev
 | `color/danger/600` | `hsl(0, 72%, 51%)` | `#dc2626` |
 | `color/danger/700` | `hsl(0, 74%, 42%)` | `#b91c1c` |
 
+#### `color/base/*` (2 stops)
+
+Pure white and pure black aren't part of any ramp — they live in a `base` family inside the Primitives collection. Used by `color/card`, `color/popover`, `color/primary-foreground`, `color/destructive-foreground` (white) — and reserved for future semantic roles that may need black (currently shadows use raw `#000000` because Effect Styles can't bind color variables).
+
+| Variable | Value | Hex |
+|---|---|---|
+| `color/base/white` | `rgb(255, 255, 255)` | `#FFFFFF` |
+| `color/base/black` | `rgb(0, 0, 0)` | `#000000` |
+
+---
+
+## Variables — Color collection (2 modes: Light + Dark)
+
+Create **one Color collection** separate from the Primitives collection, with two modes named exactly `Light` and `Dark`. Holds **only the 19 semantic role aliases** — every value resolves through a Primitives variable via Figma's "Use existing variable" picker. **Zero raw colors in the semantic layer.**
+
 ### Semantic role aliases (different value per mode)
 
-These are the **role-anchored aliases** that flip Light ↔ Dark. **Always alias** (Figma "Use existing variable") — never hardcode the hex on a semantic variable. If you change a primitive stop, semantic roles cascade automatically.
+These are the **role-anchored aliases** that flip Light ↔ Dark. **Always alias** (Figma "Use existing variable") — never hardcode the hex on a semantic variable. If you change a primitive stop, semantic roles cascade automatically. Names are `color/{role}` — no `semantic/` segment, since the Color collection itself is the semantic layer.
 
 | Variable | Light → alias to | Dark → alias to |
 |---|---|---|
-| `color/semantic/background` | `color/slate/50` | `color/slate/950` |
-| `color/semantic/foreground` | `color/slate/900` | `color/slate/100` |
-| `color/semantic/card` | `#FFFFFF` (raw) | `color/slate/900` |
-| `color/semantic/card-foreground` | `color/slate/900` | `color/slate/100` |
-| `color/semantic/popover` | `#FFFFFF` (raw) | `color/slate/900` |
-| `color/semantic/popover-foreground` | `color/slate/900` | `color/slate/100` |
-| `color/semantic/primary` | `color/brand/600` | `color/brand/500` |
-| `color/semantic/primary-foreground` | `#FFFFFF` (raw) | `#FFFFFF` (raw) |
-| `color/semantic/secondary` | `color/slate/100` | `color/slate/800` |
-| `color/semantic/secondary-foreground` | `color/slate/900` | `color/slate/100` |
-| `color/semantic/muted` | `color/slate/100` | `color/slate/800` |
-| `color/semantic/muted-foreground` | `color/slate/500` | `color/slate/400` |
-| `color/semantic/accent` | `color/slate/100` | `color/slate/800` |
-| `color/semantic/accent-foreground` | `color/slate/900` | `color/slate/100` |
-| `color/semantic/destructive` | `color/danger/600` | `color/danger/600` |
-| `color/semantic/destructive-foreground` | `#FFFFFF` (raw) | `#FFFFFF` (raw) |
-| `color/semantic/border` | `color/slate/200` | `color/slate/800` |
-| `color/semantic/input` | `color/slate/200` | `color/slate/800` |
-| `color/semantic/ring` | `color/brand/600` | `color/brand/400` |
+| `color/background` | `color/slate/50` | `color/slate/950` |
+| `color/foreground` | `color/slate/900` | `color/slate/100` |
+| `color/card` | `color/base/white` | `color/slate/900` |
+| `color/card-foreground` | `color/slate/900` | `color/slate/100` |
+| `color/popover` | `color/base/white` | `color/slate/900` |
+| `color/popover-foreground` | `color/slate/900` | `color/slate/100` |
+| `color/primary` | `color/brand/600` | `color/brand/500` |
+| `color/primary-foreground` | `color/base/white` | `color/base/white` |
+| `color/secondary` | `color/slate/100` | `color/slate/800` |
+| `color/secondary-foreground` | `color/slate/900` | `color/slate/100` |
+| `color/muted` | `color/slate/100` | `color/slate/800` |
+| `color/muted-foreground` | `color/slate/500` | `color/slate/400` |
+| `color/accent` | `color/slate/100` | `color/slate/800` |
+| `color/accent-foreground` | `color/slate/900` | `color/slate/100` |
+| `color/destructive` | `color/danger/600` | `color/danger/600` |
+| `color/destructive-foreground` | `color/base/white` | `color/base/white` |
+| `color/border` | `color/slate/200` | `color/slate/800` |
+| `color/input` | `color/slate/200` | `color/slate/800` |
+| `color/ring` | `color/brand/600` | `color/brand/400` |
 
 > **Why `primary` flips brand/600 → brand/500 in dark:** brand/600 on slate/950 reads slightly muddy (~3.8:1 contrast on white-on-brand fill); brand/500 lifts to ~5.0:1. Same reason `ring` flips brand/600 → brand/400 — focus visibility on dark surfaces. Don't drift these.
 
-> **Pure white (`#FFFFFF`) is NOT a primitive variable** — it's the raw value for `card`, `popover`, `primary-foreground`, and `destructive-foreground` in light mode (and primary/destructive foregrounds in dark too). Authored as raw to keep the primitive ramp clean (white isn't part of the slate ramp).
+> **Every value is a Primitives alias.** Pure white now lives at `color/base/white` (Primitives collection) — no raw hex anywhere in the semantic layer. The earlier raw-`#FFFFFF` decision was reversed during the architecture refactor (user direction: "in some semantic colors used flat color FFFFFF not a primitive variable").
 
 ---
 
@@ -180,18 +199,24 @@ Create **one Duration collection** with a single mode. Use Figma's `Number` vari
 
 ## Text Styles
 
-Create **6 Text Styles** matching the typography roles. Bind `Color` to `color/semantic/foreground` (or override per usage); the rest of the composition is locked into the Text Style.
+Create **13 Text Styles** matching the typography roles + their weight variants needed by component layers. Bind `Color` to `color/foreground` (or override per usage); the rest of the composition is locked into the Text Style.
+
+### Sans (10) — Inter
 
 | Text Style | Font | Size | Weight | Line height | Letter spacing | Use |
 |---|---|---:|---:|---:|---:|---|
 | `text/display-1` | Inter | 44 | 700 (Bold) | 48 | -0.02em | Hero amount on home card; receipt amount on success screen |
 | `text/display-2` | Inter | 32 | 700 (Bold) | 38 | -0.015em | Page titles ("Send money", "History") |
 | `text/heading` | Inter | 22 | 600 (Semibold) | 28 | -0.01em | Section heads ("Recent activity", "Linked cards") |
-| `text/body` | Inter | 16 | 400 (Regular) | 24 | 0 | Default body text, list-row primary, button label (md) |
+| `text/body` | Inter | 16 | 400 (Regular) | 24 | 0 | Default body text, list-row primary |
+| `text/body-medium` | Inter | 16 | 500 (Medium) | 24 | 0 | List-row primary (when emphasis needed), Card titles in dense contexts |
+| `text/body-semibold` | Inter | 16 | 600 (Semibold) | 24 | 0 | Card titles, Button label (Lg / hero CTAs), in-card headings |
 | `text/body-sm` | Inter | 14 | 400 (Regular) | 20 | 0 | Secondary meta (timestamp, helper, list-row subline, error body) |
+| `text/body-sm-medium` | Inter | 14 | 500 (Medium) | 20 | 0 | Button label (Sm / Md), List-row meta with emphasis |
+| `text/body-sm-semibold` | Inter | 14 | 600 (Semibold) | 20 | 0 | Banner / Card / inline-message titles in compact contexts |
 | `text/label` | Inter | 13 | 500 (Medium) | 18 | +0.04em (uppercased only) | Chips, kbd, uppercase section labels |
 
-### Mono Text Styles (3)
+### Mono (3) — JetBrains Mono
 
 For IDs, masked PAN, error codes — same sizes / weights as the roles above but with `JetBrains Mono` substituted. Author as **3 separate styles** to keep authoring instinct clear:
 
@@ -240,20 +265,31 @@ Effect Styles in Figma can't be themed via Variables (no mode awareness for effe
 
 > **Future Figma support:** when Figma adds Effect Variables (it's on the roadmap as of 2026), collapse the 8 Effect Styles down to 4 + a mode flip via Variables. Until then, swap manually.
 
+### Known platform limitations (Figma, not the build)
+
+When authoring the foundation in Figma 2026-05-04, these constraints surfaced. They're documented here so component specs downstream can plan around them:
+
+| Limitation | Impact | Workaround until Figma fixes |
+|---|---|---|
+| **Effect Styles can't bind color variables** | `shadow-hero` colors baked from brand-800/900/950 hex; primitive ramp changes won't auto-cascade to shadow color | Maintain the brand→shadow-hero color mapping manually; re-author shadow if brand ramp shifts |
+| **Gradient stops can't bind color variables** | Card-as-object's brand-700→brand-900 gradient baked from light-mode hex; mode flip dropped (light only) | Add a separate dark-mode variant if dark-mode parity becomes essential, or wait for Gradient Variables |
+| **OpenType features not on Text Styles via Plugin API** | `cv11` / `ss01` / `ss03` / `tnum` must be set manually via Type panel → Details on each text node | Document the rule per usage; designers toggle tabular-nums on amounts; engineering applies the features at the `<body>` tag for downstream code consumers |
+| **`componentPropertyReferences` requires nodes to be inserted before wiring** | Plugin scripts must `insertChild` first, THEN set `node.componentPropertyReferences` — order swap throws "Can only set component property references on symbol sublayer" | Always insert before wire when authoring INSTANCE_SWAP / BOOLEAN visibility properties |
+
 ---
 
 ## Setup steps (in order)
 
 Follow this order to avoid backward references when aliasing. Each step assumes the previous is complete.
 
-1. **Create the Color collection** with two modes (`Light`, `Dark`). Add all primitive ramp variables (brand / slate / success / warning / danger). Set the same value in both modes.
-2. **Add semantic alias variables** (`color/semantic/*`) inside the same Color collection. Use the "Use existing variable" picker so each semantic variable resolves through the alias chain. Verify the Light/Dark swap works by toggling the mode at the file level.
-3. **Create the Spacing collection** (single mode) with all `space/*` Number variables.
-4. **Create the Radius collection** (single mode) with all `radius/*` Number variables.
-5. **Create the Duration collection** (single mode) with all `duration/*` Number variables.
-6. **Author the 9 Text Styles** (6 sans + 3 mono). Pin Inter to the team library if not already published. Set font features per Style.
-7. **Author the 8 Effect Styles** (4 light + 4 dark).
-8. **Smoke-test on a throwaway frame:** drop a rectangle, fill it with `color/semantic/primary`, set corner radius via `radius/md`, padding via `space/5`, type via `text/body`, effect via `effect/shadow-md/light`. Toggle the file mode Light → Dark and confirm the fill flips to `brand/500` and the shadow stays light (you swap to `effect/shadow-md/dark` manually).
+1. **Create the Primitives collection** (single mode `Value`). Add all primitive ramp variables: brand 11 stops · slate 11 stops · success / warning / danger 3 each · base white + black. Set scopes (`FRAME_FILL`, `SHAPE_FILL`, `STROKE_COLOR`, `TEXT_FILL` for color primitives — flexible enough for direct use when needed). Set WEB code syntax (`var(--color-brand-600)`, `var(--color-base-white)`, etc.).
+2. **Create the Color collection** with two modes (`Light`, `Dark`). Add all 19 semantic alias variables (`color/background`, `color/foreground`, `color/card`, `color/primary`, …, `color/ring`). Use the "Use existing variable" picker so each semantic variable resolves through a Primitives alias per the table above. Verify the Light/Dark swap works by toggling the mode at the file level. Set role-appropriate scopes (backgrounds = `FRAME_FILL`+`SHAPE_FILL`, foregrounds = `TEXT_FILL`, borders / ring = `STROKE_COLOR`, destructive = `FRAME_FILL`+`SHAPE_FILL`+`TEXT_FILL`). Set WEB code syntax (`var(--background)`, `var(--primary)`, etc.).
+3. **Create the Spacing collection** (single mode) with all `space/*` Number variables (scope `GAP`+`WIDTH_HEIGHT`).
+4. **Create the Radius collection** (single mode) with all `radius/*` Number variables (scope `CORNER_RADIUS`).
+5. **Create the Duration collection** (single mode) with all `duration/*` Number variables (scope `ALL_SCOPES` — Figma has no specific scope for prototype duration).
+6. **Author the 13 Text Styles** (10 sans + 3 mono). Pin Inter to the team library if not already published. Set font features per Style **manually via Type panel → Details** — the Plugin API doesn't expose OpenType features (cv11/ss01/ss03/tnum) on Text Styles. Tabular-nums needs to be toggled on every monetary / count / ID / timestamp text node where alignment matters.
+7. **Author the 8 Effect Styles** (4 light + 4 dark). Note: Effect Styles cannot bind to color variables yet — `shadow-hero` colors are baked from brand-800/900/950 hex.
+8. **Smoke-test on a throwaway frame:** drop a rectangle, fill it with `color/primary`, set corner radius via `radius/md`, padding via `space/5`, type via `text/body`, effect via `effect/shadow-md/light`. Toggle the file mode Light → Dark and confirm the fill flips to `brand/500` and the shadow stays light (you swap to `effect/shadow-md/dark` manually).
 9. **Publish the library** so primitives + components published in the same file pick up the variables.
 
 ---

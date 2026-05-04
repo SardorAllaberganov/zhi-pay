@@ -4,6 +4,76 @@
 
 ---
 
+### 2026-05-04 — Figma foundation BUILT · Primitives/Color split + base white/black · 5 component sets (Card · Banner · Headline Number · List Row · Button) + 13 lucide icons · Pass 2 resumed via official Figma MCP
+
+- **Pass 2 unblocked**: official Figma MCP server (`plugin:figma:figma`) wired in this session — read (`get_metadata`, `get_design_context`, `get_libraries`, `get_variable_defs`) + write (`use_figma`) verified against the locked file. Pass 2 (paused since the morning per the prior entry) resumed and the Foundation Tokens layer + first 5 component sets BUILT in Figma — not just specced.
+- **Authentication verified**: `whoami` returned mr.sardor2904@gmail.com; file `p8pxXYApMNCpzQn0XkoIw9` ("ZhiPay - v0.1 Project") accessible with full write rights via the user's Unired team Pro plan. Page structure pre-existing (☑️ Final Design · ⏰ Working files · ❖ Components · 📂 Assets · ▚ Moodboard · 🖼 Cover) — components built on **❖ Components** page, smoke tests on **☑️ Final Design**.
+
+**Architecture decisions locked mid-build (user-driven)**:
+
+- **Primitives ↔ Color (semantic) split** — initial build authored everything inside one "Color" collection (31 primitives + 19 semantic aliases, 50 vars). User redirected: "the variables of semantics should not be a individual it should get from primitive colors". Refactored to two collections:
+  - **Primitives** collection (single "Value" mode): 33 color primitive variables — 11 brand stops · 11 slate stops · 3 success / 3 warning / 3 danger · **2 base** (white + black, added per follow-up "in some semantic colors used flat color FFFFFF not a primitive variable").
+  - **Color** collection (Light + Dark modes): 19 semantic aliases (`color/background` · `color/foreground` · `color/card` · `color/card-foreground` · `color/popover` · `color/popover-foreground` · `color/primary` · `color/primary-foreground` · `color/secondary` · `color/secondary-foreground` · `color/muted` · `color/muted-foreground` · `color/accent` · `color/accent-foreground` · `color/destructive` · `color/destructive-foreground` · `color/border` · `color/input` · `color/ring`). Every mode-value resolves through a Primitives variable — **zero raw color values in the semantic layer**.
+- **Semantic naming convention** — user renamed semantic vars in the Figma UI from `color/semantic/{role}` to `color/{role}` (the "Color" collection IS the semantic layer; the prefix was redundant). The figma-setup.md spec doc is updated in this cascade to reflect; downstream component specs reference the new shorter form when authored.
+- **Text Styles expanded 9 → 13** — 4 weighted body variants added during component builds (`text/body-medium` 16/500 + `text/body-semibold` 16/600 + `text/body-sm-medium` 14/500 + `text/body-sm-semibold` 14/600). Required by Card titles (16/600), Button labels (Sm/Md = 14/500, Lg = 16/600), Banner titles (14/600). Original 9 (6 sans + 3 mono) cover Display/Heading/Body/Body small/Label roles at one weight each — the 4 additions are weight variants of the body roles.
+
+**Foundation now LIVE in Figma**:
+
+- **5 Variable collections, 72 variables**: Primitives (33) · Color (19) · Spacing (13) · Radius (4) · Duration (3). Every variable has explicit scopes set (FRAME_FILL/SHAPE_FILL/STROKE_COLOR/TEXT_FILL for color primitives; per-role scoping for semantics — backgrounds get FRAME_FILL+SHAPE_FILL, foregrounds get TEXT_FILL, borders get STROKE_COLOR, ring gets STROKE_COLOR; GAP+WIDTH_HEIGHT for spacing; CORNER_RADIUS for radius; ALL_SCOPES for duration). Every variable has WEB code syntax (`var(--color-brand-600)`, `var(--background)`, `var(--space-4)`, `var(--radius-md)`, `var(--duration-base)`).
+- **13 Text Styles** (9 from initial build + 4 weighted body variants added during component builds): `text/display-1` (44/Bold) · `text/display-2` (32/Bold) · `text/heading` (22/Semibold) · `text/body` (16/Regular) · `text/body-medium` (16/500) · `text/body-semibold` (16/600) · `text/body-sm` (14/Regular) · `text/body-sm-medium` (14/500) · `text/body-sm-semibold` (14/600) · `text/label` (13/Medium UPPER +0.04em) · `text/mono/body` (16/Regular JetBrains Mono) · `text/mono/body-sm` (14/Regular JetBrains Mono) · `text/mono/label` (13/Medium JetBrains Mono).
+- **8 Effect Styles** (unchanged from initial build): `effect/shadow-{sm,md,lg,hero}/{light,dark}`. Hero variants brand-tinted (brand-800/900 light, brand-900/950 dark).
+
+**5 Component sets BUILT**:
+
+- **Card** (`56:38`-equivalent, page `❖ Components`, 6 variants): `Resting` · `Header Body` · `Footer Action` · `Flat` · `Interactive` · `Card as Object`. Strict padding contract honored per LESSON 2026-05-03 (sub-elements own padding; card outer = 0). `Card as Object` = brand-700→brand-900 vertical gradient + `radius/lg` 20pt + `shadow-hero/light` + 9:5.5 aspect ratio + ZHIPAY wordmark + masked PAN (JetBrains Mono) + holder name (Inter Medium UPPER) + expiry (mono). All other variants bind fill to `color/card`, radius to `radius/md`, padding to `space/5`, shadow to `effect/shadow-sm/light`. Title typography uses `text/body-semibold`, description uses `text/body-sm` muted.
+- **Banner** (4 tonal variants): `Info` · `Success` · `Warning` · `Danger`. Surface fill bound to `color/{slate,success,warning,danger}/50` (light), border bound to `color/{tone}/600` at 30% opacity, icon stroke bound to `color/{tone}/700`. Each variant has a real lucide icon swapped in via Instance Swap from the icon library (Info / CheckCircle2 / AlertTriangle / AlertCircle). Title `text/body-sm-semibold` at `color/foreground`, body `text/body-sm` at `color/muted-foreground`. **Light mode only** — backgrounds bind to primitives (one value across modes); dark-mode banner support needs new semantic vars (`color/banner-{tone}-bg/border/icon`) to flip cleanly. Same limitation pattern as `shadow-hero`.
+- **Headline Number** (3 sizes): `Display` (44/Bold + UZS, home balance / receipt) · `Hero` (32/Bold + CNY, send-money review / detail summary) · `Inline` (16/Semibold + UZS, list rows / inline meta). Amount bound to `color/foreground`, currency bound to `color/muted-foreground` via `text/body-medium`. NBSP gap between amount and currency. Tabular-nums NOT baked into Text Styles (Plugin API limitation; designers toggle manually via Type panel → Details where alignment matters).
+- **List Row** (5 variants): `Single-line` (56pt + chevron) · `Two-line` (64pt + meta + chevron) · `Avatar` (72pt with placeholder 48pt brand-100 circle + initials) · `Toggle` (64pt + description + placeholder switch) · `Selectable` (56pt with placeholder radio + selected state — `color/brand/50` tint background). All bg bound to `color/card`, padding to `space/3,4`, primary text to `text/body-medium` at `color/foreground`, meta to `text/body-sm` at `color/muted-foreground`. Avatar / Switch / Radio remain placeholders pending those primitive builds.
+- **Button** (14 cells: 5 variants × 3 sizes; Link×Lg skipped per spec). Variants: `Primary` (color/primary fill, primary-foreground label) · `Secondary` (color/secondary fill, secondary-foreground label) · `Tertiary` (no fill, color/brand/700 label) · `Destructive` (color/destructive fill, primary-foreground label) · `Link` (no fill, color/brand/700 label, underline). Sizes: `Sm` 40pt, `Md` 48pt (default), `Lg` 56pt. Padding bound to `space/{3,5,6}` (X) and `space/{2,3,4}` (Y) per size. Radius `radius/md` always. Text `text/body-sm-medium` (Sm/Md) or `text/body-semibold` (Lg). **State axis (Pressed / Disabled / Focused / Loading) deferred** — Default state covers ~80% of usage; designers can override per-instance.
+  - **INSTANCE_SWAP for icons (canonical per figma-generate-library skill)**: instead of multiplying by an Icon variant axis (would have produced 42 cells), each cell has hidden leading + trailing icon slots wired to 4 SET-level component properties: `Show leading icon` (BOOLEAN, default off) · `Leading icon` (INSTANCE_SWAP, default `ArrowRight`, `preferredValues` lists all 13 icons) · `Show trailing icon` (BOOLEAN, default off) · `Trailing icon` (INSTANCE_SWAP, default `ArrowRight`, same picker). Icon stroke pre-bound per variant (`color/primary-foreground` for Primary/Destructive, `color/secondary-foreground` for Secondary, `color/brand/700` for Tertiary/Link); slot pre-sized 16pt (Sm/Md) or 20pt (Lg). Designers toggle visibility + swap which icon — adding more icons to the library doesn't multiply Button cells. Initial wiring used `componentPropertyReferences` set BEFORE insertion (errored "Can only set component property references on symbol sublayer") — corrected to insert FIRST, then wire references.
+
+**13 Lucide icon components built** via `figma.createNodeFromSvg`:
+
+- **Canonical 8** (per icon.md): `Send` · `ArrowDownToLine` · `CreditCard` · `User` · `ShieldCheck` · `Clock` · `ArrowRight` · `Check`.
+- **Banner 4**: `Info` · `CheckCircle2` · `AlertTriangle` · `AlertCircle`.
+- **List Row 1**: `ChevronRight`.
+- All 24×24 baseline (lucide native), stroke-width 2, round caps. Strokes default-bound to `color/foreground`; per-usage override (Banner icons match variant 700-stop, Button icons match label color).
+
+**Smoke test**: full token-coverage frame on **☑️ Final Design** page (node `21:2`) — outer container with semantic/background fill, color swatches showing brand+semantic primitives, sample card with shadow-md/light, primary pill button, and 6-line type specimen. Verified Light/Dark mode toggle flips every semantic correctly (brand/600 → brand/500 for primary; slate/50 → slate/950 for background; etc.). Re-verified after each architecture change (Primitives split / semantic rename / base white).
+
+**Limitations & deviations documented (all are Figma platform limits, not build choices)**:
+
+| Limitation | Impact | Workaround |
+|---|---|---|
+| Effect Styles can't bind to color variables | `shadow-hero` colors baked from brand-800/900/950 hex; if primitive ramp values change, manual re-author required | Wait for Figma's Effect Variables (roadmap); meanwhile maintain mapping in figma-setup.md |
+| Gradient stops can't bind to color variables | Card-as-Object's brand-700→brand-900 gradient baked from light-mode hex; dark-mode gradient stays light-mode values | Wait for Gradient Variables; meanwhile add a separate dark-mode variant if dark-mode parity becomes essential |
+| OpenType features (cv11/ss01/ss03/tnum) not exposed on Text Styles via Plugin API | Tabular-nums must be set manually via Type panel → Details on each amount text node where alignment matters | Manual Figma UI step; document the rule in usage |
+| Banner backgrounds bind to primitives (one value per mode) | Light-mode only authored; dark-mode treatment per spec (slate-800, success-700/30, etc.) needs different colors that don't flip from one primitive | Add new semantic vars `color/banner-{tone}-bg/border/icon` if dark-mode banner support becomes essential |
+| List Row Avatar/Switch/Radio still placeholders | Avatar = brand-100 circle + initials; Switch = brand-600 track + white thumb (active position only); Radio = brand-600 ring + dot (selected only) | Build Avatar/Switch/Radio primitives properly, then swap placeholders via Instance Swap |
+| Card Footer-Action button is a styled placeholder, not a real Button instance | Built before Button existed | Swap to Button instance via Instance Swap when revisiting Card |
+
+**Code-syntax conventions chosen** (may need adjustment after `mobile/design/tokens/tailwind.tokens.css` review):
+
+- Primitives: `var(--color-{family}-{stop})` — e.g. `var(--color-brand-600)`, `var(--color-base-white)`.
+- Semantics: shadcn-style flat names — e.g. `var(--background)`, `var(--primary)`, `var(--ring)`.
+- Spacing: `var(--space-{step})` — e.g. `var(--space-4)`.
+- Radius: `var(--radius-{stop})` — e.g. `var(--radius-md)`.
+- Duration: `var(--duration-{stop})` — e.g. `var(--duration-base)`.
+
+If `tailwind.tokens.css` uses different CSS var names, the code syntax on every variable can be re-swept programmatically.
+
+**No PRD / models / mermaid cascade** — design-system architecture refactor + Figma authoring artifacts; no schema changes, no state machines touched, no flow diagrams updated.
+
+**Doc cascade scope**: `mobile/design/tokens/figma-setup.md` (Primitives/Color split section + base family + 13 Text Styles list + new gradient limitation) · `docs/product_states.md` (mobile design tokens row notes updated · mobile primitives row gains Button + Icon library notes · mobile components row gains Card / Banner / Headline Number / List Row notes · last-updated stamp bumped) · `ai_context/AI_CONTEXT.md` (new Phase 26 workstream entry; Phase 25 row marked DONE for foundation portion · pending lock for primitive/component spec drafts) · this HISTORY entry.
+
+**What's next**: Path A — try a Pattern composition with the 5 component sets + 13 icons (Send-Money Review pattern is the highest-density test). Path B — build remaining primitives properly (Avatar, Switch, Radio, Chip, Input) to retrofit List Row placeholders. Path C — extend Button with State axis (Pressed / Disabled / Loading) when a screen actually needs them.
+
+**Files**:
+- new — none (everything authored in Figma; figma-setup.md updated in this cascade)
+- modified — `mobile/design/tokens/figma-setup.md`, `ai_context/AI_CONTEXT.md`, `docs/product_states.md`, `ai_context/HISTORY.md`
+
+---
+
 ### 2026-05-04 — Figma chosen as mobile implementation surface · Pass 1 token Figma-setup landed · `primitives/button.md` Pass 2 sweep · Pass 2 PAUSED pending Figma MCP install
 
 - **Decision locked**: the mobile design system is built and reviewed in **Figma** (file: `https://www.figma.com/design/p8pxXYApMNCpzQn0XkoIw9/ZhiPay---v0.1--Project-`). Spec markdown stays as the durable source-of-truth in git; Figma is the rendered artefact. Lock criteria for primitive / component layers: ☑ only when production-ready Figma component sets exist (user verifies in Figma).
