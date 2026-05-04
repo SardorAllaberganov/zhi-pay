@@ -179,6 +179,141 @@ grep -rnE '<Avatar[^>]*rounded-md|<Avatar[^>]*rounded-sm|<Avatar[^>]*rounded-non
 grep -rnE 'Avatar.*Math\.random|Avatar.*hash.*Date' mobile/
 ```
 
+## Figma component-set
+
+Two component sets under the `Avatar / *` namespace per [`tokens/figma-setup.md`](../tokens/figma-setup.md). Split by render mode — initials and photo have completely different anatomies (initials = colored circle + text; photo = circle with image fill), so authoring them as separate sets keeps the asset palette clean.
+
+> Built in Figma 2026-05-04 alongside the Chip + Input primitives as part of Pass 2.
+
+### Set 1 · `Avatar / Initials` (15 cells)
+
+#### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `Color` | `Brand` · `Slate` · `Success` · `Warning` · `Fallback` | 5 |
+| `Size` | `Sm` (32pt) · `Md` (48pt) · `Lg` (72pt) | 3 |
+
+The 5 `Color` values surface the **deterministic name-hash buckets** documented above as a visual showcase. In code, the consumer derives the bucket from the recipient's name via `firstChar(md5(name)) → bucket`; in Figma, designers picking a static-screen avatar select the correct bucket manually. Stable identity means designers should rarely pick — but variant cells exist so all four hash colors + the fallback are visually inspectable.
+
+#### Naming
+
+```
+Avatar / Initials   →   Color=<Color>, Size=<Size>
+```
+
+Examples: `Color=Brand, Size=Md`, `Color=Slate, Size=Lg`, `Color=Fallback, Size=Sm`.
+
+#### Variable bindings — per cell
+
+##### Container (frame)
+
+| Property | Bound to |
+|---|---|
+| Layout | Auto Layout HORIZONTAL · `primaryAxisAlignItems: CENTER` · `counterAxisAlignItems: CENTER` |
+| Width × Height (fixed) | 32×32 (`Sm`) · 48×48 (`Md`) · 72×72 (`Lg`) |
+| Padding | 0 (initials are centered via auto-layout alignment) |
+| Item spacing | 0 |
+| Corner radius (all 4) | `radius/pill` |
+| Fill | per Color (see mapping below) |
+
+##### Color mapping
+
+| Color | Surface (fill) | Initial color |
+|---|---|---|
+| `Brand` | `color/brand/600` | `color/base/white` |
+| `Slate` | `color/slate/700` | `color/base/white` |
+| `Success` | `color/success/600` | `color/base/white` |
+| `Warning` | `color/warning/600` | `color/base/white` |
+| `Fallback` | `color/slate/100` | `color/slate/700` |
+
+> **No `Danger` / red avatar.** Per spec line "Never derive a danger-600 (red) avatar — red is reserved for failure semantics, not identity." — confirmed in build, `Danger` not in the Color axis.
+
+##### Initial(s) text
+
+| Property | Bound to |
+|---|---|
+| Demo content | `WL` (the canonical sample — Wang Lei) at all 15 cells |
+| Text Style | `text/label` (`Sm`) · `text/body-sm-semibold` (`Md`) · `text/heading` (`Lg`) |
+| **Weight override** | **`Inter Semi Bold` (600)** — applied to all sizes for consistency. `text/body-sm-semibold` (Md) and `text/heading` (Lg) are already 600; `Sm` overrides `text/label`'s default Medium (500) at the layer level (one-off, same pattern as CountBadge in chip.md) |
+| `textCase` | `ORIGINAL` (chip-style override on `text/label` to avoid the foundation's baked uppercase + tracking) |
+| `letterSpacing` | `0%` |
+| Fill | per Color (see mapping above) |
+
+### Set 2 · `Avatar / Photo` (3 cells)
+
+#### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `Size` | `Sm` (32pt) · `Md` (48pt) · `Lg` (72pt) | 3 |
+
+#### Naming
+
+```
+Avatar / Photo   →   Size=<Size>
+```
+
+#### Variable bindings — per cell
+
+##### Container
+
+| Property | Bound to |
+|---|---|
+| Layout | Auto Layout HORIZONTAL · centered |
+| Width × Height (fixed) | per Size (32 / 48 / 72) |
+| Corner radius (all 4) | `radius/pill` |
+| Fill (placeholder) | `color/slate/300` — **temporary; replaced at instance time** by an image fill (`fillType: IMAGE`) when a real photo is attached |
+| Clips content | `true` — masks any image overflow to the circle |
+
+##### Placeholder (when no photo attached)
+
+| Property | Bound to |
+|---|---|
+| Glyph | `Icon / User` instance, sized 0.55× the avatar diameter (18 / 26 / 40pt) |
+| Glyph stroke | `color/base/white` |
+
+> **How designers attach a photo**: select an `Avatar / Photo` instance, target the container's fill in the right panel, change the fill type from Solid → Image, drop the photo. The User-icon placeholder remains as a child (visible behind the image fill if the image is transparent — but for typical photos it gets fully covered). Fall-through to initials variant on image error is a runtime concern, not authored in Figma.
+
+### Component properties (deferred)
+
+The status-dot affordance and the selected-ring (recipient multi-select) were **not authored** in this Pass 2 build. Both are documented in the spec as v1.1+ / instance-time concerns:
+
+- **Status dot** — spec line "Mostly unused at v1." Defer until support-chat / agent-online surfaces land. Recovery path: add a `Show status dot` BOOL component property + a `Status` VARIANT (Online/Offline) on `Avatar / Initials` and `Avatar / Photo`.
+- **Selected ring** (recipient multi-select) — handled at instance time via a 2pt `color/ring` outset stroke override on the avatar's container. No component property needed; the visual contract is "outset stroke when the parent row is selected."
+
+### Effect
+
+None on either set. Avatars are flat surfaces — no shadow, no focus ring (focus is on the parent row's tap-area, not the avatar visual).
+
+### Skip cells
+
+| Set | Authored | Skipped |
+|---|---|---|
+| `Avatar / Initials` | 15 | None — all 5 colors × 3 sizes built |
+| `Avatar / Photo` | 3 | Per-photo content variants (designers swap image fills at instance time) |
+
+**Total: 18 cells across 2 component sets.**
+
+### Deviations from spec, tracked
+
+| Deviation | Reason | Recovery path |
+|---|---|---|
+| `Sm` initials use `text/label` Style with layer-level `Inter Semi Bold` weight override | No 13pt Semibold Style exists in the foundation (`text/label` is 13/500). Adding a new Style for one consumer is foundation creep | If a 2nd 13pt-Semibold consumer appears (e.g. count badges in dense lists), promote to a `text/label-semibold` Style and update both consumers in one pass |
+| `Avatar / Initials` `Color` axis surfaces hash buckets visually rather than being designer-pickable | Spec is firm: color derives deterministically from `firstChar(md5(name))` — designers picking would break stable identity. The variant matrix exists for inspection / static-screen authoring only | Document the picker convention: designers should use the `Color=Fallback` variant for unknown / placeholder names; pick brand/slate/success/warning only when they match what the runtime hash would produce. A small in-Figma prototype could expose a "name → bucket" calculator — out of scope for v1 |
+| Status-dot affordance not built | Spec marks "Mostly unused at v1" | Add `Show status dot` BOOL + `Status` (Online/Offline) VARIANT axis to both sets when support-chat lands |
+| Selected-ring (multi-select) not built | Handled at instance time via outset stroke override | No work — designer applies a 2pt `color/ring` outset stroke to the avatar's container when authoring a multi-select recipient picker |
+| `Avatar / Photo` cells default to a `slate-300` + `Icon / User` placeholder, not an actual photo | Photos are content, not chrome — designer attaches images at instance time via image-fill swap | Designers select the avatar's container fill, switch to Image fill, attach the photo. No fallback handling in Figma — runtime falls through to initials |
+
+### File placement
+
+| Set | Component-set ID | Position (page `❖ Components`) | Size |
+|---|---|---|---|
+| `Avatar / Initials` | `105:116` | (100, 6308) | 480 × 620 |
+| `Avatar / Photo` | `105:129` | (700, 6308) | 480 × 220 |
+
+Sits below the three Input sets (Input / NumberPad ends at y=6208), with the standard 100pt gap. Both sets are smaller than the chip / input rows, so they fit side-by-side on a single row at y=6308.
+
 ## Cross-references
 
 - Tokens: [`colors.md`](../tokens/colors.md) · [`typography.md`](../tokens/typography.md) · [`radii.md`](../tokens/radii.md)

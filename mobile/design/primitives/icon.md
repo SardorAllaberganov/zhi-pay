@@ -243,6 +243,101 @@ grep -rnE "from\s+['\"](react-icons|@heroicons|@fortawesome|feather)" mobile/
 # (must return 0 hits)
 ```
 
+## Figma component-set
+
+**Icon is the only primitive without a variant component set.** Each lucide icon is its own discrete `COMPONENT` node, and consumers import the icon they need directly (matches lucide-react's per-icon import shape: `import { Send } from 'lucide-react'`). Authoring a multi-axis component set with all icons would force designers to swap variants every time they want a different glyph — far worse UX than just dragging the right icon component.
+
+> Built incrementally across Phases 26 (foundation 13) + 27b (Pass 2 added 4 for Input). Now **17 components live**.
+
+### The 17-icon library
+
+| # | Component | lucide name | Node ID | Added in | Primary use |
+|--:|---|---|---|---|---|
+| 1 | `Icon / Send` | `Send` | `42:5` | Phase 26 | "Send money" CTA, transfer-flow entry |
+| 2 | `Icon / ArrowDownToLine` | `ArrowDownToLine` | `42:10` | Phase 26 | History "received" indicator (future receive flow) |
+| 3 | `Icon / CreditCard` | `CreditCard` | `42:14` | Phase 26 | Card-management entry, scheme-agnostic card |
+| 4 | `Icon / User` | `User` | `42:18` | Phase 26 | Profile, recipient placeholder, Avatar/Photo placeholder |
+| 5 | `Icon / ShieldCheck` | `ShieldCheck` | `42:22` | Phase 26 | KYC / MyID / security context |
+| 6 | `Icon / Clock` | `Clock` | `42:26` | Phase 26 | Pending state, history entry, rate-lock countdown |
+| 7 | `Icon / ArrowRight` | `ArrowRight` | `42:30` | Phase 26 | "Continue" / "Next step", Button trailing icon default |
+| 8 | `Icon / Check` | `Check` | `42:33` | Phase 26 | Success affirmation, completed status |
+| 9 | `Icon / ChevronRight` | `ChevronRight` | `49:37` | Phase 26 | List-row navigation chevron |
+| 10 | `Icon / Info` | `Info` | `44:22` | Phase 26 | Info-tone Banner |
+| 11 | `Icon / CheckCircle2` | `CheckCircle2` | `44:26` | Phase 26 | Success-tone Banner, Tier2 MyID glyph stand-in |
+| 12 | `Icon / AlertTriangle` | `AlertTriangle` | `44:31` | Phase 26 | Warning-tone Banner, KYC expired, expired state |
+| 13 | `Icon / AlertCircle` | `AlertCircle` | `44:36` | Phase 26 | Danger-tone Banner, error states |
+| 14 | `Icon / Search` | `Search` | `86:73` | **Phase 27b (Pass 2 — Input)** | Search field leading magnifier |
+| 15 | `Icon / X` | `X` | `86:77` | **Phase 27b (Pass 2 — Input)** | Search clear button, modal close |
+| 16 | `Icon / Delete` | `Delete` | `86:82` | **Phase 27b (Pass 2 — Input)** | NumberPad delete key |
+| 17 | `Icon / Lock` | `Lock` | `86:86` | **Phase 27b (Pass 2 — Input)** | Read-only field state, Frozen chip recovery |
+
+### Component anatomy (per icon)
+
+Every icon component follows the same shape:
+
+| Property | Value |
+|---|---|
+| Type | `COMPONENT` (not `COMPONENT_SET` — single node) |
+| Container | 24 × 24pt baseline (matches lucide's `viewBox`) |
+| Vector source | `figma.createNodeFromSvg(<lucide-svg-string>)` — bundles all path / circle / line elements as one frame |
+| Stroke (every path) | bound to `color/foreground` via `setBoundVariableForPaint` — flips brand-correct in Light + Dark modes |
+| Stroke weight | `2` (lucide default) — never overridden per-icon |
+| Stroke linecap | `round` (lucide default) — never overridden |
+| Fills | None (lucide icons are stroke-only) |
+
+### Showcase frames
+
+Two reference frames live on the page:
+
+| Frame | Position | Contents |
+|---|---|---|
+| `Icons (canonical 8)` | (100, 1700) — pre-existing | The 8-icon foundation demo set per spec "The canonical 8" — Send · ArrowDownToLine · CreditCard · User · ShieldCheck · Clock · ArrowRight · Check at 20pt with name labels |
+| `Icons (17 — full library)` | **(100, 1900)** — added Pass 2 (`108:92`) | All 17 icons in a 6×3 grid with name labels at 20pt slate-700 (foreground), label `text/body-sm` slate-500 |
+
+The first showcase satisfies the foundation prompt's "render all eight at 20pt with `slate-700` color in the foundation sample frame" requirement. The second is the discoverable inventory designers consult when picking an icon.
+
+### Usage convention
+
+Designers consume icons three ways:
+
+1. **Direct instance** — drag from the Assets palette, drop into a frame. Override size at instance time (`size-3` / `size-4` / `size-5` default / `size-6` / `size-8`).
+2. **Inside a component property** — used by `Button` (`Leading icon` / `Trailing icon` INSTANCE_SWAP), `Input / Field` (Search variant), `Input / NumberPad` (Delete key). The component-set author wires the property; the instance designer picks via the right-panel picker.
+3. **Inline in a custom layout** — drop an instance, override stroke color via the Variables picker (e.g. `color/slate/400` for the search magnifier; `color/primary-foreground` for the Tier2 glyph).
+
+### Color / sizing rules (binding to spec)
+
+- **Stroke**: bound to `color/foreground` by default; override at instance time to any `color/*` variable. **Never use raw hex.**
+- **Size**: 24×24 baseline; override at instance time. The 5 canonical sizes (`size-3` 12 / `size-4` 16 / `size-5` 20 / `size-6` 24 / `size-8` 32) are documented above; use the variant table at the top of this spec to pick.
+- **Stroke-width**: 2pt baseline (lucide default). **Never overridden per-icon** — system reads as one weight.
+
+### Variant axes
+
+**None — Icon has no component set.** The library is 17 individual `COMPONENT` nodes; the spec's `xs/sm/md/lg/xl` size variants are applied by the consumer at instance time, not as Figma variants. See the "Default size" table above.
+
+### Skip cells
+
+Not applicable. The library covers the most-used surface actions (per the canonical-8 list) plus the 5 banner / list-row glyphs added during Phase 26 plus the 4 Pass 2 input-driven additions. Future additions land in this same row pattern (24×24, stroke 2, foreground-bound) and are appended to the `Icons (17 — full library)` showcase.
+
+### Deviations from spec, tracked
+
+| Deviation | Reason | Recovery path |
+|---|---|---|
+| Library coverage is 17, not the lucide-react full set (~1500 icons) | Adding every lucide icon would bloat the file + the asset palette becomes unwieldy. Library grows on-demand as new screens / patterns need icons | Build new icons via `figma.createNodeFromSvg(<svg-string>)` per the convention; append to the `Icons (17 — full library)` showcase; add an entry to this spec's library table |
+| `Icon / BadgeCheck` not in library (used by Tier2 glyph) | Wasn't needed at foundation time; Tier2 used `CheckCircle2` as stand-in | Add via the convention; swap instance reference in 3 `Chip / Tier / Tier2 / *` cells |
+| `Icon / Loader2` not in library (used by Button loading state, status icons) | Button loading state was deferred from variant matrix; spinner pattern is animation, not a static icon usage | Add via the convention when a screen / pattern needs the static spinner glyph; the animation contract (`animate-spin`, 1s linear, infinite, reduced-motion fallback to three dots) lives at code time |
+| Brand logos (Visa / Mastercard / UzCard / Humo / Alipay / WeChat) excluded | Per [`card-schemes.md`](../../../.claude/rules/card-schemes.md): brand marks live in a separate `SchemeLogo` primitive (Components layer), NOT in the Icon library — they need brand-accurate paths, NOT lucide simplifications | Build `SchemeLogo` as a Components-layer primitive when the `scheme-logo.md` Pass 2 sweep happens |
+
+### File placement
+
+| Asset | Component / Frame ID | Position (page `❖ Components`) | Size |
+|---|---|---|---|
+| Icon row 1 | individual icons at y=1600 | x=100…676 | 24 × 24 each |
+| Icons (canonical 8) showcase | `43:2` | (100, 1700) | 745 × 112 |
+| Icon row 2 | individual icons at y=1824 | x=100…436 | 24 × 24 each |
+| **Icons (17 — full library) showcase** | **`108:92`** | **(100, 1900)** | **724 × 244** |
+
+The 17 icons themselves stay in their original positions on the icon rows at y=1600 and y=1824. The two showcase frames sit between (canonical 8) and below (full 17) — neither contains the actual icon components, just instances arranged with name labels.
+
 ## Cross-references
 
 - Lucide library: [`lucide.dev/icons`](https://lucide.dev/icons/)

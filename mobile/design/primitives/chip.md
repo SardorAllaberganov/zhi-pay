@@ -229,6 +229,240 @@ grep -rnE 'chip[^.]*#[0-9a-fA-F]|StatusChip.*rounded-\[' mobile/
 grep -rnE 'status:\s*"(awaiting|partial|cancelled|in_progress)"' mobile/
 ```
 
+## Figma component-set
+
+Three component sets, all under the `Chip / *` namespace per [`tokens/figma-setup.md`](../tokens/figma-setup.md). They share the `radius/pill` corner + `text/label` (Sm/Md) or `text/body-sm-medium` (Lg) typography contract but otherwise diverge — so they're authored as **three discrete sets** rather than one mega-axis set, matching the asset-panel rhythm Card / Banner / Button already established (≤ 30 cells per set).
+
+> Built in Figma 2026-05-04 alongside Button as part of Pass 2.
+
+### Set 1 · `Chip / Status` (30 cells)
+
+#### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `Status` | `Created` · `Processing` · `Completed` · `Failed` · `Reversed` · `Pending` · `Passed` · `Expired` · `Active` · `Frozen` | 10 |
+| `Size` | `Sm` · `Md` · `Lg` | 3 |
+
+`Failed` and `Expired` are deduped across transfer / KYC / card domains (same tone + label; consumer disambiguates by row context, not by domain prefix). The animated pulse on `Processing` lives at code time per [`motion.md`](../tokens/motion.md) — Figma cell renders the dot static at full opacity.
+
+#### Naming
+
+```
+Chip / Status   →   Status=<Status>, Size=<Size>
+```
+
+Examples: `Status=Completed, Size=Md`, `Status=Failed, Size=Lg`, `Status=Frozen, Size=Sm`.
+
+#### Variable bindings — per cell
+
+##### Container (frame)
+
+| Property | Bound to |
+|---|---|
+| Fill | per status (see surface table below) |
+| Padding-Left | `space/2` (8pt) |
+| Padding-Right | `space/3` (12pt) |
+| Item spacing | `space/1` (4pt) — gap between dot and label |
+| Padding-Top / Bottom | `0` (height carried by fixed `height`) |
+| Corner radius (all 4) | `radius/pill` |
+| Auto Layout direction | Horizontal · `counterAxisAlignItems: CENTER` |
+| Width | Hug contents |
+| Height | Fixed: 24 (`Sm`) · 28 (`Md`) · 32 (`Lg`) |
+
+##### Status-tone mapping (the matrix)
+
+| Status | Surface (Container fill) | Dot fill | Label color |
+|---|---|---|---|
+| `Created` · `Pending` · `Frozen` | `color/slate/100` | `color/slate/500` | `color/slate/700` |
+| `Processing` | `color/brand/50` | `color/brand/600` | `color/brand/700` |
+| `Completed` · `Passed` · `Active` | `color/success/50` | `color/success/600` | `color/success/700` |
+| `Failed` | `color/danger/50` | `color/danger/600` | `color/danger/700` |
+| `Reversed` · `Expired` | `color/warning/50` | `color/warning/600` | `color/warning/700` |
+
+> The 5-tone palette × 10 statuses dedupes naturally — colors map by intent, not by domain. Three statuses share the slate (neutral) tone; three share success; two share warning; one each on brand / danger.
+
+##### Dot (ellipse)
+
+| Property | Bound to |
+|---|---|
+| Width × Height | `Sm` 6×6 · `Md` 8×8 · `Lg` 10×10 |
+| Fill | per status (see matrix above) — semantic 600-stop |
+
+##### Label (text)
+
+| Property | Bound to |
+|---|---|
+| Text Style | `text/label` (Sm + Md) · `text/body-sm-medium` (Lg) |
+| `textCase` | `ORIGINAL` (overrides `text/label`'s baked `UPPER` — chips are Title Case as authored per [LESSON 2026-05-02](../../../ai_context/LESSONS.md)) |
+| `letterSpacing` | `0%` (overrides `text/label`'s baked `+0.04em` — same reason) |
+| Fill | per status (see matrix above) — semantic 700-stop |
+
+> The `text/label` foundation Style is set up for uppercase + tracking ("uppercase section labels" use case). Chip labels override both at the layer level. **This is a one-off; if a second consumer needs the same override pattern, propose a `text/label-titlecase` Style addition in [`tokens/figma-setup.md`](../tokens/figma-setup.md).**
+
+##### Effect (focus ring)
+
+None on chips. Tap-area is enforced by the parent row at the Components / Patterns layer, not on the chip itself.
+
+### Set 2 · `Chip / Tier` (9 cells)
+
+#### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `Tier` | `Tier0` · `Tier1` · `Tier2` | 3 |
+| `Size` | `Sm` · `Md` · `Lg` | 3 |
+
+The MyID glyph is **baked into the `Tier2` cell** at all three sizes — not a separate axis. Per spec line "Tier_2 badge without the MyID glyph" forbidden, the glyph is part of the contract.
+
+#### Naming
+
+```
+Chip / Tier   →   Tier=<Tier>, Size=<Size>
+```
+
+Examples: `Tier=Tier0, Size=Md`, `Tier=Tier2, Size=Lg`.
+
+#### Variable bindings — per cell
+
+##### Container (frame)
+
+| Tier | Fill | Padding-Left | Padding-Right | Item spacing |
+|---|---|---|---|---|
+| `Tier0` · `Tier1` | per Tier surface (below) | `space/3` (12pt) | `space/3` (12pt) | `space/1` (4pt — unused, no glyph) |
+| `Tier2` | `color/primary` | `space/2` (8pt — tighter to compensate for glyph) | `space/3` (12pt) | `space/1` (4pt — gap before label) |
+
+| Property | Bound to |
+|---|---|
+| Padding-Top / Bottom | `0` |
+| Corner radius (all 4) | `radius/pill` |
+| Auto Layout | Horizontal · `counterAxisAlignItems: CENTER` |
+| Height | Fixed: 24 (`Sm`) · 28 (`Md`) · 32 (`Lg`) |
+
+##### Tier-tone mapping
+
+| Tier | Surface (fill) | Label color | Glyph |
+|---|---|---|---|
+| `Tier0` | `color/slate/100` | `color/slate/700` | none |
+| `Tier1` | `color/brand/50` | `color/brand/700` | none |
+| `Tier2` | `color/primary` (brand-600 light / brand-500 dark) | `color/primary-foreground` (white via `color/base/white`) | white check-in-rounded glyph |
+
+##### Glyph (Tier2 only)
+
+The spec calls for lucide `<BadgeCheck>`. The Figma file's icon library currently ships 13 lucide components but **does not include `BadgeCheck`** — the `Tier2` cell uses **`Icon / CheckCircle2`** as a stand-in (visually close: round shape with internal check; same MyID-verified semantics). Glyph fills are overridden to `color/primary-foreground` at instance time.
+
+| Size | Glyph dimensions |
+|---|---|
+| `Sm` | 12 × 12 |
+| `Md` | 14 × 14 |
+| `Lg` | 16 × 16 |
+
+> **Deviation, tracked.** When `Icon / BadgeCheck` lands in the icon library, swap the instance reference in all three Tier2 cells. No other binding changes required.
+
+##### Label (text)
+
+| Property | Bound to |
+|---|---|
+| Text Style | `text/label` (Sm + Md) · `text/body-sm-medium` (Lg) |
+| `textCase` | `ORIGINAL` (same chip Title Case override) |
+| `letterSpacing` | `0%` |
+| Fill | per Tier (see mapping above) |
+
+### Set 3 · `Chip / Count` (18 cells)
+
+#### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `Digits` | `One` · `Two` · `Overflow` (renders `99+`) | 3 |
+| `Tone` | `Destructive` · `Brand` · `Muted` | 3 |
+| `Border` | `None` · `Stroked` (2pt `color/background` ring for icon-overlay use) | 2 |
+
+`Digits=One` renders as a 20×20 square (centered, no horizontal padding) — `radius/pill` rounds it to a circle. `Two` and `Overflow` render as auto-width pills with `space/2` (8pt) horizontal padding.
+
+#### Naming
+
+```
+Chip / Count   →   Digits=<Digits>, Tone=<Tone>, Border=<Border>
+```
+
+Examples: `Digits=One, Tone=Destructive, Border=None`, `Digits=Overflow, Tone=Brand, Border=Stroked`.
+
+#### Variable bindings — per cell
+
+##### Container (frame)
+
+| Property | Bound to |
+|---|---|
+| Fill | per Tone (see mapping below) |
+| Stroke (when `Border=Stroked`) | `color/background` · 2pt · `OUTSIDE` align |
+| Padding-Left / Right (Digits=One) | `0` (centered single digit) |
+| Padding-Left / Right (Digits=Two / Overflow) | `space/2` (8pt) |
+| Padding-Top / Bottom | `0` |
+| Item spacing | `0` |
+| Corner radius (all 4) | `radius/pill` |
+| Auto Layout | Horizontal · `primaryAxisAlignItems: CENTER` · `counterAxisAlignItems: CENTER` |
+| Height (fixed) | `One` 20 · `Two` 24 · `Overflow` 28 |
+| Width | `One` fixed 20 · `Two` / `Overflow` Hug contents |
+
+##### Tone mapping
+
+| Tone | Surface (fill) | Label color |
+|---|---|---|
+| `Destructive` | `color/destructive` (`danger/600`) | `color/destructive-foreground` (white) |
+| `Brand` | `color/primary` (brand/600 light · brand/500 dark) | `color/primary-foreground` (white) |
+| `Muted` | `color/slate/500` | `color/base/white` (white via primitive — no `slate-foreground` semantic) |
+
+##### Label (text)
+
+| Property | Bound to |
+|---|---|
+| Text Style | `text/label` (13pt) at all `Digits` values |
+| **Weight override** | **`Inter Semi Bold` (600)** — `text/label`'s default weight is Medium (500); spec calls for `font-semibold` (600). One-off layer-level override; no new Text Style added |
+| `textCase` | `ORIGINAL` (chip Title Case override) |
+| `letterSpacing` | `0%` |
+| `font-variant-numeric` | `tabular-nums` (already on every Text Style by default per [`figma-setup.md`](../tokens/figma-setup.md) "Font features") |
+| Fill | per Tone (see mapping above) |
+
+> **Why no new `text/label-semibold` Style?** A single-component need doesn't justify a foundation addition — the figma-setup ledger is already at 13 Text Styles. If a second consumer needs the same Medium→Semibold override, lift the override into a new Text Style and update both consumers in one pass.
+
+##### Border (Stroked variant) behavior
+
+The `Stroked` variant exists to make CountBadge readable when **overlaid on a tab-bar icon or notifications bell** — the 2pt `color/background` ring "punches" the badge out of the icon's silhouette. On a page-background surface (like the component-set preview), the ring blends into the background and reads as identical to `Border=None` — that's correct: the ring's job is to disambiguate against the host icon, not the page.
+
+### Effect (focus rings, shadows)
+
+None on any chip primitive. Chips are non-interactive at this layer (state display); focus + hover treatment lives at the parent-row level in the Components layer.
+
+### Skip cells
+
+None. All variant combinations are authored:
+- `Chip / Status`: 10 × 3 = 30 (no skips)
+- `Chip / Tier`: 3 × 3 = 9 (no skips)
+- `Chip / Count`: 3 × 3 × 2 = 18 (no skips)
+
+**Total: 57 cells across 3 component sets.**
+
+### Deviations from spec, tracked
+
+| Deviation | Reason | Recovery path |
+|---|---|---|
+| `Tier2` glyph uses `Icon / CheckCircle2` instead of `BadgeCheck` | `BadgeCheck` not yet in the icon library (file ships 13 lucide icons, BadgeCheck not among them) | Add `Icon / BadgeCheck` to the library, swap instance reference in all 3 Tier2 cells |
+| `Frozen` status has no inline lock icon (spec line "with lock icon overlay") | `Lock` not yet in the icon library; admin-only territory; ambiguity-free without the glyph | Add `Icon / Lock` to the library, append a small leading icon slot to the `Frozen` cells (Sm 10pt · Md 12pt · Lg 14pt) |
+| `text/label` requires per-layer `textCase: ORIGINAL` + `letterSpacing: 0%` overrides | Foundation `text/label` baked uppercase + tracking for "section label" use; chip spec is firm on Title Case + 0 tracking | Either accept the per-layer override (current state — used in 39 chip cells) OR split foundation into `text/label-uppercase` + `text/label-titlecase` if a 4th consumer surfaces |
+| `CountBadge` label weight = Semibold via `fontName` override (not via Style) | No `text/label-semibold` Style exists | If a 2nd Semibold consumer at 13pt appears, lift the override into a new Text Style |
+| `Processing` dot static (not animated) | Figma component sets render still frames; pulse animation is a code-time concern | Smart Animate prototype connection on the dot opacity (1 → 0.4 → 1 over 1500ms) when a prototype demo is needed |
+
+### File placement
+
+| Set | Component-set ID | Position (page `❖ Components`) |
+|---|---|---|
+| `Chip / Status` | `71:92` | `(100, 3720)` · 510 × 680 |
+| `Chip / Tier` | `75:29` | `(700, 3720)` · 510 × 288 |
+| `Chip / Count` | `78:44` | `(1300, 3720)` · 320 × 624 |
+
+Sits below the existing `Button` set (`(180, 3080)`) at y=3720+. The next primitive (Avatar) lands further down in Pass 2.
+
 ## Cross-references
 
 - Tokens: [`colors.md`](../tokens/colors.md) · [`typography.md`](../tokens/typography.md) · [`spacing.md`](../tokens/spacing.md) · [`radii.md`](../tokens/radii.md)
