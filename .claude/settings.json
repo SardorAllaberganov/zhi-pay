@@ -53,6 +53,8 @@
       "Bash(ls:*)",
       "Bash(find *)",
       "Bash(cat *)",
+      "Bash(curl *)",
+      "Bash(wait)",
       "Bash(head *)",
       "Bash(tail *)",
       "Bash(wc *)",
