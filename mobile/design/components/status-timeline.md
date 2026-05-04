@@ -156,6 +156,61 @@ grep -rnE 'StatusTimeline[^>]*\n[^<]*<Button[^>]*Mark|<Button[^>]*Force' mobile/
 grep -rnE 'state:\s*"(awaiting|partial|cancelled|in_progress|in-progress)"' mobile/
 ```
 
+## Figma component-set
+
+Single component set `Status timeline` with one `Variant` axis showing the four canonical terminal states for a transfer event stream. Each cell renders 4–5 events with circle + label/meta column.
+
+### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `Variant` | `Processing` · `Completed` · `Failed` · `Reversed` | 4 |
+
+= **4 cells**.
+
+### Naming
+
+```
+Status timeline   →   Variant=<Variant>
+```
+
+### Variable bindings — per row
+
+Each event row has the same anatomy: Left column (20×80 fixed: 12pt circle + 56pt vertical line) + horizontal `space/3` gap + Right column (label `text/body-medium` 16/500 slate-900 + 4pt gap + meta `text/body-sm` 14/400 slate-500).
+
+| Circle state | Bound to |
+|---|---|
+| `past-filled` | 12pt ELLIPSE, fill bound to state-tone-600 (`color/slate/500` / `color/success/600` / `color/danger/600` / `color/warning/600` / `color/brand/600`) |
+| `future-hollow` | 12pt ELLIPSE, no fill, 1.5pt stroke `color/slate/300` |
+| `current-ring` (Processing variant only) | 12pt ELLIPSE, no fill, 2pt stroke bound to state-tone-600 (e.g. `color/brand/600`) |
+
+| Line state | Bound to |
+|---|---|
+| Past → past (solid) | 2pt × 56pt RECTANGLE filled with previous-event's state-tone-600 |
+| Past → current / current → future (dashed approximation) | Same RECTANGLE shape but with 0.4 opacity to suggest dashed appearance — Figma's stroke-dash on a fill rect doesn't render as expected; opacity dim is the workaround |
+
+| Variant | Event sequence |
+|---|---|
+| `Processing` | Created (slate) → Auth captured (success) → Sent to Alipay (success) → Confirming… (current ring brand) → Completed (future hollow) |
+| `Completed` | All 5 events filled in success-600 |
+| `Failed` | Created → Auth captured → Sent → Failed (terminal danger-600 with `CARD_DECLINED` meta) — 4 events, no future |
+| `Reversed` | All 5 success → final Reversed in warning-600 |
+
+### File placement
+
+| Asset | Component-set ID | Position (page `❖ Components`) | Size |
+|---|---|---|---|
+| `Status timeline` | `128:327` | (700, 8500) | 1496 × 520 |
+
+### Deviations from spec, tracked
+
+| Deviation | Reason | Recovery path |
+|---|---|---|
+| **Current-event ring with inner dot** simplified to ring-only (no inner 6pt dot) | Figma auto-layout doesn't natively support overlay positioning; nesting a smaller filled ellipse inside a hollow ring requires escaping auto-layout | Detach the current-ring frame and absolutely position a 6pt filled ellipse at the center; or accept the simpler hollow ring as the canonical mobile rendering |
+| **Dashed line** rendered as 0.4-opacity solid line | Figma RECTANGLE node fills don't accept stroke-dash; `dashPattern` on the stroke wouldn't render the way the spec describes (the dash needs to be on a 2pt vertical line, not on stroked edges). Opacity dim approximates the dashed effect visually | Use a Vector node or PNG asset for true dashed lines; or accept the opacity approximation |
+| **Pulse animation** on current event not built | Animation territory | Smart Animate prototype connection between Processing cell and itself with opacity 1→0.5→1 cycle |
+| **Initial layout collapsed cells to 0pt height** | First build set `cell.resize(280, 0)` then expected `primaryAxisSizingMode='AUTO'` to recompute. Resize value stuck. Fixed via explicit `layoutSizingVertical='HUG'` per-cell | Lesson: `resize(_, 0)` on auto-layout containers can stick despite sizing mode; force `layoutSizingVertical='HUG'` explicitly |
+
 ## Cross-references
 
 - State machines: [`status-machines.md`](../../../.claude/rules/status-machines.md), [`docs/mermaid_schemas/`](../../../docs/mermaid_schemas/)

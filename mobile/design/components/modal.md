@@ -178,6 +178,57 @@ grep -rnE 'Modal.*useEffect.*open|Modal.*open.*onMount' mobile/
 grep -rnE 'Modal.*bg-\[#|Modal.*text-\[#' mobile/
 ```
 
+## Figma component-set
+
+Single component set `Modal` with one `Variant` axis. Each cell is a full mobile viewport (360 × 760) showing the close-X header + 56pt centered icon + title + body + bottom CTA stack.
+
+### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `Variant` | `Confirm` · `Destructive` · `Info` | 3 |
+
+= **3 cells**.
+
+### Naming
+
+```
+Modal   →   Variant=<Variant>
+```
+
+### Variable bindings — per cell
+
+| Slot | Bound to |
+|---|---|
+| Modal container fill | `color/card` |
+| Modal width × height (fixed) | 360 × 760 — full mobile viewport, no radius, no scrim |
+| Header height | 60 |
+| Close X (top-left) | `Icon / X` instance at 24pt in 44pt tap-area frame, stroke `color/slate/700` |
+| Body block (centered) | Auto-layout VERTICAL, 360 × hug, `space/5` X padding, `space/7` (32pt) top + `space/4` bottom padding |
+| Body icon (above title) | INSTANCE per Variant: Confirm → `Icon / Send` `color/primary` · Destructive → `Icon / AlertTriangle` `color/destructive` · Info → `Icon / CheckCircle2` `color/primary`. Sized 56pt. |
+| Spacer (icon → title) | 24pt |
+| Title | `text/heading` (22/600), centered, `color/slate/900` |
+| Spacer (title → body) | 12pt |
+| Body text | `text/body` (16/400), centered, `color/slate/700` |
+| CTA stack | Auto-layout VERTICAL, `space/3` (12pt) item spacing, `space/5` X padding · `space/4` top + `space/8` (40pt) bottom padding (safe-area buffer) |
+| Primary button (lg = 56pt) | per Variant: Confirm + Info → `color/primary` fill / `color/primary-foreground` text · Destructive → `color/destructive` fill / `color/destructive-foreground` text. `radius/md` 12pt. Label = `text/body` (16pt) Semibold weight override. |
+| Secondary button (md = 48pt) | `color/secondary` fill, `color/secondary-foreground` text, `radius/md`, `text/body` Medium-weight override. **Hidden in Info variant** (single OK CTA). |
+
+### File placement
+
+| Asset | Component-set ID | Position (page `❖ Components`) | Size |
+|---|---|---|---|
+| `Modal` | `120:236` | (100, 8500) | 1384 × 880 |
+
+### Deviations from spec, tracked
+
+| Deviation | Reason | Recovery path |
+|---|---|---|
+| `pending` (CTA in flight) and `error` states not authored | Animation / runtime states | Apply loading spinner + `aria-busy` + inline error block at code time |
+| Sample copy baked per variant | Modals are highly content-specific; designers replace text at instance time | Detach text overrides per screen; chrome stays untouched |
+| Initial layout had body overflowing the 760pt viewport (CTAs clipped) | First build set body height to 540 + ctaStack auto-hug, exceeding the modal's fixed 760 height. Fixed by reducing body to `760 - headerH - ctaStackH` and forcing `ctaStack.layoutSizingVertical='HUG'` | Lesson: when stacking auto-layout children inside a fixed-height parent, explicitly compute the flexible child's height instead of relying on auto-hug to "just work" |
+| Slide-up entry motion + scrim fade not animated | Static frames | Smart Animate prototype connection between modal Variant cells for the open transition |
+
 ## Cross-references
 
 - Admin parity: [`dashboard/src/components/ui/dialog.tsx`](../../../dashboard/src/components/ui/dialog.tsx)

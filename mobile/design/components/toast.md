@@ -175,6 +175,56 @@ grep -rnE 'Toast.*bg-\[#|toast\(.*style.*#' mobile/
 grep -rnE 'toast\(.*type:\s*"error".*transfer.*failed|toast.*KYC|toast.*SANCTIONS' mobile/
 ```
 
+## Figma component-set
+
+Single component set `Toast` with one Variant axis. Mirrors Banner's 4-tone structure but on a `bg-card` surface with shadow, 3pt left accent, and stack-of-2 (title + body) text rhythm — distinct from Banner's flush inline pattern.
+
+> Built in Figma 2026-05-04 alongside the Components Pass 2 sweep.
+
+### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `Variant` | `Success` · `Info` · `Warning` · `Error` | 4 |
+
+`State`, `Auto-dismiss`, `with-CTA` are runtime concerns — handled at instance-time / code time, not authored as variants.
+
+### Naming
+
+```
+Toast   →   Variant=<Variant>
+```
+
+### Variable bindings — per cell
+
+| Slot | Bound to (per Variant) |
+|---|---|
+| Container fill | Success → `color/success/50` · Info → `color/slate/100` · Warning → `color/warning/50` · Error → `color/danger/50` |
+| Container border-left (3pt accent) | Success → `color/success/600` · Info → `color/slate/500` · Warning → `color/warning/600` · Error → `color/danger/600` |
+| Container effect | `effect/shadow-md/light` |
+| Container radius (all 4) | `radius/md` |
+| Container width × height | 380 fixed × hug (typically 80pt with title + body) |
+| Padding | `space/4` X (16pt) · `space/3` Y (12pt) |
+| Item spacing (icon → text) | `space/3` (12pt) |
+| Icon | INSTANCE per Variant: `Icon / CheckCircle2` · `Icon / Info` · `Icon / AlertTriangle` · `Icon / AlertCircle`. Stroke bound to variant-700: success/700 · slate/700 · warning/700 · danger/700. Sized 20pt. |
+| Title | `text/body-sm-semibold` (14/600), `color/slate/900` |
+| Body | `text/body-sm` (14/400), `color/slate/700` |
+| Title → body gap | `space/1` (4pt) |
+
+### File placement
+
+| Asset | Component-set ID | Position (page `❖ Components`) | Size |
+|---|---|---|---|
+| `Toast` | `110:160` | (100, 7028) | 500 × 520 |
+
+### Deviations from spec, tracked
+
+| Deviation | Reason | Recovery path |
+|---|---|---|
+| CTA slot not authored as a variant axis | Per spec "CTA (optional) — `<Button variant="link" size="sm">` aligned right". Adding `WithCTA: Yes/No` would double the cells; CTA is rare per spec ("Refresh" warning, "Retry" error) | Designers detach + add a Button instance manually for CTA-bearing toasts |
+| Stack behavior not authored | Stack offset is a runtime layout concern (cron-scheduled toasts push older down) — not a static frame concern | No work — toast manager handles stacking at code time |
+| Auto-dismiss timer + swipe gesture not animated | Static spec frames don't show timers / gestures | Smart Animate prototype connections + `duration-base` enter / exit per the Motion table |
+
 ## Cross-references
 
 - Tokens: [`colors.md`](../../tokens/colors.md) · [`shadows.md`](../../tokens/shadows.md) · [`motion.md`](../../tokens/motion.md)

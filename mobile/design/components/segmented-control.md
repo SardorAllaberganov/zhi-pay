@@ -153,6 +153,59 @@ grep -rnE 'SegmentedControl.*bg-\[#|SegmentedControl.*text-\[#' mobile/
 grep -rnE 'SegmentedControl.*rounded-md|SegmentedControl.*rounded-lg' mobile/
 ```
 
+## Figma component-set
+
+Single component set `Segmented control` with `Variant × Size` axes. 3-segment authoring (Recent / Saved / New); designers detach for 2-segment use cases.
+
+### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `Variant` | `InlineFlex` (content-hug) · `FullWidth` (each segment `flex-1`) | 2 |
+| `Size` | `Sm` (32pt) · `Md` (40pt) · `Lg` (48pt) | 3 |
+
+= **6 cells**. All cells render 3 segments with the first segment active. Second/third active states + `Disabled` + `Focused` handled via instance-time overrides (mirrors Button's State-axis-deferred pattern).
+
+### Naming
+
+```
+Segmented control   →   Variant=<Variant>, Size=<Size>
+```
+
+### Variable bindings — per cell
+
+| Slot | Bound to |
+|---|---|
+| Track fill | `color/muted` |
+| Track padding (all sides) | `space/1` (4pt) |
+| Track radius (all 4) | `radius/pill` |
+| Track width | InlineFlex: hug · FullWidth: 328 fixed |
+| Track height (fixed) | 32 (Sm) · 40 (Md) · 48 (Lg) |
+| Active segment fill | `color/card` |
+| Active segment effect | `effect/shadow-sm/light` |
+| Active segment radius | `radius/pill` |
+| Inactive segment fill | transparent |
+| Segment padding-X | `space/3` (Sm) · `space/4` (Md) · `space/5` (Lg) |
+| Segment padding-Y | `space/1` (Sm) · `space/2` (Md) · `space/3` (Lg) |
+| Active label color | `color/slate/900` |
+| Inactive label color | `color/slate/700` |
+| Label Text Style | Sm: `text/label` (13/500) with `textCase: ORIGINAL` + `letterSpacing: 0` overrides per chip-style Title Case rule · Md / Lg: `text/body-sm-medium` (14/500) |
+| FullWidth segment grow | `layoutGrow=1` + `layoutSizingHorizontal=FILL` per segment |
+
+### File placement
+
+| Asset | Component-set ID | Position (page `❖ Components`) | Size |
+|---|---|---|---|
+| `Segmented control` | `112:182` | (700, 7028) | 1260 × 248 |
+
+### Deviations from spec, tracked
+
+| Deviation | Reason | Recovery path |
+|---|---|---|
+| 3-segment fixed (no `Segments=Two/Three` axis) | Doubles cells; 2-segment is rare; designers detach to remove a segment when needed | Add `Segments` axis if 2-segment becomes a primary use case (e.g. on a screen that ships 2-segment as the canonical) |
+| Active=First only (no `Active=First/Middle/Last` axis) | Tripling cells for the active-position axis was overkill — designers can override at instance time by swapping which segment carries the active fill + label color | Same — instance-time override |
+| `Disabled` and `Focused` states not in matrix | Same Button precedent: handled via instance overrides | Apply `opacity-60` + `pointer-events-none` for disabled; `--ring` outset for focused at instance time |
+
 ## Cross-references
 
 - Tokens: [`colors.md`](../../tokens/colors.md) · [`spacing.md`](../../tokens/spacing.md) · [`radii.md`](../../tokens/radii.md) · [`motion.md`](../../tokens/motion.md)

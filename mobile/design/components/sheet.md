@@ -176,6 +176,58 @@ grep -rnE 'Sheet.*rounded-t-\[12px\]|Sheet.*rounded-t-lg' mobile/
 # (review every multi-sheet flow manually)
 ```
 
+## Figma component-set
+
+Single component set `Sheet` with a `SnapPoint` axis. Each cell shows the canonical chrome (drag handle + header + content + sticky action) at three progressive heights with sample content (recipient picker rows).
+
+### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `SnapPoint` | `Peek` (240pt) · `Half` (480pt) · `Full` (700pt) | 3 |
+
+= **3 cells**. `Peek` shows handle + 1 sample row only (no header, no sticky action). `Half` adds header + 3 rows + sticky Continue. `Full` adds 5 rows.
+
+### Naming
+
+```
+Sheet   →   SnapPoint=<SnapPoint>
+```
+
+### Variable bindings — per cell
+
+| Slot | Bound to |
+|---|---|
+| Sheet container fill | `color/card` |
+| Sheet top corner radius | `radius/lg` (20pt) — top two corners only; bottom flush |
+| Sheet effect | `effect/shadow-lg/light` |
+| Sheet width × height | 360 × per `SnapPoint` |
+| `clipsContent` | `true` — masks any overflow to the rounded top |
+| Drag handle area height | 24pt |
+| Drag handle bar | 36 × 4pt RECTANGLE, `color/slate/300` fill, 2pt corner radius |
+| Header height (Half / Full) | 56pt |
+| Header padding | `space/5` (20pt) left + `space/3` (12pt) right |
+| Header title | `text/body-semibold` (16/600), `color/slate/900`, `layoutGrow=1` |
+| Header close-X | `Icon / X` instance at 20pt, in 44pt tap-area frame, stroke `color/slate/700` |
+| Content padding | `space/5` (20pt) horizontal · `space/3` (12pt) vertical · `space/3` item spacing |
+| Sample row | 320 × 56pt, horizontal · 40pt avatar (slate-300 ellipse) + name (`text/body` 16pt slate-900) + meta (`text/body-sm` 14pt slate-500) |
+| Sticky bottom action (Half / Full) | 360 × 80pt, border-top 1pt `color/border`, padding `space/4` (16pt), bg `color/card` |
+| Continue button | 48pt height, `color/primary` fill, `radius/md` 12pt, `text/body` (16pt) Semibold-weight override, `color/primary-foreground` text |
+
+### File placement
+
+| Asset | Component-set ID | Position (page `❖ Components`) | Size |
+|---|---|---|---|
+| `Sheet` | `118:251` | (700, 7600) | 1264 × 820 |
+
+### Deviations from spec, tracked
+
+| Deviation | Reason | Recovery path |
+|---|---|---|
+| Scrim (`bg-black/40` backdrop) not authored as part of the component | Scrim is the screen's responsibility — sheets render in a portal above the page; the Figma component set captures the sheet itself, not its modal context | Add a backdrop fill at instance time when authoring full screens |
+| Drag / snap motion not animated | Static frames | Smart Animate prototype connections between SnapPoint variants for the snap animation |
+| Sample content baked (recipient picker) | Sheets are content-agnostic; designers replace the inner content per use case | Detach + replace content; sheet chrome (handle, header, action bar) survives untouched |
+
 ## Cross-references
 
 - Tokens: [`colors.md`](../../tokens/colors.md) · [`radii.md`](../../tokens/radii.md) · [`shadows.md`](../../tokens/shadows.md) · [`motion.md`](../../tokens/motion.md)

@@ -94,6 +94,55 @@ lg size (onboarding):
 | `loading` (asset hasn't loaded) | skeleton shimmer at the container dimensions, `slate-100 / slate-800` background, `duration-base` opacity pulse |
 | `selected` (in a picker) | 2pt `--ring` outset around the container, 2pt offset against the page background — never tint the asset itself |
 
+## Figma component-set
+
+Single component set `Scheme logo` with `Scheme × Size` axes. **Visa / Mastercard variants are NOT authored** in v1 per [LESSON 2026-04-30](../../../ai_context/LESSONS.md) — only UzCard, Humo, Alipay, WeChat ship in the Figma component set.
+
+> Built in Figma 2026-05-04. Brand-color placeholder marks (white wordmark on brand-tinted surface) — designers swap to real licensed brand assets at instance time when those assets land.
+
+### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `Scheme` | `UzCard` · `Humo` · `Alipay` · `WeChat` | 4 |
+| `Size` | `Sm` (32×20) · `Md` (56×32) · `Lg` (88×56) | 3 |
+
+= **12 cells**. Visa / Mastercard variants would land if the LESSON 2026-04-30 scope-out is lifted.
+
+### Naming
+
+```
+Scheme logo   →   Scheme=<Scheme>, Size=<Size>
+```
+
+### Variable bindings — per cell
+
+| Slot | Bound to |
+|---|---|
+| Container fill | **Hardcoded brand color** per Scheme (cannot bind to existing variables since brand colors don't have semantic equivalents): UzCard `#0066B3` · Humo `#F58220` · Alipay `#1677FF` · WeChat `#07C160` |
+| Container radius | UzCard / Humo → `radius/sm` (8pt) · Alipay / WeChat → `radius/pill` (round wallet marks) |
+| Container width × height | per `Size`: 32×20 / 56×32 / 88×56 |
+| Wordmark text | Scheme display name (`UzCard` / `Humo` / `Alipay` / `WeChat`), `Inter Bold` (700) at `fontSize` 8 (Sm) / 12 (Md) / 18 (Lg) |
+| Wordmark color | `color/base/white` |
+
+> **Why hardcoded brand colors?** Each scheme has a specific brand color that doesn't map to any token in the foundation. Introducing semantic variables for `color/scheme/uzcard` etc. would creep the foundation token surface for an asset-replacement use case (the placeholder marks get replaced by licensed PNG/SVG assets in production). The hardcoded approach is acceptable per the existing dashboard precedent — admin dashboard's `SchemeLogo` primitive also uses placeholder hex.
+
+### File placement
+
+| Asset | Component-set ID | Position (page `❖ Components`) | Size |
+|---|---|---|---|
+| `Scheme logo` | `132:217` | (100, 9500) | 510 × 440 |
+
+### Deviations from spec, tracked
+
+| Deviation | Reason | Recovery path |
+|---|---|---|
+| Visa / Mastercard variants not built | Per [LESSON 2026-04-30](../../../ai_context/LESSONS.md) — Visa/MC scoped out of v1 mock until user explicitly invokes them. Spec says "The four-scheme primitive keeps all four cases registered" — the registration is in code/tokens, not Figma | When LESSON's scope-out lifts, add `Scheme=Visa` and `Scheme=Mastercard` cells (Visa: blue/yellow `#1A1F71`/`#F7B600` mark; Mastercard: red/yellow circles overlapping `#EB001B`/`#F79E1B`). Add 2 schemes × 3 sizes = 6 new cells |
+| Brand-color hex hardcoded (not token-bound) | Brand colors are licensed assets with their own color rules; foundation tokens shouldn't be polluted with per-brand colors. The hardcoded approach matches the dashboard's existing pattern | Replace placeholder marks with licensed brand SVG/PNG assets when those land (instance-time swap or full re-author) |
+| Wordmark uses Inter Bold instead of brand-correct typography | Real licensed brand assets would have their own brand typography baked into the SVG | Same — replaced when licensed assets land |
+| `loading` skeleton + `selected` ring states not authored | Static frames | Apply at instance time — `slate-100` skeleton fill for loading; 2pt `color/ring` outset stroke + 2pt offset for selected |
+| `disabled` state (e.g. tier_1 sees Visa logo greyed) not authored | Same — instance-time `opacity-50` override + helper text adjacency | No work — designer applies at composition time |
+
 ## Token consumption summary
 
 | Surface | Token |

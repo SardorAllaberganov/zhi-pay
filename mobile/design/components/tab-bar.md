@@ -166,6 +166,67 @@ grep -rnE 'tabs:\s*\[.*\].*\.length\s*>\s*4|TabBar.*<Tab[^>]*5' mobile/
 grep -rnE 'TabBar.*text-\[#|TabBar.*bg-\[#' mobile/
 ```
 
+## Figma component-set
+
+Single component set `Tab bar` with one `ActiveTab` axis. 4 tabs are baked at every cell — only which tab is active changes per variant.
+
+### Variant axes
+
+| Property | Values | Count |
+|---|---|---:|
+| `ActiveTab` | `Home` · `Send` · `History` · `More` | 4 |
+
+= **4 cells**. Active dot indicator + active scale (1.04 / 1.06 for Send) + press tint + transitioning state are deferred (animation territory; static frames don't show them). CountBadge overlay handled at instance time via the existing `Chip / Count` set.
+
+### Naming
+
+```
+Tab bar   →   ActiveTab=<ActiveTab>
+```
+
+### Prerequisite — 2 new lucide icon components
+
+Tab Bar needed two icons not in the foundation library; added in this pass:
+
+| Icon | Node ID | Position |
+|---|---|---|
+| `Icon / Home` | `114:143` | (484, 1824) |
+| `Icon / Menu` | `114:148` | (532, 1824) |
+
+Both built via `figma.createNodeFromSvg` at 24×24, stroke-width 2, default-bound to `color/foreground` — same convention as the existing 17 icons. Library is now **19 icons** total.
+
+### Variable bindings — per cell
+
+| Slot | Bound to |
+|---|---|
+| Container fill | `color/card` |
+| Container border-top | `color/border` 1pt INSIDE |
+| Container width × height (fixed) | 360 × 56 |
+| Container padding | 0 (tab cells fill via `flex-1`) |
+| Tab cell layout | Auto Layout VERTICAL · `primaryAxisAlignItems: CENTER` · `counterAxisAlignItems: CENTER` |
+| Tab cell width × height | `flex-1` × 56 (each tab grows to fill ~90pt) |
+| Tab cell padding-Y | `space/2` (8pt) top + bottom |
+| Tab cell item spacing (icon → label) | `space/1` (4pt) |
+| Active icon | INSTANCE per tab: `Icon / Home` · `Icon / Send` · `Icon / Clock` · `Icon / Menu`. Stroke bound to `color/primary`. Sized 24pt. |
+| Inactive icon | Same instances, stroke bound to `color/slate/400` |
+| Active label | `text/label` (13/500) with `textCase: ORIGINAL` + `letterSpacing: 0` overrides + `Inter Semi Bold` weight override · `color/primary` |
+| Inactive label | Same Style with `Inter Medium` weight (no override needed since `text/label` defaults to Medium) · `color/slate/500` |
+
+### File placement
+
+| Asset | Component-set ID | Position (page `❖ Components`) | Size |
+|---|---|---|---|
+| `Tab bar` | `115:228` | (100, 7600) | 480 × 480 |
+
+### Deviations from spec, tracked
+
+| Deviation | Reason | Recovery path |
+|---|---|---|
+| **Active dot indicator** (4pt circle above icon) not built | Spec describes it as a multi-signal pair with brand color + scale + label weight. The brand color + Semibold weight already provide sufficient contrast; the dot is decorative reinforcement | Add a 4pt circle child node above each tab cell at instance time when designing screens that need stronger active emphasis |
+| **Active scale 1.04** + **Send tab scale 1.06** not applied | Static spec frames don't preserve transform; would skew the icon's bounding box at instance time | Apply at code time via `transform: scale(1.04)` per the Motion table |
+| **Press tint** + **transitioning** state not authored | Animation territory | Smart Animate prototype connection between tab variants for the spring-pop |
+| **CountBadge overlay** not pre-attached to tab cells | Adding a hidden CountBadge instance to each cell + a Boolean visibility prop would mirror Button. For Pass 2 simplicity, designers add a `Chip / Count` instance manually at top: -4pt right: -4pt of the icon when needed | If badge becomes common, wire `Show badge` BOOL + INSTANCE_SWAP `Badge` for tabs that surface counts (Home, More) |
+
 ## Cross-references
 
 - Tokens: [`colors.md`](../../tokens/colors.md) · [`spacing.md`](../../tokens/spacing.md) · [`typography.md`](../../tokens/typography.md)
