@@ -179,6 +179,18 @@ ZhiPay/
 ├── claude-design/                     # external-tool kickoff pack for the Claude Design canvas (claude.ai/design/...)
 │   ├── brief.md                       # ~150-line kickoff: project context, Figma URL, constraints, sequenced task ask
 │   └── rules-pack.md                  # ~810-line attachment: 8 distilled rules + design-review checklist + layer hierarchy + doc slices (PRD personas + features, models KYC/cards/15 error codes/FX-lock invariant) + canonical mermaid flows
+├── mobile/ZhiPay/                     # Claude Design output (Phase 28, 2026-05-04) — React/JSX + HTML rendered files for the brief; translated to Figma `⏰ Working files` page. Untracked in git as reference material
+│   ├── tokens.jsx                     # Design tokens mirroring foundation (brand/slate/status/radii/spacing/type) — RGB values pre-aligned to Figma Variables
+│   ├── ios-frame.jsx                  # iOS 26 device chrome primitives (IOSDevice 402×874 · IOSStatusBar · IOSNavBar · IOSGlassPill · IOSList · IOSListRow · IOSKeyboard)
+│   ├── design-canvas.jsx              # Figma-style pan/zoom canvas wrapper (DC*) for laying out the JSX preview pages
+│   ├── auth-screens.jsx               # Splash · Phone · OTP · PIN-Create · PIN-Confirm · Onboarding · Lock + Numpad helper + AuthTopBar (4-step progress)
+│   ├── home-screens.jsx               # HomeSafe (gradient CTA hero) · HomeBold (inline amount entry) · ProfileTab · CardsScreen · TabBar · KycBanner · RateChip · ActivityRow · RecipientPill · Avatar · CardPill · CardsSection · EmptyState
+│   ├── transfer-screens.jsx           # RecipientSelectScreen · AddRecipientScreen · AmountEntryScreen · ReviewScreen · ProcessingScreen · SuccessScreen + XferTopBar
+│   ├── pattern-fx-quote.jsx           # FxQuoteBreakdown component w/ 6 states (default/loading/error/offline/stale/rateMoved) + Card / HeadlineNumber / Banner / Chip / Lucide-Q-curve icons
+│   ├── tweaks-panel.jsx               # Designer tools panel (not user-facing)
+│   ├── Home + Auth.html               # Rendered HTML preview of auth+home flows
+│   ├── Pattern 1 - FX Quote Breakdown.html  # Rendered HTML preview of the pattern's 6 states
+│   └── uploads/                       # The doc context the user fed into Claude Design (brief.md + rules-pack.md + slices of PRD/models/product_states)
 ├── docs/                              # source of truth
 │   ├── models.md                      # 7-domain data model reference
 │   ├── product_requirements_document.md

@@ -4,6 +4,42 @@
 
 ---
 
+### 2026-05-04 — Phase 28 · Claude Design output translated to Figma — 23 frames built on `⏰ Working files` page (Auth 7 + Home 4 + Transfer 6 + Pattern 1 FX-Quote-Breakdown 6 cells); pixel-perfect, light-mode-only, foundation-Variable-bound
+
+- **Summary**: User dropped Claude Design's React/JSX + rendered HTML output into [`mobile/ZhiPay/`](../mobile/ZhiPay/) (untracked) and asked for a pixel-perfect translation into the locked Figma file's `⏰ Working files` page (`1:5`) using the existing component-system foundation. 23 frames shipped: 7 Auth · 4 Home · 6 Transfer · 6 Pattern-1 state cells.
+- **Why this matters**: This is the first end-to-end visual exploration of the mobile app sitting on top of the now-locked foundation. It's NOT canonical screen-spec work — every per-surface row in [`product_states.md`](../docs/product_states.md) §Surfaces stays ❌ until each ships a full spec MD with all 6 generic states + tier variants + i18n keys + acceptance criteria + state-machine refs. The frames built here are reference / drafts that exercise the foundation under composition pressure and surface real consumption gaps.
+- **Files modified**:
+  - `docs/product_states.md` — Last-updated stamp bumped to Phase 28; **Mobile patterns** row flipped ❌ → 🚧 with Pattern-1 specifics; new row added under §Foundation: **Mobile screens — Claude Design exploration** at 🚧 with the 23-frame inventory + layout coordinates + locale + build-pitfalls.
+  - `ai_context/AI_CONTEXT.md` — `mobile/ZhiPay/` block added to "Where things live" tree with file-by-file annotations (tokens.jsx · ios-frame.jsx · design-canvas.jsx · auth-screens.jsx · home-screens.jsx · transfer-screens.jsx · pattern-fx-quote.jsx · tweaks-panel.jsx · 2 HTML previews · uploads/ subfolder).
+  - `ai_context/HISTORY.md` — this entry.
+- **Files created (in Figma file `p8pxXYApMNCpzQn0XkoIw9`, page `⏰ Working files` (`1:5`))** — frame node IDs follow:
+  - **Auth row** (y=200, frames at x=100/622/1144/1666/2188/2710/3232): Splash (`141:3`) · Phone (`142:2`) · OTP (`142:37`) · PIN-Create (`143:2`) · PIN-Confirm (`143:69`) · Onboarding-1 (`144:2`) · Lock (`143:136`)
+  - **Home row** (y=1324, frames at x=100/622/1144/1666): Safe-CTA-hero (`153:3`) · Bold-inline-amount (`153:90`) · Profile (`154:2`) · Cards-manage (`154:90`)
+  - **Transfer row** (y=2448, frames at x=100/622/1144/1666/2188/2710): Recipient-select (`156:3`) · Add-recipient (`156:60`) · Amount-entry (`158:2`) · Review (`158:44`) · Processing (`159:2`) · Success (`159:21`)
+  - **Pattern 1 — FX Quote Breakdown** (2 rows × 3 cols at y=3622, y=4282): Default (`160:3`) · Loading (`160:46`) · Error (`160:65`) · Offline (`160:76`) · Stale (`160:94`) · Rate-moved (`160:138`)
+  - 4 section title text labels (`1 · Auth` · `2 · Home` · `3 · Transfer` · `4 · Pattern 1 — FX Quote Breakdown`) + 23 per-frame screen labels above each device.
+- **Pixel-perfect translation strategy**: every fill, stroke, padding, item-spacing, and corner-radius bound to the foundation Variables (`color/brand/600`, `color/slate/100`, `space/*`, `radius/*`, etc.) where the foundation maps cleanly. Where Claude Design used hex values outside the brand palette by design (recipient avatars from a deterministic name-hash bucket — `#3B82F6`, `#EC4899`, `#10B981`, `#F59E0B`), those stayed as raw hex per the Avatar primitive spec. Text styles applied via foundation `text/heading` / `text/body` / `text/body-medium` / `text/body-semibold` / `text/body-sm` / `text/body-sm-semibold` / `text/label` / `text/mono/body-sm`. Hero amounts use Inter Bold 26–36pt; mono money uses JetBrains Mono Bold (no Semi Bold available in the family).
+- **iOS chrome on every screen**: 126×37 dynamic island (top:11) · Status bar w/ time "9:41" + 4 cellular bars + battery outline+fill+cap · 139×5 home indicator (bottom:13) · 48pt corner radius outer device frame · drop-shadow `(0, 40, 80, rgba(0,0,0,0.18))` for the floating-device effect. iPhone 15 Pro size (402×874) chosen over the brief's 393×852 to match Claude Design's `IOSDevice` component baseline.
+- **Build pitfalls captured (Figma Plugin API quirks discovered this session — generalizable)**:
+  1. **Vector paths**: only `M`, `L`, `Q`, `Z` accepted. SVG arc commands (`a`, `A`) are rejected with `Failed to convert path. Invalid command at a`. Workaround: use Q-curves to approximate circles, or stack ellipse nodes for circular outlines + path nodes for the rest. Affected icons rebuilt: bell, profile silhouette, KYC check-circle, biometric FaceID frame.
+  2. **`primaryAxisAlignItems`**: only `MIN | MAX | CENTER | SPACE_BETWEEN` — `SPACE_AROUND` is rejected.
+  3. **`counterAxisAlignItems`**: only `MIN | MAX | CENTER | BASELINE` — `LAST_BASELINE` is rejected.
+  4. **`JetBrains Mono`** has no `Semi Bold`. Available: Bold, ExtraBold, Medium, Regular, Light, Thin (+ Italic variants). For semibold-equivalent on mono money, use Bold (closest weight match).
+  5. **Frame nodes have no `removeChild`** method. Restructure the build order instead — create the wrapper frame first, then create children inside it. Don't rely on undo / re-parent patterns.
+  6. **Fonts must be preloaded** before any text-set call on a node — even when setting via `textStyleId`, if the style references a font weight that wasn't loaded, the node creation fails. Always preload Inter Regular + Medium + Semi Bold + Bold + Extra Bold + JetBrains Mono Regular + Medium + Bold at the top of any script that creates text.
+  7. **Avatars inside auto-layout rows** must use `layoutMode: 'NONE'` so the circle stays a circle (auto-layout HUG would shrink to text width and turn it into a vertical pill).
+  8. **`padding*` properties** are FRAME-only — text nodes don't accept them. Wrap padded text in a frame instead.
+- **Rendering notes**:
+  - Spinner on Processing screen is a static 70% arc (`figma.createEllipse()` + `arcData: {startingAngle, endingAngle}`) — animation requires Smart Animate prototype connections, deferred.
+  - UZ flag emoji on Phone screen renders as missing-glyph in Figma's font fallback (multi-codepoint emoji unsupported in current font); would need an SVG flag asset.
+  - Pattern 1 cells are rendered as standalone Card-style frames on a clean light surface (no iOS device frame around them) since they're component-level patterns, not full screens.
+- **Decision locked**: `mobile/ZhiPay/` is **untracked** — Claude Design's React/JSX is reference material, not source-of-truth. The Figma frames it produced are the durable artefact. If the user wants to commit the JSX as historical record, that's a separate /commit decision.
+- **No PRD / models / mermaid / state-machine cascade** — design-implementation work, no schema changes, no state machines touched.
+- **Doc cascade scope**: `docs/product_states.md` (stamp + Mobile patterns row + new exploration row) · `ai_context/AI_CONTEXT.md` (Where-things-live tree) · `ai_context/HISTORY.md` (this entry).
+- **What's next (optional follow-ups, none blocking)**: (a) iterate any specific screen for closer fidelity if visual review surfaces a gap; (b) replace static Processing spinner arc with Smart Animate prototype connection; (c) source SVG flag assets for Phone-screen prefix; (d) start canonical screen builds — pick a marquee surface (recommend Send-money since it's most spec-rich), draft the spec MD with all 6 states + tier variants + i18n keys + acceptance criteria, then build to a per-surface page (`📱 Send-money`) with full state coverage; (e) extend Pattern 1 with the remaining patterns (KYC step · recipient picker · send-money review block · receipt block · transfer-status detail · card-link 3DS).
+
+---
+
 ### 2026-05-04 — Claude Design briefing pack — `claude-design/` folder created with two upload-ready files (brief.md + rules-pack.md) for the external Claude Design canvas (claude.ai/design/...)
 
 - **Summary**: User asked how to hand the project context to a Claude Design canvas file (`https://claude.ai/design/p/019df1a2-9383-73b3-ba0b-1210a5a27ad7`) so it can design the mobile app directly. Built a two-file kickoff pack the user can upload as attachments + a master prompt to paste as the kickoff message. New top-level `claude-design/` folder houses the artifacts so they don't collide with `mobile/design/` (the spec layer) or `dashboard/` (the admin prototype).
