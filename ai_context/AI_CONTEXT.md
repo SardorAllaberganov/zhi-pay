@@ -176,6 +176,9 @@ ZhiPay/
 │   ├── rules/                         # 13 rule files (auto-loaded)
 │   ├── commands/                      # 3 slash commands: /start_task /doc_sync /commit
 │   └── settings.json                  # project-shared (settings.local.json gitignored)
+├── claude-design/                     # external-tool kickoff pack for the Claude Design canvas (claude.ai/design/...)
+│   ├── brief.md                       # ~150-line kickoff: project context, Figma URL, constraints, sequenced task ask
+│   └── rules-pack.md                  # ~810-line attachment: 8 distilled rules + design-review checklist + layer hierarchy + doc slices (PRD personas + features, models KYC/cards/15 error codes/FX-lock invariant) + canonical mermaid flows
 ├── docs/                              # source of truth
 │   ├── models.md                      # 7-domain data model reference
 │   ├── product_requirements_document.md
