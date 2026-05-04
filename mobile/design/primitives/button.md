@@ -85,6 +85,112 @@ Six states per variant × size. Render every cell on a sample frame to verify co
 - Trailing icon: same sizing rules; gap on the trailing side mirrors the leading-side gap.
 - Border radius: `radius-md` (12pt) at all sizes — never `radius-sm` (looks like an input), never `radius-pill` (looks like a chip).
 
+## Figma component-set
+
+Single component set named `Button`. Naming convention + Variables setup live in [`tokens/figma-setup.md`](../tokens/figma-setup.md).
+
+### Variant axes
+
+| Property | Values | Notes |
+|---|---|---|
+| `Variant` | `Primary` · `Secondary` · `Tertiary` · `Destructive` · `Link` | 5 values |
+| `Size` | `Sm` · `Md` · `Lg` | 3 values; `Md` is the canonical default |
+| `State` | `Default` · `Pressed` · `Disabled` · `Focused` · `Loading` | 5 values; **`Hover` excluded** (touch surface, no hover) |
+| `Icon` | `None` · `Leading` · `Trailing` | 3 values |
+
+**Total cells:** 5 × 3 × 5 × 3 = **225**
+**Skip cells:** `State=Loading` × `Icon=Trailing` (the spinner sits where a leading icon would, never trailing) — 5 × 3 × 1 = **15 skipped** → **210 authored cells**.
+
+> `Link` variant only ships in `Sm` + `Md` (no hero `Lg` link — hero CTAs are always primary). Skip 5 additional cells for `Link` × `Lg` × every state × every icon-position. Final = **210 − (1 × 1 × 5 × 3)** = **195 cells**.
+
+### Naming
+
+```
+Button / <Variant> / <Size> / <State> / <Icon>
+```
+
+Examples: `Button / Primary / Md / Default / None`, `Button / Destructive / Lg / Pressed / Leading`, `Button / Tertiary / Sm / Loading / None`.
+
+### Variable bindings — per cell
+
+#### Fill (background)
+
+| Variant | State | Light | Dark |
+|---|---|---|---|
+| Primary | Default · Focused · Loading | `color/semantic/primary` | `color/semantic/primary` |
+| Primary | Pressed | `color/brand/700` | `color/brand/600` |
+| Primary | Disabled | `color/semantic/primary` (50% opacity at layer) | `color/semantic/primary` (50% opacity at layer) |
+| Secondary | Default · Focused · Loading | `color/semantic/secondary` | `color/semantic/secondary` |
+| Secondary | Pressed | `color/slate/200` | `color/slate/700` |
+| Secondary | Disabled | `color/semantic/secondary` (50%) | `color/semantic/secondary` (50%) |
+| Tertiary · Link | Default · Focused · Loading · Disabled | transparent (no fill) | transparent |
+| Tertiary | Pressed | `color/semantic/accent` | `color/semantic/accent` |
+| Destructive | Default · Focused · Loading | `color/semantic/destructive` | `color/semantic/destructive` |
+| Destructive | Pressed | `color/danger/700` | `color/danger/700` |
+| Destructive | Disabled | `color/semantic/destructive` (50%) | `color/semantic/destructive` (50%) |
+
+#### Label (text color)
+
+| Variant | Light | Dark |
+|---|---|---|
+| Primary · Destructive | `color/semantic/primary-foreground` (white) | `color/semantic/primary-foreground` |
+| Secondary | `color/semantic/secondary-foreground` | `color/semantic/secondary-foreground` |
+| Tertiary · Link | `color/brand/700` | `color/brand/400` |
+
+> **Tertiary + Link bind to a primitive ramp directly** (no semantic alias for "brand text" today). When designing the dark mode of the Tertiary / Link cells, swap the layer's fill from `color/brand/700` to `color/brand/400` manually. If this becomes painful across primitives, propose a `color/semantic/foreground-brand` alias addition in [`tokens/figma-setup.md`](../tokens/figma-setup.md).
+
+#### Stroke
+
+No stroke on any variant in any state. Focus ring is rendered as a separate Effect Style, not a stroke.
+
+#### Corner radius
+
+`radius/md` (12pt) on all variants and sizes. Never `radius/sm`, never `radius/pill`.
+
+#### Auto Layout
+
+| Property | Value | Bound to |
+|---|---|---|
+| Direction | Horizontal | — |
+| Padding-X (Sm) | 12pt | `space/3` |
+| Padding-Y (Sm) | 8pt | `space/2` |
+| Padding-X (Md) | 20pt | `space/5` |
+| Padding-Y (Md) | 12pt | `space/3` |
+| Padding-X (Lg) | 24pt | `space/6` |
+| Padding-Y (Lg) | 16pt | `space/4` |
+| Gap (Sm) | 8pt | `space/2` |
+| Gap (Md · Lg) | 12pt | `space/3` |
+| Width | Hug contents (default) — Fill container when `Layout=Stacked` or `Layout=Inline` invoked at instance level | — |
+| Height | Fixed: 40pt (Sm) · 48pt (Md) · 56pt (Lg) | — |
+| Align | Center · Center | — |
+
+### Typography (Text Style binding)
+
+| Size | Text Style | Weight override (if any) |
+|---|---|---|
+| Sm | `text/body-sm` | `Medium` (500) |
+| Md | `text/body-sm` | `Medium` (500) |
+| Lg | `text/body` | `Semibold` (600) |
+
+> `Sm` / `Md` use the Body small role at Medium weight (the spec calls for 14pt `font-medium`). `Lg` uses Body at Semibold (16pt `font-semibold`). If your Figma Inter master doesn't expose Medium / Semibold as separate weights at small sizes, drop in the closest available — Inter ships 9 weights and Figma should resolve them cleanly.
+
+### Effect (focus ring)
+
+When `State=Focused`, attach **two Drop Shadow effects** stacked on the button frame (NOT a Variable — focus ring is an Effect Style instance per the figma-setup.md "Effect Styles" rules):
+
+1. Drop Shadow #1: X 0 / Y 0 / Blur 0 / Spread 2 / Color `color/semantic/background` (offset against background)
+2. Drop Shadow #2: X 0 / Y 0 / Blur 0 / Spread 4 / Color `color/semantic/ring`
+
+The 2pt offset reads as the `--ring-offset-background` step from the admin spec.
+
+### Loading spinner
+
+When `State=Loading`, replace the leading-icon slot (or insert at the same gap if `Icon=None`) with a 16pt Frame containing the spinner SVG. Spinner color = label color. Animate via Smart Animate `360deg` rotation at `duration/base` (220ms). For the static spec frame, render the spinner at 0deg with stroke color matching the label.
+
+### Disabled-because-X reason text (separate frame)
+
+The reason-text below the button is **NOT part of the button component** — it's a sibling frame the consuming screen / pattern places below. Don't bake it into the Button component set. See the "Disabled-because-X reasons" section above for content rules.
+
 ## Token consumption
 
 | Surface / state | Token |
