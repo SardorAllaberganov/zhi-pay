@@ -4,6 +4,20 @@
 
 ---
 
+### 2026-05-10 — Dashboard `/sign-in` pre-filled credentials fixed — `defaultEmail` now resolves through `getDemoSuperAdminEmail()` instead of the stale hardcoded `super.admin@zhipay.uz`
+
+- **Summary**: User asked "in login input set the working login and password in values both." The `/sign-in` form's `defaultEmail` prop on `<EmailPasswordStep>` was hardcoded to `super.admin@zhipay.uz` — a string that doesn't match any seeded admin in [`dashboard/src/data/mockAdminAuth.ts`](../dashboard/src/data/mockAdminAuth.ts) (the actual super-admin's email is `sardor@zhipay.uz` per `SEED_USERS[0]`). Result: even though `defaultPassword={DEMO_PASSWORD}` correctly pre-filled `zhipay-demo-2026`, the email pre-fill was wrong and `findAdminByEmail()` would always return `null` on submit, blocking sign-in unless the user manually retyped the email. Replaced the literal with `getDemoSuperAdminEmail()` (already exported from [`mockAdminAuth.ts:340`](../dashboard/src/data/mockAdminAuth.ts#L340)) so the pre-fill stays in lockstep with the seeded `admin_super_01.email` field.
+- **Files modified**:
+  - [`dashboard/src/pages/SignIn.tsx`](../dashboard/src/pages/SignIn.tsx) — added `getDemoSuperAdminEmail` to the existing `mockAdminAuth` import on line 9; replaced `defaultEmail="super.admin@zhipay.uz"` with `defaultEmail={getDemoSuperAdminEmail()}` on line 54.
+  - `ai_context/AI_CONTEXT.md` — new bullet at top of bullet list documenting the fix.
+  - `ai_context/HISTORY.md` — this entry.
+- **Why this matters**: Demo / design-probing surfaces must be self-consistent — pre-filled credentials must match what the verifier accepts. Hardcoded strings drift when the underlying mock changes (the Phase 21 `/settings` work renamed the demo super-admin to `sardor@zhipay.uz` but the sign-in default wasn't updated in the same sweep). Routing through the helper makes the SignIn page resilient to any future rename of the seeded admin.
+- **Generalizable rule (worth recording next time it recurs)**: when a mock-data store exposes a "demo entrypoint" helper (e.g. `getDemoSuperAdminEmail`, `getDemoSenderId`, `getDemoCardId`), prefer the helper over hardcoded literals — even in pre-production / design surfaces — so the demo path stays correct under data refactors.
+- **Verification**: not run in this session (no dev-server / browser probe). The diff is a 1-symbol replacement against an already-exported helper; type-check is the only correctness gate and TypeScript will catch a missing export at compile time.
+- **No PRD / models / mermaid cascade** — pure UI bug fix; no schema changes, no state machines touched, no surface row flipped status.
+
+---
+
 ### 2026-05-05 — Phase 29 follow-up #7 · Icon / Languages + Icon / HelpCircle + Icon / LogOut authored — closes the Profile screen's deferred glyph trio (Til / Yordam / Chiqish rows on the More tab)
 
 - **Summary**: User asked "make the languages and help center icons" then added "the exit icon also" — three new lucide icon components authored on `❖ Components` page icon row at y=1824, mirroring the canonical Phase 29 icon-authoring contract: 24×24 frame + single VECTOR child + stroke 2pt ROUND bound to `color/foreground` Variable (`VariableID:15:3`) + no fill on stroke or component frame.

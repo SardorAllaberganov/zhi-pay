@@ -6,7 +6,7 @@ import { AuthCard } from '@/components/auth/AuthCard';
 import { SessionExpiredBanner } from '@/components/auth/SessionExpiredBanner';
 import { EmailPasswordStep } from '@/components/auth/EmailPasswordStep';
 import { getSession } from '@/lib/auth';
-import { DEMO_PASSWORD } from '@/data/mockAdminAuth';
+import { DEMO_PASSWORD, getDemoSuperAdminEmail } from '@/data/mockAdminAuth';
 import { t } from '@/lib/i18n';
 
 /**
@@ -51,7 +51,7 @@ export function SignIn() {
         banner={showSessionBanner ? <SessionExpiredBanner /> : null}
       >
         <EmailPasswordStep
-          defaultEmail="super.admin@zhipay.uz"
+          defaultEmail={getDemoSuperAdminEmail()}
           defaultPassword={DEMO_PASSWORD}
           onSuccess={handleSuccess}
         />
